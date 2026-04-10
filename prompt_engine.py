@@ -114,7 +114,7 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
     }
 
 TEST_CASES = [
-    "Critical bug filed in Jira → Create GitHub branch → Notify Slack → Update incident tracker",
+    "Critical bug filed in Jira -> Create GitHub branch -> Notify Slack -> Update incident tracker",
     "Create a new Jira ticket for a login bug",
     "Fix is merged on GitHub, now close the Jira ticket and notify the team on Slack",
     "New feature request came in — create a Jira story, make a GitHub branch, tell the team on Slack, and log it in the tracker",
