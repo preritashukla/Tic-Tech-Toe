@@ -1,16 +1,32 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import ChatInput from '@/components/ChatInput';
+import { createWorkflow } from '@/lib/api';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (text: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { workflow_id } = await createWorkflow(text);
+      navigate(`/workflow/${workflow_id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create workflow. Is the API running?');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <Layout showTitle={false}>
+      <ChatInput onSubmit={handleSubmit} loading={loading} error={error} />
+    </Layout>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
