@@ -47,6 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        node: {
+          pending: "hsl(var(--node-pending))",
+          running: "hsl(var(--node-running))",
+          done: "hsl(var(--node-done))",
+          failed: "hsl(var(--node-failed))",
+          approval: "hsl(var(--node-approval))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
