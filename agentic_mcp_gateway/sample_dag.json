@@ -1,0 +1,97 @@
+{
+  "workflow_id": "wf-hackathon-demo-01",
+  "name": "Cross-Platform Issue Resolver",
+  "description": "Creates Jira ticket, runs parallel GitHub and Slack linking, waits for human approval to alter the production budget sheet.",
+  "nodes": [
+    {
+      "id": "task_1",
+      "name": "Create Jira Ticket",
+      "tool": "jira_mcp",
+      "action": "create_ticket",
+      "inputs": {
+        "title": "Fix Auth Gateway Bug",
+        "priority": "High"
+      },
+      "depends_on": [],
+      "requires_approval": false,
+      "retry": {
+        "max_attempts": 3,
+        "backoff_factor": 1.5,
+        "initial_delay": 1.0,
+        "timeout": 5
+      },
+      "mock_output": {
+        "ticket_id": "PRJ-8822"
+      }
+    },
+    {
+      "id": "task_2",
+      "name": "Link GitHub Issue",
+      "tool": "github_mcp",
+      "action": "link_issue",
+      "inputs": {
+        "issue_number": 1045,
+        "jira_tracker": "{{task_1.output.ticket_id}}"
+      },
+      "depends_on": [
+        "task_1"
+      ],
+      "requires_approval": false,
+      "retry": {
+        "max_attempts": 3,
+        "backoff_factor": 2.0,
+        "initial_delay": 1.0,
+        "timeout": 10
+      },
+      "mock_output": {
+        "success": true,
+        "linked_to": "{{task_1.output.ticket_id}}"
+      }
+    },
+    {
+      "id": "task_3",
+      "name": "Ping Engineer on Slack",
+      "tool": "slack_mcp",
+      "action": "post_message",
+      "inputs": {
+        "channel": "#dev-auth",
+        "message": "Jira {{task_1.output.ticket_id}} was created for the Auth bug."
+      },
+      "depends_on": [
+        "task_1"
+      ],
+      "requires_approval": false,
+      "retry": {
+        "max_attempts": 2,
+        "initial_delay": 0.5
+      },
+      "mock_output": {
+        "delivered": true,
+        "timestamp": 1684562000
+      }
+    },
+    {
+      "id": "task_4",
+      "name": "Update Billing Sheet",
+      "tool": "sheets_mcp",
+      "action": "update_row",
+      "inputs": {
+        "doc_id": "budget_doc_2024",
+        "jira": "{{task_1.output.ticket_id}}",
+        "status": "Escalated to GitHub"
+      },
+      "depends_on": [
+        "task_2",
+        "task_3"
+      ],
+      "requires_approval": true,
+      "retry": {
+        "max_attempts": 1,
+        "timeout": 15
+      },
+      "mock_output": {
+        "row_updated": 42
+      }
+    }
+  ]
+}

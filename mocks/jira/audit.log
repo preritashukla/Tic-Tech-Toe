@@ -1,0 +1,5 @@
+INFO:root:{'timestamp': '2026-04-10 18:59:58.477073', 'tool': 'jira', 'action': 'get_issue', 'params': {'issue_id': 'JIRA-102'}, 'token': 'jira_token', 'status': 'success'}
+INFO:root:{'timestamp': '2026-04-10 19:00:16.293144', 'tool': 'jira', 'action': 'get_issue', 'params': {'issue_id': 'JIRA-102'}, 'token': 'jira_token', 'status': 'success'}
+INFO:root:{'timestamp': '2026-04-10 19:01:24.382903', 'tool': 'jira', 'action': 'get_issue', 'params': {'issue_id': 'JIRA-102'}, 'token': 'jira_token', 'status': 'success'}
+INFO:root:{'timestamp': '2026-04-10 19:09:02.367318', 'tool': 'jira', 'action': 'get_issue', 'params': {}, 'token': 'jira_token', 'status': 'success'}
+INFO:root:{'timestamp': '2026-04-10 19:09:22.890395', 'tool': 'jira', 'action': 'get_issue', 'params': {}, 'token': 'jira_token', 'status': 'success'}
