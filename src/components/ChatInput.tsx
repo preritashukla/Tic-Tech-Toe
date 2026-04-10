@@ -54,13 +54,15 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
             }}
             disabled={loading}
             variant="standard"
-            InputProps={{
-              disableUnderline: true,
-              sx: {
+            slotProps={{
+              input: {
+                disableUnderline: true,
+                sx: {
                 color: 'hsl(213, 31%, 91%)',
                 px: 2,
                 py: 1,
                 '& ::placeholder': { color: 'hsl(215, 20%, 45%)' },
+                },
               },
             }}
           />

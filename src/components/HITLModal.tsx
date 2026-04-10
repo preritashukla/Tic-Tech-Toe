@@ -35,13 +35,15 @@ const HITLModal = ({ node, onApprove, onReject }: HITLModalProps) => {
   return (
     <Dialog
       open
-      PaperProps={{
-        sx: {
-          bgcolor: 'hsl(222, 47%, 9%)',
-          border: '1px solid hsl(38, 92%, 50% / 0.4)',
-          borderRadius: 3,
-          minWidth: 400,
-          color: 'hsl(213, 31%, 91%)',
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: 'hsl(222, 47%, 9%)',
+            border: '1px solid hsl(38, 92%, 50% / 0.4)',
+            borderRadius: 3,
+            minWidth: 400,
+            color: 'hsl(213, 31%, 91%)',
+          },
         },
       }}
     >
