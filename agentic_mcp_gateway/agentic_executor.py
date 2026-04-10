@@ -35,6 +35,7 @@ class Node:
         self.inputs: Dict[str, Any] = data.get("inputs", {})
         self.depends_on: List[str] = data.get("depends_on", [])
         self.requires_approval: bool = data.get("requires_approval", False)
+        self.mock_output: Dict[str, Any] = data.get("mock_output", {})
         
         # Reliability Config
         retry = data.get("retry", {})
@@ -59,21 +60,16 @@ def log_event(status: str, message: str, color_code: str = "0"):
 
 # --- Mock MCP Router ---
 
-async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
+async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_output: Dict[str, Any] = None) -> Dict[str, Any]:
     """Stub to simulate external tool execution over MCP."""
     await asyncio.sleep(0.5) # Simulate network latency
     
     if action == "link_issue": # Simulate a transient failure for demonstration
         if not hasattr(dispatch_mcp, "failed_once"):
             dispatch_mcp.failed_once = True
-            raise ConnectionError("GitHub API rate limit exceeded")
+            raise ConnectionError("External API rate limit exceeded")
             
-    if tool == "jira_mcp": return {"ticket_id": "PRJ-999"}
-    if tool == "github_mcp": return {"linked": True}
-    if tool == "slack_mcp": return {"delivered": True}
-    if tool == "sheets_mcp": return {"row_updated": 42}
-    
-    return {"status": "ok"}
+    return mock_output or {"status": "ok"}
 
 
 # --- Core Executor Engine ---
@@ -108,7 +104,7 @@ class DAGExecutor:
         for n_id in self.nodes:
             visit(n_id)
 
-    def _resolve_inputs(self, node: Node) -> Dict[str, Any]:
+    def _resolve_templates(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Resolve templated variables {{task_id.output.field}} via regex."""
         resolved = {}
         pattern = re.compile(r"\{\{([^.]+)\.output\.([^}]+)\}\}")
@@ -123,7 +119,7 @@ class DAGExecutor:
                 raise ValueError(f"Field '{field}' missing from {ref_task} output")
             return str(val)
 
-        for key, value in node.inputs.items():
+        for key, value in payload.items():
             if isinstance(value, str):
                 resolved[key] = pattern.sub(interpolator, value)
             else:
@@ -137,9 +133,11 @@ class DAGExecutor:
         while node.attempts < node.max_attempts:
             node.attempts += 1
             try:
+                # Prepare generic mock output if provided in DAG
+                dynamic_mock = self._resolve_templates(node.mock_output) if node.mock_output else None
                 # Enforce timeout boundary
                 return await asyncio.wait_for(
-                    dispatch_mcp(node.tool, node.action, inputs),
+                    dispatch_mcp(node.tool, node.action, inputs, dynamic_mock),
                     timeout=node.timeout
                 )
             except Exception as e:
@@ -170,7 +168,7 @@ class DAGExecutor:
 
         # Resolve templates & execution Context
         try:
-            inputs = self._resolve_inputs(node)
+            inputs = self._resolve_templates(node.inputs)
             output = await self._execute_with_retry(node, inputs)
             
             node.output = output
@@ -229,7 +227,12 @@ class DAGExecutor:
 
 # --- Runner ---
 if __name__ == "__main__":
-    with open("sample_dag.json") as f:
+    import argparse
+    parser = argparse.ArgumentParser(description="Agentic DAG Executor")
+    parser.add_argument("dag_file", nargs="?", default="sample_dag.json", help="Path to JSON DAG")
+    args = parser.parse_args()
+
+    with open(args.dag_file) as f:
         dag_data = json.load(f)
     try:
         asyncio.run(DAGExecutor(dag_data).run())
