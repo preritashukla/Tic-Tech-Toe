@@ -27,4 +27,14 @@ dist-ssr
 .env
 __pycache__/
 *.pyc
+<<<<<<< HEAD
 .next/
+=======
+node_modules/
+.next/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+>>>>>>> 82c809b (fastapi backend)
