@@ -23,7 +23,7 @@ const Index = () => {
   };
 
   return (
-    <Layout showTitle={false}>
+    <Layout>
       <ChatInput onSubmit={handleSubmit} loading={loading} error={error} />
     </Layout>
   );
