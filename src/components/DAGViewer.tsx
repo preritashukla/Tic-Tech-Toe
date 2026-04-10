@@ -1,73 +1,134 @@
 import { useMemo } from 'react';
 import { ReactFlow, Background, Controls, MarkerType } from '@xyflow/react';
 import NodeCard from './NodeCard';
-import type { WorkflowNode } from '@/lib/types';
-import { Box, Skeleton } from '@mui/material';
+import type { WorkflowNode, WorkflowEdge } from '@/lib/types';
+import { Box, Skeleton, Typography } from '@mui/material';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 interface DAGViewerProps {
   nodes: WorkflowNode[];
-  edges: { source: string; target: string }[];
+  edges: WorkflowEdge[];
   loading?: boolean;
 }
 
 const nodeTypes = { custom: NodeCard };
 
+// Map node status to edge color to show execution progress
+function getEdgeColor(sourceStatus: string): string {
+  switch (sourceStatus) {
+    case 'done':
+      return 'hsl(142, 71%, 45%)';
+    case 'running':
+      return 'hsl(217, 91%, 60%)';
+    case 'failed':
+      return 'hsl(0, 84%, 60%)';
+    case 'waiting_approval':
+      return 'hsl(38, 92%, 50%)';
+    default:
+      return 'hsl(217, 33%, 25%)';
+  }
+}
+
 const DAGViewer = ({ nodes, edges, loading }: DAGViewerProps) => {
+  const nodeStatusMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    nodes.forEach((n) => (map[n.id] = n.status));
+    return map;
+  }, [nodes]);
+
   const flowNodes = useMemo(
     () =>
       nodes.map((n, i) => ({
         id: n.id,
         type: 'custom' as const,
-        position: { x: i * 260, y: 100 },
-        data: { title: n.title, status: n.status },
+        position: { x: i * 300, y: 80 + (i % 2 === 1 ? 30 : 0) },
+        data: {
+          title: n.title,
+          status: n.status,
+          description: n.description,
+          tool: n.tool,
+          duration: n.duration,
+        },
       })),
     [nodes]
   );
 
   const flowEdges = useMemo(
     () =>
-      edges.map((e) => ({
-        id: `${e.source}-${e.target}`,
-        source: e.source,
-        target: e.target,
-        markerEnd: { type: MarkerType.ArrowClosed, color: 'hsl(217, 33%, 30%)' },
-        animated: true,
-      })),
-    [edges]
+      edges.map((e) => {
+        const color = getEdgeColor(nodeStatusMap[e.source] || 'pending');
+        return {
+          id: `${e.source}-${e.target}`,
+          source: e.source,
+          target: e.target,
+          markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+          animated: nodeStatusMap[e.source] === 'running' || nodeStatusMap[e.source] === 'done',
+          style: { stroke: color, strokeWidth: 2 },
+        };
+      }),
+    [edges, nodeStatusMap]
   );
 
   if (loading) {
     return (
-      <Box className="flex-1 flex items-center justify-center gap-6 p-8">
-        {[1, 2, 3].map((i) => (
-          <Skeleton
-            key={i}
-            variant="rounded"
-            width={180}
-            height={80}
-            sx={{ bgcolor: 'hsl(217, 33%, 15%)', borderRadius: 3 }}
-          />
-        ))}
+      <Box className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+        <Box className="flex items-center gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Box key={i} className="flex items-center gap-3">
+              <Skeleton
+                variant="rounded"
+                width={200}
+                height={90}
+                sx={{ bgcolor: 'hsl(217, 33%, 12%)', borderRadius: 3 }}
+              />
+              {i < 4 && (
+                <Box sx={{ width: 40, height: 2, bgcolor: 'hsl(217, 33%, 18%)', borderRadius: 1 }} />
+              )}
+            </Box>
+          ))}
+        </Box>
+        <Typography sx={{ color: 'hsl(215, 20%, 40%)', fontSize: 13 }}>
+          Loading execution graph…
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (nodes.length === 0) {
+    return (
+      <Box className="flex-1 flex flex-col items-center justify-center gap-3 p-8">
+        <AccountTreeIcon sx={{ fontSize: 48, color: 'hsl(217, 33%, 25%)' }} />
+        <Typography sx={{ color: 'hsl(215, 20%, 40%)', fontSize: 14 }}>
+          No execution graph available
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box className="flex-1" sx={{ minHeight: 400 }}>
+    <Box className="flex-1" sx={{ minHeight: 400, width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         nodesDraggable={false}
         nodesConnectable={false}
         panOnDrag
         zoomOnScroll
+        minZoom={0.3}
+        maxZoom={1.5}
       >
-        <Background gap={24} size={1} color="hsl(217, 33%, 15%)" />
+        <Background gap={30} size={1} color="hsl(217, 33%, 12%)" />
         <Controls
-          style={{ background: 'hsl(222, 47%, 9%)', borderColor: 'hsl(217, 33%, 20%)', borderRadius: 12 }}
+          style={{
+            background: 'hsl(222, 47%, 9%)',
+            borderColor: 'hsl(217, 33%, 20%)',
+            borderRadius: 12,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          }}
         />
       </ReactFlow>
     </Box>

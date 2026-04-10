@@ -3,12 +3,29 @@ import { Box, TextField, Typography, CircularProgress, Chip } from '@mui/materia
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import DescriptionIcon from '@mui/icons-material/Description';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 
+// MCP-relevant workflow examples matching the problem statement
 const EXAMPLE_WORKFLOWS = [
-  'Scrape top HN posts, summarize with GPT, post to Slack',
-  'Monitor competitor prices, compare, alert on changes',
-  'Parse PDF invoices, extract data, update spreadsheet',
-  'Fetch weather API, generate report, email team',
+  {
+    text: 'When a critical bug is filed in Jira, create a GitHub branch, notify Slack on-call, and update the incident tracker',
+    icon: <BugReportIcon sx={{ fontSize: '14px !important', color: 'hsl(0, 84%, 60%) !important' }} />,
+  },
+  {
+    text: 'Monitor competitor prices, compare with GPT, alert on Discord, and log to Airtable',
+    icon: <TrendingUpIcon sx={{ fontSize: '14px !important', color: 'hsl(142, 71%, 50%) !important' }} />,
+  },
+  {
+    text: 'Parse PDF invoices, extract line items, update Google Sheets, and create Trello cards for review',
+    icon: <DescriptionIcon sx={{ fontSize: '14px !important', color: 'hsl(217, 91%, 60%) !important' }} />,
+  },
+  {
+    text: 'Monitor AWS CloudWatch alarms, create Jira tickets, notify Slack, and update status page',
+    icon: <NotificationsActiveIcon sx={{ fontSize: '14px !important', color: 'hsl(38, 92%, 50%) !important' }} />,
+  },
 ];
 
 interface ChatInputProps {
@@ -44,12 +61,13 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
             WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.04em',
             textAlign: 'center',
+            fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
           }}
         >
           Describe your workflow
         </Typography>
-        <Typography sx={{ color: 'hsl(215, 20%, 55%)', textAlign: 'center', maxWidth: 500, fontSize: 16, lineHeight: 1.6 }}>
-          Enter a natural language description and we'll orchestrate an AI-powered execution plan in seconds.
+        <Typography sx={{ color: 'hsl(215, 20%, 55%)', textAlign: 'center', maxWidth: 520, fontSize: { xs: 14, sm: 16 }, lineHeight: 1.6, px: 1 }}>
+          Enter a natural language description and our MCP Gateway will decompose it into an executable DAG across your connected services.
         </Typography>
       </Box>
 
@@ -61,7 +79,7 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
               fullWidth
               multiline
               maxRows={4}
-              placeholder="e.g. Scrape website, summarize with GPT, email results..."
+              placeholder="e.g. When a critical bug is filed in Jira, create a GitHub branch, notify Slack…"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -80,6 +98,7 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
                     px: 2,
                     py: 1,
                     fontSize: 15,
+                    fontFamily: "'Inter', system-ui, sans-serif",
                     '& ::placeholder': { color: 'hsl(215, 20%, 40%)' },
                   },
                 },
@@ -115,15 +134,20 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
               <span className="dot" />
             </Box>
             <Typography sx={{ color: 'hsl(217, 91%, 60%)', fontSize: 14, fontWeight: 500 }}>
-              Generating execution plan…
+              Decomposing workflow into DAG…
             </Typography>
           </Box>
         )}
 
         {error && (
-          <Typography sx={{ color: 'hsl(0, 84%, 60%)', mt: 2, textAlign: 'center', fontSize: 14 }}>
-            {error}
-          </Typography>
+          <Box
+            className="flex items-center gap-2 justify-center mt-3 px-4 py-2 rounded-lg"
+            sx={{ bgcolor: 'hsl(0, 84%, 60% / 0.08)', border: '1px solid hsl(0, 84%, 60% / 0.2)' }}
+          >
+            <Typography sx={{ color: 'hsl(0, 84%, 65%)', fontSize: 13 }}>
+              {error}
+            </Typography>
+          </Box>
         )}
 
         {/* Example Workflow Chips */}
@@ -131,24 +155,31 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
           <Box className="flex flex-wrap justify-center gap-2 mt-6 animate-fade-in" sx={{ animationDelay: '0.2s' }}>
             {EXAMPLE_WORKFLOWS.map((example) => (
               <Chip
-                key={example}
-                label={example}
-                onClick={() => setText(example)}
-                icon={<SendIcon sx={{ fontSize: '14px !important', color: 'hsl(215, 20%, 50%) !important' }} />}
+                key={example.text}
+                label={example.text}
+                onClick={() => setText(example.text)}
+                icon={example.icon}
                 sx={{
                   bgcolor: 'hsl(217, 33%, 12%)',
                   color: 'hsl(215, 20%, 65%)',
-                  border: '1px solid hsl(217, 33%, 20%)',
+                  border: '1px solid hsl(217, 33%, 18%)',
                   borderRadius: '12px',
-                  fontSize: 12,
-                  height: 34,
+                  fontSize: 11,
+                  height: 'auto',
+                  py: 0.75,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
+                  maxWidth: { xs: '100%', sm: '48%' },
+                  '& .MuiChip-label': {
+                    whiteSpace: 'normal',
+                    lineHeight: 1.4,
+                  },
                   '&:hover': {
                     bgcolor: 'hsl(217, 33%, 17%)',
                     color: 'hsl(213, 31%, 91%)',
                     borderColor: 'hsl(217, 91%, 60% / 0.4)',
                     transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                   },
                 }}
               />
@@ -156,6 +187,11 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
           </Box>
         )}
       </Box>
+
+      {/* Bottom tag */}
+      <Typography sx={{ color: 'hsl(215, 20%, 30%)', fontSize: 11, mt: 6, textAlign: 'center' }}>
+        Powered by Model Context Protocol (MCP) · Supports Jira, GitHub, Slack, Sheets, Discord, AWS & more
+      </Typography>
     </Box>
   );
 };
