@@ -76,7 +76,12 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
 
 class DAGExecutor:
     def __init__(self, dag_json: Dict[str, Any]):
-        self.nodes: Dict[str, Node] = {n["id"]: Node(n) for n in dag_json["nodes"]}
+        self.nodes: Dict[str, Node] = {}
+        for n in dag_json["nodes"]:
+            if n["id"] in self.nodes:
+                raise ValueError(f"Duplicate Node ID detected: {n['id']}")
+            self.nodes[n["id"]] = Node(n)
+            
         self.completed: Set[str] = set()
         self.failed: Set[str] = set()
         
