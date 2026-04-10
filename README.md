@@ -27,7 +27,7 @@ User Input (Natural Language)
         ↓ executes nodes
   MCP Servers: Jira | GitHub | Slack | Sheets
         ↓
-  Logs + Final Response → Frontend (Next.js)
+  Logs + Final Response → Frontend (Next.js/React)
 ```
 
 ### Key Components
@@ -59,7 +59,7 @@ Executes DAG nodes sequentially and in parallel with retry + exponential backoff
 Docker containers mocking Jira, GitHub, Slack, and Sheets APIs for local development and testing.
 
 **Frontend (Tejas)**
-Next.js UI with three screens:
+React/Vite UI with three screens:
 - NL input chat
 - Live DAG execution view with per-step status
 - HITL approval modal for sensitive actions
@@ -74,7 +74,7 @@ Next.js UI with three screens:
 | Backend | Python, FastAPI, MCP SDK |
 | Prompt Engine | `prompt_engine.py` with validation + retry |
 | Infrastructure | Docker (Mock MCP Servers) |
-| Frontend | Next.js / React |
+| Frontend | React, Vite, Tailwind CSS, Material UI, React Flow |
 
 ---
 
@@ -86,7 +86,6 @@ Next.js UI with three screens:
 git clone <repo-url>
 cd agentic-mcp-gateway
 pip install groq python-dotenv fastapi uvicorn
-npm install  # for frontend
 ```
 
 ### 2. Set environment variables
@@ -112,9 +111,13 @@ uvicorn main:app --reload
 ```
 
 ### 5. Run the frontend
+The frontend is located in the `frontend/` directory and can run completely standalone without the backend to demo the simulated capabilities, or connected to the real backend.
+
+To run with real backend endpoints: edit `frontend/src/lib/api.ts` and set `USE_MOCK = false;`.
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
@@ -203,15 +206,3 @@ Input: "Critical bug filed in Jira → Create GitHub branch → Notify Slack →
 | Dynamic Recovery | ✗ | ✗ | ✗ | ✓ |
 
 > Only system supporting full lifecycle automation with Human-in-the-Loop control.
-
----
-
-## .gitignore
-
-```
-.env
-__pycache__/
-*.pyc
-node_modules/
-.next/
-```
