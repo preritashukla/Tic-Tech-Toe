@@ -6,7 +6,7 @@ import { getMockWorkflowStatus, getRandomWorkflowId, resetSimulation } from './m
 // When true, the app works fully standalone with simulated real-time execution.
 
 const API_BASE = 'http://localhost:8000';
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 // ─── API Functions ───────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ export async function getWorkflowStatus(id: string): Promise<WorkflowStatus> {
   return res.json();
 }
 
-export async function approveNode(nodeId: string): Promise<{ success: boolean }> {
+export async function approveNode(workflowId: string, nodeId: string, approved: boolean = true): Promise<{ success: boolean }> {
   if (USE_MOCK) {
     await new Promise((r) => setTimeout(r, 800));
     return { success: true };
@@ -47,7 +47,7 @@ export async function approveNode(nodeId: string): Promise<{ success: boolean }>
   const res = await fetch(`${API_BASE}/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ node_id: nodeId }),
+    body: JSON.stringify({ workflow_id: workflowId, node_id: nodeId, approved }),
   });
   if (!res.ok) throw new Error(`Failed to approve node: ${res.statusText}`);
   return res.json();

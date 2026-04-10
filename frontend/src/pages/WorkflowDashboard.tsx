@@ -42,16 +42,23 @@ const WorkflowDashboard = () => {
     status?.nodes.find((n) => n.status === 'waiting_approval') ?? null;
 
   const handleApprove = async (nodeId: string) => {
+    if (!id) return;
     try {
-      await approveNode(nodeId);
+      await approveNode(id, nodeId, true);
       await fetchStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve node');
     }
   };
 
-  const handleReject = (_nodeId: string) => {
-    // Reject could POST to a reject endpoint if available
+  const handleReject = async (nodeId: string) => {
+    if (!id) return;
+    try {
+      await approveNode(id, nodeId, false);
+      await fetchStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject node');
+    }
   };
 
   // Status summary counts
