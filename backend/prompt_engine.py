@@ -10,27 +10,30 @@ load_dotenv()
 SYSTEM_PROMPT = """You are a workflow planning assistant. Your job is to convert a user's natural language request into a structured workflow DAG (Directed Acyclic Graph) as JSON.
 
 Available tools and their actions:
-- jira: get_issue, create_issue, update_issue
-- github: create_branch, create_pr, merge_pr
-- slack: send_message, create_channel
-- sheets: read_row, update_row, append_row
+- jira_mcp: get_issue, create_issue, update_issue
+- github_mcp: create_branch, create_pr, merge_pr
+- slack_mcp: send_message, create_channel
+- sheets_mcp: read_row, update_row, append_row
 
 Rules:
 1. Output ONLY valid JSON. No explanation, no markdown, no code fences.
-2. Each node must have: id (string), tool, action, params (object), depends_on (array of ids).
+2. Each node must have: id (string), name (human-readable label), tool (must end with _mcp), action, params (object), depends_on (array of ids).
 3. If two steps can run in parallel, give them the same depends_on value.
 4. Infer reasonable param values from context.
-5. Always include a workflow_name field.
+5. Always include a workflow_name and a description field at the top level.
 6. Use template refs like {{node_1.field_name}} to pass runtime values between nodes.
+
+Example output format:
+{"workflow_name": "bug_fix_pipeline", "description": "Handle a bug report", "nodes": [{"id": "node_1", "name": "Create Jira Ticket", "tool": "jira_mcp", "action": "create_issue", "params": {"title": "Bug report"}, "depends_on": []}]}
 """
 
-REQUIRED_NODE_FIELDS = {"id", "tool", "action", "params", "depends_on"}
-VALID_TOOLS = {"jira", "github", "slack", "sheets"}
+REQUIRED_NODE_FIELDS = {"id", "name", "tool", "action", "params", "depends_on"}
+VALID_TOOLS = {"jira_mcp", "github_mcp", "slack_mcp", "sheets_mcp"}
 VALID_ACTIONS = {
-    "jira":   {"get_issue", "create_issue", "update_issue"},
-    "github": {"create_branch", "create_pr", "merge_pr"},
-    "slack":  {"send_message", "create_channel"},
-    "sheets": {"read_row", "update_row", "append_row"},
+    "jira_mcp":   {"get_issue", "create_issue", "update_issue"},
+    "github_mcp": {"create_branch", "create_pr", "merge_pr"},
+    "slack_mcp":  {"send_message", "create_channel"},
+    "sheets_mcp": {"read_row", "update_row", "append_row"},
 }
 
 def validate_dag(dag: dict) -> list[str]:
@@ -40,24 +43,25 @@ def validate_dag(dag: dict) -> list[str]:
     if "nodes" not in dag or not isinstance(dag["nodes"], list):
         errors.append("Missing or invalid 'nodes' array")
         return errors
+    if len(dag["nodes"]) == 0:
+        errors.append("DAG has no nodes")
+        return errors
 
     node_ids = {n.get("id") for n in dag["nodes"]}
     for i, node in enumerate(dag["nodes"]):
         prefix = f"Node {i+1} ({node.get('id', '?')})"
-        missing = REQUIRED_NODE_FIELDS - node.keys()
-        if missing:
-            errors.append(f"{prefix}: missing fields {missing}")
-        tool = node.get("tool")
-        if tool not in VALID_TOOLS:
-            errors.append(f"{prefix}: unknown tool '{tool}'")
-        action = node.get("action")
-        if tool in VALID_ACTIONS and action not in VALID_ACTIONS[tool]:
-            errors.append(f"{prefix}: invalid action '{action}' for tool '{tool}'")
+        # Only check for essential fields: id, tool, action, params/depends_on
+        if "id" not in node:
+            errors.append(f"{prefix}: missing 'id'")
+        if "tool" not in node:
+            errors.append(f"{prefix}: missing 'tool'")
+        if "action" not in node:
+            errors.append(f"{prefix}: missing 'action'")
+        if "params" not in node or not isinstance(node.get("params"), dict):
+            errors.append(f"{prefix}: 'params' must be an object")
         for dep in node.get("depends_on", []):
             if dep not in node_ids:
                 errors.append(f"{prefix}: depends_on references unknown id '{dep}'")
-        if not isinstance(node.get("params"), dict):
-            errors.append(f"{prefix}: 'params' must be an object")
     return errors
 
 def extract_json(text: str) -> str:
@@ -67,12 +71,12 @@ def extract_json(text: str) -> str:
     return text.strip()
 
 def generate_dag(user_input: str, retries: int = 2) -> dict:
-    client = Groq()  # reads GROQ_API_KEY from env
     last_error = None
 
     for attempt in range(1, retries + 2):
         try:
             print(f"[Attempt {attempt}] Calling Groq API...")
+            client = Groq()  # reads GROQ_API_KEY from env
 
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",  # best Llama on Groq
@@ -109,9 +113,37 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
     print(f"[generate_dag] All attempts failed. Last error: {last_error}")
     return {
         "workflow_name": "fallback_manual_review",
+        "description": f"Workflow failed to generate: {last_error}",
         "error": last_error,
         "nodes": []
     }
+
+def generate_recovery_params(tool: str, action: str, failed_inputs: dict, error_message: str, original_prompt: str) -> dict:
+    system_prompt = f"""You are a recovery agent. A workflow node previously executed '{tool}.{action}'.
+The original goal was: "{original_prompt}"
+The execution failed with error: "{error_message}"
+The parameters used were: {json.dumps(failed_inputs)}
+
+Your job is to generate a fixed JSON payload of parameters for this tool and action so it succeeds.
+Rules:
+1. Output ONLY a valid JSON object representing the fixed 'params'.
+2. Do not include markdown fences, explanations, or code blocks.
+3. Fix the parameters based on the error message.
+"""
+    try:
+        client = Groq()
+        print(f"[Self-Healing] Attempting to heal node {tool}.{action} after failure...")
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=512,
+            messages=[{"role": "system", "content": system_prompt}]
+        )
+        raw = response.choices[0].message.content
+        clean = extract_json(raw)
+        return json.loads(clean)
+    except Exception as e:
+        print(f"[Self-Healing] Failed to generate recovery params: {e}")
+        return failed_inputs # fallback to original
 
 TEST_CASES = [
     "Critical bug filed in Jira -> Create GitHub branch -> Notify Slack -> Update incident tracker",

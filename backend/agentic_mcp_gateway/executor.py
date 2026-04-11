@@ -13,19 +13,20 @@ import asyncio
 import re
 from typing import Callable, Awaitable
 
-from models import DAG, DAGNode, TaskStatus
-from hitl import HITLGate
-from observability import ExecutionLogger
+from .models import DAG, DAGNode, TaskStatus
+from .hitl import HITLGate
+from .observability import ExecutionLogger
 
 # Typedef for the MCP caller function signature
 MCPDispatcherType = Callable[[str, str, dict], Awaitable[dict]]
 
 class DAGExecutor:
-    def __init__(self, dag: DAG, mcp_dispatcher: MCPDispatcherType, hitl: HITLGate, logger: ExecutionLogger):
+    def __init__(self, dag: DAG, mcp_dispatcher: MCPDispatcherType, hitl: HITLGate, logger: ExecutionLogger, original_prompt: str = ""):
         self.dag = dag
         self.mcp_dispatcher = mcp_dispatcher
         self.hitl = hitl
         self.logger = logger
+        self.original_prompt = original_prompt
         
         self.nodes = self.dag.node_map()
         self.completed_nodes: dict[str, DAGNode] = {}
@@ -91,8 +92,26 @@ class DAGExecutor:
                 if node.attempts >= node.retry.max_attempts:
                     raise e
                     
+                # SELF-HEALING via LLM
+                import sys, os
+                prompt_engine_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                if prompt_engine_dir not in sys.path:
+                    sys.path.append(prompt_engine_dir)
+                try:
+                    from prompt_engine import generate_recovery_params
+                    # Ask LLM to fix parameters based on the error
+                    resolved_inputs = generate_recovery_params(
+                        tool=node.tool, 
+                        action=node.action, 
+                        failed_inputs=resolved_inputs, 
+                        error_message=str(e), 
+                        original_prompt=self.original_prompt
+                    )
+                    self.logger.node_retry(node, node.attempts, delay, f"Self-healing injected params: {resolved_inputs}")
+                except Exception as he:
+                    self.logger.node_retry(node, node.attempts, delay, f"Self-healing failed: {he}")
+
                 # Otherwise back off
-                self.logger.node_retry(node, node.attempts, delay, str(e))
                 await asyncio.sleep(delay)
                 delay *= node.retry.backoff_factor
 

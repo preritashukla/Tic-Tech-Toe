@@ -11,11 +11,11 @@ import sys
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from models import dag_from_dict
-from observability import ExecutionLogger
-from hitl import HITLGate
-from executor import DAGExecutor
-from mock_mcp_servers import dispatch_mcp_call
+from .models import dag_from_dict
+from .observability import ExecutionLogger
+from .hitl import HITLGate
+from .executor import DAGExecutor
+from .mock_mcp_servers import dispatch_mcp_call
 
 EXAMPLE_DAG_JSON = {
     "workflow_id": "wf-20240409-login-bug",
