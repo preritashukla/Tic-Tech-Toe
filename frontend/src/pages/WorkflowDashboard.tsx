@@ -31,36 +31,52 @@ const WorkflowDashboard = () => {
     }
   }, [id]);
 
-  // Connect to WebSocket for real-time updates
+  // Connect to WebSocket for real-time updates, fallback to polling
   useEffect(() => {
     if (!id) return;
     
     // Initial fetch
     fetchStatus();
 
-    const ws = new WebSocket(`${WS_BASE}/ws/status/${id}`);
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setStatus(data);
-        setError(null);
-        setLoading(false);
-      } catch (err) {
-        console.error('Failed to parse websocket message', err);
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    let ws: WebSocket | null = null;
+
+    const startPolling = () => {
+      if (!pollingInterval) {
+        pollingInterval = setInterval(fetchStatus, 1500);
       }
     };
-    
-    ws.onerror = (err) => {
-      console.error('WebSocket error', err);
-      // Fallback to polling if WS fails
-      const interval = setInterval(fetchStatus, 2000);
-      ws.close();
-      return () => clearInterval(interval);
-    };
+
+    try {
+      ws = new WebSocket(`${WS_BASE}/ws/status/${id}`);
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setStatus(data);
+          setError(null);
+          setLoading(false);
+        } catch (err) {
+          console.error('Failed to parse websocket message', err);
+        }
+      };
+      
+      ws.onerror = () => {
+        console.warn('WebSocket error, falling back to polling');
+        ws?.close();
+        startPolling();
+      };
+
+      ws.onclose = () => {
+        startPolling();
+      };
+    } catch {
+      startPolling();
+    }
 
     return () => {
-      ws.close();
+      ws?.close();
+      if (pollingInterval) clearInterval(pollingInterval);
     };
   }, [id, fetchStatus]);
 

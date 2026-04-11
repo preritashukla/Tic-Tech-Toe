@@ -5,6 +5,10 @@ from typing import Dict, Any, List, Optional
 import asyncio
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Adjust path so we can import from agentic_mcp_gateway and prompt_engine
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -56,6 +60,12 @@ async def plan_workflow(req: PlanRequest):
     raw_dag_json["workflow_id"] = wf_id
 
     # 2. Parse DAG into python objects
+    if "error" in raw_dag_json:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"LLM Generation Error: {raw_dag_json['error']}. Check if GROQ_API_KEY is set in backend/.env"
+        )
+
     try:
         dag = dag_from_dict(raw_dag_json)
     except Exception as e:
@@ -86,6 +96,38 @@ async def plan_workflow(req: PlanRequest):
 
     return PlanResponse(workflow_id=wf_id, message="Execution started")
 
+@app.get("/active-workflows")
+async def get_active_workflows():
+    """Return status of all active workflows for the logs page."""
+    workflows = []
+    for wf_id, wf in ACTIVE_WORKFLOWS.items():
+        dag = wf["dag_obj"]
+        nodes_out = []
+        for node in dag.nodes:
+            raw_status = node.status.value.lower()
+            if raw_status == 'waiting approval':
+                raw_status = 'waiting_approval'
+
+            tool_name = "generic"
+            if "jira" in str(node.tool).lower(): tool_name = "jira"
+            if "github" in str(node.tool).lower(): tool_name = "github"
+            if "slack" in str(node.tool).lower(): tool_name = "slack"
+            if "sheet" in str(node.tool).lower(): tool_name = "sheets"
+
+            nodes_out.append({
+                "id": node.id,
+                "title": node.name or node.action,
+                "description": f"Tool: {node.tool} Action: {node.action}",
+                "status": raw_status,
+                "tool": tool_name,
+            })
+        workflows.append({
+            "workflow_id": wf_id,
+            "title": wf.get("title", wf_id),
+            "nodes": nodes_out
+        })
+    return {"workflows": workflows}
+
 @app.get("/status")
 async def get_status(id: str):
     if id not in ACTIVE_WORKFLOWS:
@@ -98,7 +140,7 @@ async def get_status(id: str):
     nodes = []
     edges = []
 
-    for node in dag.nodes.values():
+    for node in dag.nodes:
         # Map python enum value to lowercase (WAITING_APPROVAL -> waiting_approval)
         raw_status = node.status.value.lower()
         if raw_status == 'waiting approval':
@@ -167,7 +209,7 @@ async def websocket_status(websocket: WebSocket, id: str):
             nodes_out = []
             edges_out = []
 
-            for node in dag.nodes.values():
+            for node in dag.nodes:
                 raw_status = node.status.value.lower()
                 if raw_status == 'waiting approval':
                     raw_status = 'waiting_approval'

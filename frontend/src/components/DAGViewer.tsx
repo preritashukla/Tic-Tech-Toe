@@ -18,6 +18,7 @@ const nodeTypes = { custom: NodeCard };
 function getEdgeColor(sourceStatus: string): string {
   switch (sourceStatus) {
     case 'done':
+    case 'success':
       return 'hsl(142, 71%, 45%)';
     case 'running':
       return 'hsl(217, 91%, 60%)';
@@ -65,7 +66,7 @@ const DAGViewer = ({ nodes, edges, loading }: DAGViewerProps) => {
           source: e.source,
           target: e.target,
           markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
-          animated: nodeStatusMap[e.source] === 'running' || nodeStatusMap[e.source] === 'done',
+          animated: nodeStatusMap[e.source] === 'running' || nodeStatusMap[e.source] === 'done' || nodeStatusMap[e.source] === 'success',
           style: { stroke: color, strokeWidth: 2 },
         };
       }),
