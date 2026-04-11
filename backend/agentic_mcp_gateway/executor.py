@@ -13,9 +13,9 @@ import asyncio
 import re
 from typing import Callable, Awaitable
 
-from models import DAG, DAGNode, TaskStatus
-from hitl import HITLGate
-from observability import ExecutionLogger
+from .models import DAG, DAGNode, TaskStatus
+from .hitl import HITLGate
+from .observability import ExecutionLogger
 
 # Typedef for the MCP caller function signature
 MCPDispatcherType = Callable[[str, str, dict], Awaitable[dict]]
