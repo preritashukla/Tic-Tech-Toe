@@ -62,25 +62,36 @@ The system automatically:
 
 ## Project Structure
 
-```
-agentic_mcp/
-├── backend/                         # Contains all API and Python code
+```text
+Tic-Tech-Toe/Product/
+├── .env                             # Environment file (ignored by git)
+├── .gitignore                       # Git ignore rules
+├── prompt_engine.py                 # Standalone DAG generator (standalone test script)
+├── Prompt_test.txt                  # Test input file
+├── docker-compose.yml               # Mock MCP server containers
+│
+├── backend/                         # Contains API and Core Execution Code
 │   ├── main.py                      # FastAPI app — CORS, health, audit endpoints
-│   ├── prompt_engine.py             # Prerita's standalone DAG generator
+│   ├── prompt_engine.py             # Backend specific DAG generator
 │   ├── requirements.txt             # Python dependencies
-│   ├── .env.example                 # Environment template
+│   ├── .env.example                 # Environment template for backend
 │   ├── models/                      # Pydantic data models
 │   ├── routers/                     # FastAPI route handlers
 │   ├── services/                    # Core business logic (LLM, Context, Bridge, Audit)
 │   ├── prompts/                     # System prompts
-│   └── agentic_mcp_gateway/         # Grishma's standalone execution engine
+│   └── agentic_mcp_gateway/         # Execution engine (Grishma)
 │
 ├── frontend/                        # React/Vite UI
 │   ├── src/                         # UI source code
-│   └── package.json                 # Node dependencies
+│   ├── package.json                 # Node dependencies
+│   ├── tailwind.config.ts           # Tailwind styling configuration
+│   └── vite.config.ts               # Vite configuration
 │
-├── mocks/                           # Mock MCP servers (Docker)
-└── docker-compose.yml               # Mock MCP server containers
+└── mocks/                           # Mock MCP servers
+    ├── github/                      
+    ├── jira/                        
+    ├── sheets/                      
+    └── slack/                       
 ```
 
 ---
@@ -133,8 +144,8 @@ agentic_mcp/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone <repo-url>
-cd agentic-mcp-gateway
+git clone https://github.com/preritashukla/Tic-Tech-Toe.git
+cd Tic-Tech-Toe/Product
 cd backend
 pip install -r requirements.txt
 ```
