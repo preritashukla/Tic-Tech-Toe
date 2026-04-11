@@ -97,6 +97,25 @@ const NodeCard = memo(({ data }: NodeCardProps) => {
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
+        {/* Server Label */}
+        {data.tool && (
+          <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center' }}>
+            <Typography sx={{ 
+              fontSize: 9, 
+              fontWeight: 700, 
+              textTransform: 'uppercase', 
+              letterSpacing: 0.5, 
+              color: config.color, 
+              bgcolor: config.bg, 
+              px: 1, 
+              py: 0.25, 
+              borderRadius: 1 
+            }}>
+               Executing on {data.tool.toUpperCase()} Server
+            </Typography>
+          </Box>
+        )}
+
         {/* Header: tool icon + title */}
         <Box className="flex items-center gap-2 mb-1.5">
           {data.tool && (
