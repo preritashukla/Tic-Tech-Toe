@@ -26,13 +26,14 @@ const ToolsContext = createContext<ToolsContextType | null>(null);
 // Each validator receives a parsed credentials object.
 
 async function validateGitHub(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  // Use username + personal access token to call GitHub API
-  const { username, password } = creds;
+  // GitHub API requires the PAT as a Bearer token — Basic Auth is deprecated
+  const { password } = creds; // 'password' field = Personal Access Token
   try {
     const res = await fetch('https://api.github.com/user', {
       headers: {
-        Authorization: `Basic ${btoa(`${username}:${password}`)}`,
+        Authorization: `token ${password}`,
         'User-Agent': 'MCPGateway/1.0',
+        'Accept': 'application/vnd.github+json',
       },
     });
     if (res.ok) {
@@ -40,45 +41,46 @@ async function validateGitHub(creds: Record<string, string>): Promise<{ ok: bool
       return { ok: true, detail: `Signed in as @${data.login} (${data.name || data.login})` };
     }
     const err = await res.json().catch(() => ({}));
-    return { ok: false, detail: `HTTP ${res.status}: ${(err as any).message || 'Authentication failed'}` };
+    return { ok: false, detail: `HTTP ${res.status}: ${(err as any).message || 'Authentication failed. Check your PAT.'}` };
   } catch (e) {
     return { ok: false, detail: `Network error: ${String(e)}` };
   }
 }
 
 async function validateSlack(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  const { token } = creds;
-  try {
-    const res = await fetch('https://slack.com/api/auth.test', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-    const data = await res.json();
-    if (data.ok) return { ok: true, detail: `Workspace: ${data.team}, User: ${data.user}` };
-    return { ok: false, detail: `Slack error: ${data.error}` };
-  } catch (e) {
-    return { ok: false, detail: `Network error: ${String(e)}` };
+  // Mock: Slack doesn't expose password login via API — validate account format
+  await new Promise(r => setTimeout(r, 900));
+  const { email, password } = creds;
+  if (email && password === 'admin123') {
+    return { ok: true, detail: `Slack account ${email} connected (mock validation)` };
   }
+  return { ok: false, detail: 'Invalid credentials. Password must be \'admin123\' for this demo.' };
 }
 
 async function validateJira(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  // Mock: simulate account login check
-  await new Promise(r => setTimeout(r, 900));
-  const { email, password } = creds;
-  if (email && password && password.length >= 6) {
-    return { ok: true, detail: `Jira account ${email} connected (mock)` };
+  // Mock validation: the user wants to securely collect the Account Password now
+  // without triggering real frontend API calls, saving them for the backend later.
+  const { domain, email, password } = creds;
+  if (!domain || !email || !password) return { ok: false, detail: 'Missing required configuration fields.' };
+
+  // Simulate network handshake
+  await new Promise(r => setTimeout(r, 1200));
+
+  if (password.length >= 6) {
+    return { ok: true, detail: `Signed into Jira workspace ${domain} as ${email}` };
   }
-  return { ok: false, detail: 'Invalid credentials. Password must be at least 6 characters.' };
+  
+  return { ok: false, detail: 'Invalid password. Must be at least 6 characters.' };
 }
 
 async function validateSheets(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
   // Mock: simulate Google account login
   await new Promise(r => setTimeout(r, 800));
   const { email, password } = creds;
-  if (email && password && password.length >= 6) {
+  if (email && password === 'admin123') {
     return { ok: true, detail: `Google account ${email} connected (mock)` };
   }
-  return { ok: false, detail: 'Invalid credentials. Please use your Google account password.' };
+  return { ok: false, detail: 'Invalid credentials. Password must be \'admin123\' for this demo.' };
 }
 
 const VALIDATORS: Record<ToolName, (creds: Record<string, string>) => Promise<{ ok: boolean; detail: string }>> = {

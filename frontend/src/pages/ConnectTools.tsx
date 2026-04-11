@@ -26,6 +26,7 @@ const TOOLS = [
     accentColor: 'bg-blue-500/15 hover:bg-blue-500/25 border-blue-500/30 text-blue-200',
     accentBg:    'bg-blue-500/10 border-blue-500/20',
     fields: [
+      { key: 'domain',   label: 'Jira Workspace URL',        placeholder: 'team.atlassian.net',   type: 'text'     as const },
       { key: 'email',    label: 'Atlassian Email',           placeholder: 'you@yourteam.com',     type: 'email'    as const },
       { key: 'password', label: 'Account Password',          placeholder: '••••••••',             type: 'password' as const },
     ],
@@ -38,7 +39,8 @@ const TOOLS = [
     accentColor: 'bg-green-500/15 hover:bg-green-500/25 border-green-500/30 text-green-200',
     accentBg:    'bg-green-500/10 border-green-500/20',
     fields: [
-      { key: 'token',    label: 'Bot OAuth Token',           placeholder: 'xoxb-xxxxxxxxxxxx',    type: 'password' as const },
+      { key: 'email',    label: 'Slack Email',               placeholder: 'you@yourworkspace.com', type: 'email'    as const },
+      { key: 'password', label: 'Account Password',          placeholder: 'Demo pass: admin123',  type: 'password' as const },
     ],
   },
   {
@@ -50,7 +52,7 @@ const TOOLS = [
     accentBg:    'bg-yellow-500/10 border-yellow-500/20',
     fields: [
       { key: 'email',    label: 'Google Account Email',      placeholder: 'you@gmail.com',        type: 'email'    as const },
-      { key: 'password', label: 'Account Password',          placeholder: '••••••••',             type: 'password' as const },
+      { key: 'password', label: 'Account Password',          placeholder: 'Demo pass: admin123',  type: 'password' as const },
     ],
   },
 ];
