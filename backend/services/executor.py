@@ -135,19 +135,22 @@ class ExecutionBridge:
         })
 
         try:
-            # Try to use Grishma's production executor
-            await self._run_with_grishma_executor(exec_id)
-        except ImportError:
-            logger.warning("Grishma's executor not importable — using internal fallback runner")
-            await self._run_internal_fallback(exec_id)
-        except Exception as e:
-            logger.error(f"Execution engine error: {e}")
-            self.audit.log_error(exec_id, str(e))
+            try:
+                # Try to use Grishma's production executor
+                await self._run_with_grishma_executor(exec_id)
+            except ImportError:
+                logger.warning("Grishma's executor not importable — using internal fallback runner")
+                await self._run_internal_fallback(exec_id)
+            except Exception as e:
+                logger.error(f"Execution engine error: {e}")
+                self.audit.log_error(exec_id, str(e))
+        finally:
+            # Finalize results collection regardless of success/error
+            self.execution.mark_complete()
+            get_execution_store().save(self.execution)
 
         # Finalize
         elapsed_ms = (time.time() - start_time) * 1000
-        self.execution.mark_complete()
-        get_execution_store().save(self.execution)
         self.audit.log_workflow_complete(
             exec_id, self.execution.succeeded,
             self.execution.failed, self.execution.total_nodes, elapsed_ms,

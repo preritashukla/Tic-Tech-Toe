@@ -280,7 +280,7 @@ class DAGExecutor:
             for n_id in list(pending_ids):
                 node = self.nodes[n_id]
                 
-                # Fast fail downstream nodes if dependency crashed
+                # Fast fail downstream nodes if dependency crashed or was skipped
                 if any(dep in self.failed for dep in node.depends_on):
                     node.state = TaskState.SKIPPED
                     node.error = "Upstream dependency failed"
@@ -289,7 +289,7 @@ class DAGExecutor:
                     log_event("SKIPPED", f"{node.id} (Dependency failure)", "90")
                     continue
                 
-                # Check if unblocked
+                # Check if all dependencies are successfully completed
                 if all(dep in self.completed for dep in node.depends_on):
                     ready_to_run.append(n_id)
                     pending_ids.remove(n_id)
@@ -299,14 +299,14 @@ class DAGExecutor:
                 task = asyncio.create_task(self._run_node(self.nodes[n_id]))
                 running_tasks.add(task)
                 
-            if not running_tasks and pending_ids:
-                raise RuntimeError(f"Deadlock detected! Blocked nodes: {pending_ids}")
-                
             # Yield control, wait for at least one routine to finish
             if running_tasks:
                 done, running_tasks = await asyncio.wait(
                     running_tasks, return_when=asyncio.FIRST_COMPLETED
                 )
+            elif pending_ids:
+                # If no tasks are running and we couldn't unblock any more, it's a real deadlock
+                raise RuntimeError(f"Deadlock detected! Blocked nodes: {pending_ids}")
 
         print("\n\033[1m[WORKFLOW COMPLETE]\033[0m")
 

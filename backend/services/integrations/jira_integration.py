@@ -11,7 +11,7 @@ def get_jira_auth() -> tuple:
     email = os.getenv("JIRA_EMAIL")
     api_token = os.getenv("JIRA_API_TOKEN")
     if not email or not api_token:
-        logger.warning("JIRA_EMAIL or JIRA_API_TOKEN not set in environment.")
+        raise Exception("Jira Credentials Missing: Please connect your Jira account in the 'Connect Tools' dashboard.")
     return (email, api_token)
 
 def get_jira_domain() -> str:

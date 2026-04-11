@@ -135,14 +135,23 @@ function AuditLog({ steps }) {
       padding: "12px 16px", marginTop: 8, fontSize: 12
     }}>
       <div style={{ color: "#7d8590", fontSize: 11, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        Audit Log — {steps.length}/{steps.length}
+        Audit Log
       </div>
-      {steps.map((s, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: i < steps.length - 1 ? "1px solid #21262d" : "none" }}>
-          <span style={{ color: "#2ea043", fontSize: 14 }}>✓</span>
-          <span style={{ fontFamily: "monospace", color: "#79c0ff" }}>{s}</span>
-        </div>
-      ))}
+      {steps.map((s, i) => {
+        const isObject = typeof s === 'object';
+        const label = isObject ? s.label : s;
+        const status = isObject ? s.status : (s.includes('[failed]') ? 'failed' : s.includes('[skipped]') ? 'skipped' : 'success');
+        
+        const icon = status === 'failed' ? '✕' : status === 'skipped' ? '⊘' : '✓';
+        const color = status === 'failed' ? '#f85149' : status === 'skipped' ? '#7d8590' : '#2ea043';
+
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: i < steps.length - 1 ? "1px solid #21262d" : "none" }}>
+            <span style={{ color, fontSize: 14, fontWeight: 700 }}>{icon}</span>
+            <span style={{ fontFamily: "monospace", color: status === 'failed' ? '#f85149' : '#79c0ff' }}>{label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -350,7 +359,10 @@ export default function App() {
           thinking: `Executed workflow "${execData.execution_id}" — ${execData.total_nodes} nodes processed`,
           content: `Workflow completed — ${execData.succeeded}/${execData.total_nodes} succeeded${execData.failed > 0 ? `, ${execData.failed} failed` : ""}.`,
           dagData,
-          audit: auditLogStrings.length > 0 ? auditLogStrings : execData.results.map(r => `${r.tool} → ${r.action} [${r.status}]`)
+          audit: execData.results.map(r => ({
+            label: `${r.tool} → ${r.action}`,
+            status: r.status
+          }))
         }
       ]);
 
