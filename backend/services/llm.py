@@ -17,7 +17,7 @@ from typing import Optional
 from groq import Groq
 from dotenv import load_dotenv
 
-from models.dag import WorkflowDAG
+from api_schemas.dag import WorkflowDAG
 from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX, TOOL_SPECIFICATIONS
 
 load_dotenv()

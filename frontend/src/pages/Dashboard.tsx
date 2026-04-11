@@ -144,9 +144,10 @@ const Dashboard = () => {
               )}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
         {/* ── Center + Right: DAG + Logs ─────────────────────── */}
         <div className="flex-1 h-full min-h-0 flex flex-col overflow-hidden bg-[hsl(222,47%,4%)] relative">

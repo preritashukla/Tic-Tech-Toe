@@ -10,8 +10,8 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, HTTPException
 
-from models.requests import PlanRequest, PlanResponse
-from models.dag import WorkflowDAG
+from api_schemas.requests import PlanRequest, PlanResponse
+from api_schemas.dag import WorkflowDAG
 from services.llm import get_llm_service
 from services.audit import get_audit_logger
 

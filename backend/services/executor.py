@@ -23,8 +23,8 @@ from typing import Any, AsyncGenerator, Optional
 # Add Grishma's module to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "agentic_mcp_gateway"))
 
-from models.dag import WorkflowDAG, DAGNode
-from models.execution import (
+from api_schemas.dag import WorkflowDAG, DAGNode
+from api_schemas.execution import (
     NodeStatus, NodeExecutionResult, WorkflowExecution, WorkflowStatus
 )
 from services.context import ContextManager
@@ -277,7 +277,11 @@ class ExecutionBridge:
                 if random.random() < 0.10 and attempt < node.retry.max_attempts:
                     raise ConnectionError(f"{node.tool}.{node.action}: transient 502")
 
-                output = _mock_tool_output(node.tool, node.action, resolved_params)
+                if node.tool == "sheets":
+                    from services.integrations.sheets_integration import execute_sheets
+                    output = await execute_sheets(node.action, resolved_params, self.context.get_all())
+                else:
+                    output = _mock_tool_output(node.tool, node.action, resolved_params)
                 elapsed = (time.time() - start) * 1000
 
                 self.context.store(node_id, output)
@@ -363,8 +367,6 @@ def _mock_tool_output(tool: str, action: str, params: dict) -> dict:
         ("github", "merge_pr"):      {"merged": True, "sha": f"a1b2c3{rand}"},
         ("slack", "send_message"):   {"delivered": True, "timestamp": "1684562000.123", "channel": params.get("channel", "#general")},
         ("slack", "create_channel"): {"channel_id": f"C0{rand}", "channel_name": params.get("name", "new-channel")},
-        ("sheets", "read_row"):      {"data": {"col_a": "value1", "col_b": "value2"}},
-        ("sheets", "update_row"):    {"success": True, "row_updated": random.randint(1, 100)},
-        ("sheets", "append_row"):    {"success": True, "row_id": random.randint(40, 100)},
+        # sheets replaced by live integration in _execute_fallback_node
     }
     return mocks.get((tool, action), {"status": "ok", "action": action})
