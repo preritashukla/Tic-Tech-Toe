@@ -14,11 +14,11 @@ const mockTools = [
   { name: 'Slack Mock', href: '/mock/slack', icon: MessageSquare },
 ];
 
-export default function Sidebar({ className = '' }: { className?: string }) {
+export default function Sidebar() {
   const pathname = useLocation().pathname;
 
   return (
-    <aside className={`${className} flex flex-col h-full`}>
+    <aside className="flex flex-col h-full">
       <Link to="/" className="p-6 flex items-center gap-3 border-b border-[#27272a] hover:bg-[#18181b] transition-colors">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shrink-0">
           <Server size={18} className="text-white" />

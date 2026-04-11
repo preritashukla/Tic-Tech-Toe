@@ -5,6 +5,8 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import Layout from '@/components/Layout';
 import WorkflowDashboard from '@/pages/WorkflowDashboard';
 import { createWorkflow } from '@/lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PanelLeftClose as PanelLeftCloseIcon, PanelLeftOpen as PanelLeftOpenIcon } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [text, setText] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(true);
 
   const loadHistory = () => {
     setHistory(JSON.parse(localStorage.getItem('workflow_history') || '[]'));
@@ -45,7 +48,16 @@ const Dashboard = () => {
       <div className="flex w-full flex-1 overflow-hidden h-full min-h-0">
 
         {/* ── Left Panel: Input + History ────────────────────── */}
-        <div className="w-[300px] shrink-0 border-r border-[hsl(217,33%,15%)] flex flex-col h-full bg-[hsl(222,47%,6%)]">
+        <AnimatePresence initial={false}>
+          {historyOpen && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 300, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="shrink-0 overflow-hidden border-r border-[hsl(217,33%,15%)] flex flex-col h-full bg-[hsl(222,47%,6%)]"
+            >
+              <div className="w-[300px] flex flex-col h-full">
 
           {/* Workflow Input */}
           <div className="p-4 border-b border-[hsl(217,33%,15%)] bg-[hsl(222,47%,8%)] shrink-0">
@@ -112,12 +124,23 @@ const Dashboard = () => {
                   No workflows yet. Type a command above to start one!
                 </p>
               )}
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
         {/* ── Center + Right: DAG + Logs ─────────────────────── */}
-        <div className="flex-1 h-full min-h-0 flex flex-col overflow-hidden bg-[hsl(222,47%,4%)]">
+        <div className="flex-1 h-full min-h-0 flex flex-col overflow-hidden bg-[hsl(222,47%,4%)] relative">
+          
+          {/* Toggle History Button */}
+          <button
+            onClick={() => setHistoryOpen(!historyOpen)}
+            className="absolute left-2 top-2 z-[100] w-7 h-7 flex items-center justify-center rounded-md bg-[hsl(222,47%,8%)] border border-[hsl(217,33%,15%)] text-[hsl(215,20%,55%)] hover:text-white hover:bg-[hsl(217,33%,15%)] transition-all shadow-sm"
+            title={historyOpen ? "Hide History" : "Show History"}
+          >
+            {historyOpen ? <PanelLeftCloseIcon size={14} /> : <PanelLeftOpenIcon size={14} />}
+          </button>
           {id ? (
             <WorkflowDashboard />
           ) : (
