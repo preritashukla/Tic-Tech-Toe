@@ -49,12 +49,8 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
         </Box>
         <Typography
           variant="h3"
+          className="font-extrabold bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary"
           sx={{
-            fontWeight: 800,
-            background: 'linear-gradient(135deg, hsl(213, 31%, 91%), hsl(217, 91%, 60%))',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.04em',
             textAlign: 'center',
             fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
@@ -62,7 +58,7 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
         >
           Describe your workflow
         </Typography>
-        <Typography sx={{ color: 'hsl(215, 20%, 55%)', textAlign: 'center', maxWidth: 520, fontSize: { xs: 14, sm: 16 }, lineHeight: 1.6, px: 1 }}>
+        <Typography className="text-muted-foreground text-center max-w-[520px] px-2 text-sm sm:text-base leading-relaxed">
           Enter a natural language description and our MCP Gateway will decompose it into an executable DAG across your connected services.
         </Typography>
       </Box>
@@ -86,17 +82,11 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
               }}
               disabled={loading}
               variant="standard"
+              className="text-foreground"
               slotProps={{
                 input: {
                   disableUnderline: true,
-                  sx: {
-                    color: 'hsl(213, 31%, 91%)',
-                    px: 2,
-                    py: 1,
-                    fontSize: 15,
-                    fontFamily: "'Inter', system-ui, sans-serif",
-                    '& ::placeholder': { color: 'hsl(215, 20%, 40%)' },
-                  },
+                  className: "text-foreground font-sans px-2 py-1 text-[15px]",
                 },
               }}
             />
@@ -113,9 +103,9 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
               }}
             >
               {loading ? (
-                <CircularProgress size={22} sx={{ color: 'hsl(222, 47%, 6%)' }} />
+                <CircularProgress size={22} className="text-primary-foreground" />
               ) : (
-                <RocketLaunchIcon sx={{ fontSize: 22, color: 'hsl(222, 47%, 6%)' }} />
+                <RocketLaunchIcon sx={{ fontSize: 22 }} className="text-primary-foreground" />
               )}
             </Box>
           </Box>
@@ -136,13 +126,8 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
         )}
 
         {error && (
-          <Box
-            className="flex items-center gap-2 justify-center mt-3 px-4 py-2 rounded-lg"
-            sx={{ bgcolor: 'hsl(0, 84%, 60% / 0.08)', border: '1px solid hsl(0, 84%, 60% / 0.2)' }}
-          >
-            <Typography sx={{ color: 'hsl(0, 84%, 65%)', fontSize: 13 }}>
-              {error}
-            </Typography>
+          <Box className="flex items-center gap-2 justify-center mt-3 px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[13px]">
+            {error}
           </Box>
         )}
 
@@ -155,27 +140,17 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
                 label={example.text}
                 onClick={() => setText(example.text)}
                 icon={example.icon}
+                className="bg-secondary text-muted-foreground border border-border hover:bg-secondary/80 hover:text-foreground transition-all duration-200"
                 sx={{
-                  bgcolor: 'hsl(217, 33%, 12%)',
-                  color: 'hsl(215, 20%, 65%)',
-                  border: '1px solid hsl(217, 33%, 18%)',
                   borderRadius: '12px',
                   fontSize: 11,
                   height: 'auto',
                   py: 0.75,
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
                   maxWidth: { xs: '100%', sm: '48%' },
                   '& .MuiChip-label': {
                     whiteSpace: 'normal',
                     lineHeight: 1.4,
-                  },
-                  '&:hover': {
-                    bgcolor: 'hsl(217, 33%, 17%)',
-                    color: 'hsl(213, 31%, 91%)',
-                    borderColor: 'hsl(217, 91%, 60% / 0.4)',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                   },
                 }}
               />
@@ -185,7 +160,7 @@ const ChatInput = ({ onSubmit, loading, error }: ChatInputProps) => {
       </Box>
 
       {/* Bottom tag */}
-      <Typography sx={{ color: 'hsl(215, 20%, 30%)', fontSize: 11, mt: 6, textAlign: 'center' }}>
+      <Typography className="text-muted-foreground/60 text-[11px] mt-6 flex text-center font-medium">
         Powered by Model Context Protocol (MCP) · Supports Jira, GitHub, Slack, Sheets, Discord, AWS & more
       </Typography>
     </Box>
