@@ -220,7 +220,7 @@ class LLMService:
         """
         # Ensure workflow_name exists (map from 'name' if necessary)
         if "workflow_name" not in dag_dict:
-            dag_dict["workflow_name"] = dag_dict.get("name", dag_dict.get("workflow_id", "unnamed_workflow"))
+            dag_dict["workflow_name"] = dag_dict.get("title", dag_dict.get("name", dag_dict.get("workflow_id", "unnamed_workflow")))
 
         # Map 'steps' to 'nodes' if present
         if "steps" in dag_dict and "nodes" not in dag_dict:

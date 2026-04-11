@@ -1,24 +1,24 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Eye, EyeOff, Loader2, AlertCircle, Code2, BarChart3 } from 'lucide-react';
-import { useAuth, UserRole } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
 
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole]         = useState<UserRole>('developer');
+  const [role, setRole] = useState('developer');
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const from = (location.state as any)?.from?.pathname || '/connect-tools';
+  const from = location.state?.from?.pathname || '/connect-tools';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     setLoading(true);
@@ -33,100 +33,114 @@ const LoginPage = () => {
     }
   };
 
+  const inputStyle = {
+    width: "100%", padding: "12px 16px", borderRadius: 10,
+    background: "#0d1117", border: "1px solid #30363d",
+    color: "#e6edf3", fontSize: 14, outline: "none",
+    fontFamily: "inherit", transition: "border-color 0.2s"
+  };
+
   return (
-    <div className="h-screen bg-background text-foreground flex items-center justify-center relative overflow-hidden">
-      {/* Background */}
-      <div className="grid-bg" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div style={{
+      height: "100vh", background: "#0d1117", color: "#e6edf3",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      position: "relative", overflow: "hidden"
+    }}>
+      {/* Glow */}
+      <div style={{ position: "absolute", top: "20%", left: "30%", width: 400, height: 400, background: "radial-gradient(circle, rgba(46,160,67,0.05) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-md px-4"
+        transition={{ duration: 0.5 }}
+        style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 420, padding: "0 16px" }}
       >
         {/* Header */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="p-4 rounded-2xl bg-[hsl(222,47%,8%)] border border-[hsl(217,33%,15%)] mb-4 shadow-xl ai-icon-glow">
-            <Zap size={36} className="text-[hsl(217,91%,60%)] ai-icon-spin" />
-          </div>
-          <h1 className="text-2xl font-black tracking-tight mb-1"
-            style={{
-              background: 'linear-gradient(135deg, hsl(213,31%,95%), hsl(217,91%,70%), hsl(270,91%,75%))',
-              backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>
-            Agentic MCP Gateway
-          </h1>
-          <p className="text-[hsl(215,20%,50%)] text-sm">Sign in to your workspace</p>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: "#0d3320", border: "1px solid #2ea043",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: 16, fontSize: 20, fontWeight: 700, color: "#4ade80",
+            boxShadow: "0 0 30px rgba(46,160,67,0.12)"
+          }}>A</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 4px" }}>Agentic MCP Gateway</h1>
+          <p style={{ color: "#7d8590", fontSize: 13, margin: 0 }}>Sign in to your workspace</p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-[hsl(217,33%,18%)] bg-[hsl(222,47%,6%)] shadow-2xl p-8">
-
-          {/* Role Selector */}
-          <div className="flex gap-2 mb-6 p-1 rounded-xl bg-[hsl(222,47%,4%)] border border-[hsl(217,33%,15%)]">
-            {([
-              { value: 'developer', label: 'Developer', Icon: Code2 },
-              { value: 'manager',   label: 'Manager',   Icon: BarChart3 },
-            ] as { value: UserRole; label: string; Icon: any }[]).map(({ value, label, Icon }) => (
+        <div style={{
+          borderRadius: 16, border: "1px solid #21262d",
+          background: "#161b22", padding: 32,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+        }}>
+          {/* Role selector */}
+          <div style={{
+            display: "flex", gap: 6, marginBottom: 24, padding: 4, borderRadius: 10,
+            background: "#0d1117", border: "1px solid #21262d"
+          }}>
+            {[
+              { value: "developer", label: "👨‍💻 Developer" },
+              { value: "manager", label: "📊 Manager" }
+            ].map(r => (
               <button
-                key={value}
+                key={r.value}
                 type="button"
-                onClick={() => setRole(value)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  role === value
-                    ? 'bg-[hsl(217,91%,60%)] text-black shadow-md shadow-blue-500/20'
-                    : 'text-[hsl(215,20%,55%)] hover:text-foreground'
-                }`}
-              >
-                <Icon size={15} />
-                {label}
-              </button>
+                onClick={() => setRole(r.value)}
+                style={{
+                  flex: 1, padding: "8px 12px", borderRadius: 8, border: "none",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  transition: "all 0.2s",
+                  background: role === r.value ? "#2ea043" : "transparent",
+                  color: role === r.value ? "#fff" : "#7d8590",
+                }}
+              >{r.label}</button>
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit}>
             {/* Email */}
-            <div>
-              <label className="block text-xs font-semibold text-[hsl(215,20%,55%)] uppercase tracking-wider mb-1.5">
-                Email
-              </label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>Email</label>
               <input
                 id="login-email"
                 type="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === 'developer' ? 'dev@daiict.ac.in' : 'manager@daiict.ac.in'}
+                onChange={e => setEmail(e.target.value)}
+                placeholder={role === "developer" ? "dev@daiict.ac.in" : "manager@daiict.ac.in"}
                 disabled={loading}
-                className="w-full px-4 py-3 rounded-xl bg-[hsl(222,47%,4%)] border border-[hsl(217,33%,18%)] text-foreground text-sm placeholder:text-[hsl(215,20%,35%)] outline-none focus:border-[hsl(217,91%,60%)] transition-colors"
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = "#2ea043"}
+                onBlur={e => e.target.style.borderColor = "#30363d"}
               />
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-xs font-semibold text-[hsl(215,20%,55%)] uppercase tracking-wider mb-1.5">
-                Password
-              </label>
-              <div className="relative">
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>Password</label>
+              <div style={{ position: "relative" }}>
                 <input
                   id="login-password"
-                  type={showPass ? 'text' : 'password'}
+                  type={showPass ? "text" : "password"}
                   autoComplete="current-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={loading}
-                  className="w-full px-4 py-3 pr-12 rounded-xl bg-[hsl(222,47%,4%)] border border-[hsl(217,33%,18%)] text-foreground text-sm placeholder:text-[hsl(215,20%,35%)] outline-none focus:border-[hsl(217,91%,60%)] transition-colors"
+                  style={{ ...inputStyle, paddingRight: 44 }}
+                  onFocus={e => e.target.style.borderColor = "#2ea043"}
+                  onBlur={e => e.target.style.borderColor = "#30363d"}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(215,20%,45%)] hover:text-foreground transition-colors"
-                >
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", color: "#7d8590", cursor: "pointer", fontSize: 13
+                  }}
+                >{showPass ? "🙈" : "👁"}</button>
               </div>
             </div>
 
@@ -135,12 +149,16 @@ const LoginPage = () => {
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "10px 12px", borderRadius: 10, marginBottom: 16,
+                    background: "rgba(248,81,73,0.1)", border: "1px solid rgba(248,81,73,0.2)",
+                    color: "#f85149", fontSize: 13
+                  }}
                 >
-                  <AlertCircle size={15} className="shrink-0" />
-                  {error}
+                  ⚠️ {error}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -150,34 +168,45 @@ const LoginPage = () => {
               id="login-submit"
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl font-bold text-sm text-black transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_hsl(217,91%,60%,0.4)] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-1"
-              style={{ background: 'linear-gradient(135deg, hsl(217,91%,60%), hsl(240,91%,65%))' }}
+              style={{
+                width: "100%", padding: "12px 16px", borderRadius: 10, border: "none",
+                background: "#2ea043", color: "#fff", fontSize: 14, fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1,
+                transition: "all 0.2s", marginBottom: 4
+              }}
+              onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 0 20px rgba(46,160,67,0.3)"; }}}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              {loading
-                ? <span className="flex items-center justify-center gap-2"><Loader2 size={15} className="animate-spin" /> Signing in...</span>
-                : `Sign in as ${role === 'developer' ? 'Developer' : 'Manager'}`
-              }
+              {loading ? "⏳ Signing in..." : `Sign in as ${role === "developer" ? "Developer" : "Manager"}`}
             </button>
           </form>
 
-          {/* Demo credentials hint */}
-          <div className="mt-5 pt-5 border-t border-[hsl(217,33%,12%)]">
-            <p className="text-[hsl(215,20%,40%)] text-xs text-center mb-2">Demo Credentials</p>
-            <div className="flex gap-2">
+          {/* Demo credentials */}
+          <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #21262d" }}>
+            <p style={{ color: "#484f58", fontSize: 11, textAlign: "center", marginBottom: 8 }}>Demo Credentials</p>
+            <div style={{ display: "flex", gap: 8 }}>
               <button
                 type="button"
-                onClick={() => { setEmail('dev@daiict.ac.in'); setPassword('dev123'); setRole('developer'); }}
-                className="flex-1 py-1.5 px-2 rounded-lg border border-[hsl(217,33%,15%)] text-[hsl(215,20%,50%)] text-xs hover:border-[hsl(217,91%,60%)] hover:text-foreground transition-colors"
-              >
-                Dev: dev@daiict.ac.in / dev123
-              </button>
+                onClick={() => { setEmail("dev@daiict.ac.in"); setPassword("dev123"); setRole("developer"); }}
+                style={{
+                  flex: 1, padding: "8px", borderRadius: 8,
+                  border: "1px solid #21262d", background: "transparent",
+                  color: "#7d8590", fontSize: 10, cursor: "pointer", transition: "border-color 0.2s"
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = "#2ea043"}
+                onMouseLeave={e => e.currentTarget.style.borderColor = "#21262d"}
+              >Dev: dev@daiict.ac.in / dev123</button>
               <button
                 type="button"
-                onClick={() => { setEmail('manager@daiict.ac.in'); setPassword('manager123'); setRole('manager'); }}
-                className="flex-1 py-1.5 px-2 rounded-lg border border-[hsl(217,33%,15%)] text-[hsl(215,20%,50%)] text-xs hover:border-[hsl(270,91%,75%)]/50 hover:text-foreground transition-colors"
-              >
-                Mgr: manager@daiict.ac.in / manager123
-              </button>
+                onClick={() => { setEmail("manager@daiict.ac.in"); setPassword("manager123"); setRole("manager"); }}
+                style={{
+                  flex: 1, padding: "8px", borderRadius: 8,
+                  border: "1px solid #21262d", background: "transparent",
+                  color: "#7d8590", fontSize: 10, cursor: "pointer", transition: "border-color 0.2s"
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = "#2ea043"}
+                onMouseLeave={e => e.currentTarget.style.borderColor = "#21262d"}
+              >Mgr: manager@daiict.ac.in / mgr123</button>
             </div>
           </div>
         </div>

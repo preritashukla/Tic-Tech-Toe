@@ -1,57 +1,30 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, XCircle, Loader2, RefreshCw, Eye, EyeOff } from 'lucide-react';
-import { ToolName, ToolStatus, useTools } from '@/context/ToolsContext';
+import { useTools } from '@/context/ToolsContext';
 import { useAuth } from '@/context/AuthContext';
 
-export interface ToolField {
-  key: string;
-  label: string;
-  placeholder: string;
-  type: 'text' | 'password' | 'email';
-}
-
-interface ToolCardProps {
-  tool: ToolName;
-  icon: React.ReactNode;
-  label: string;
-  accentColor: string;
-  accentBg: string;
-  description: string;
-  fields: ToolField[];
-}
-
-const STATUS_CONFIG: Record<ToolStatus, { label: string; icon: React.ReactNode; style: string }> = {
-  idle:       { label: 'Not connected',  icon: null,                                                style: 'text-muted-foreground' },
-  connecting: { label: 'Connecting…',   icon: <Loader2 size={14} className="animate-spin" />,      style: 'text-blue-400' },
-  connected:  { label: 'Connected',     icon: <CheckCircle2 size={14} />,                           style: 'text-green-400' },
-  error:      { label: 'Failed',        icon: <XCircle size={14} />,                                style: 'text-red-400' },
-};
-
-export default function ToolCard({ tool, icon, label, accentColor, accentBg, description, fields }: ToolCardProps) {
+function ToolCard({ tool, icon, label, description, fields }) {
   const { tools, connect, reset } = useTools();
   const { user } = useAuth();
   const isDeveloper = user?.role === 'developer';
 
-  const state  = tools[tool];
+  const state = tools[tool];
   const status = state.status;
-  const { label: statusLabel, icon: statusIcon, style } = STATUS_CONFIG[status];
 
-  // One state entry per field
-  const [values, setValues]   = useState<Record<string, string>>(
+  const [values, setValues] = useState(
     Object.fromEntries(fields.map(f => [f.key, '']))
   );
-  const [showPwd, setShowPwd] = useState<Record<string, boolean>>(
+  const [showPwd, setShowPwd] = useState(
     Object.fromEntries(fields.filter(f => f.type === 'password').map(f => [f.key, false]))
   );
 
   const isConnecting = status === 'connecting';
-  const isConnected  = status === 'connected';
-  const allFilled    = fields.every(f => values[f.key]?.trim());
+  const isConnected = status === 'connected';
+  const allFilled = fields.every(f => values[f.key]?.trim());
 
   const handleConnect = () => {
     if (!allFilled || isConnecting) return;
-    // Pass all field values as JSON; validators can parse as needed
     connect(tool, JSON.stringify(values));
   };
 
@@ -60,67 +33,84 @@ export default function ToolCard({ tool, icon, label, accentColor, accentBg, des
     setValues(Object.fromEntries(fields.map(f => [f.key, ''])));
   };
 
+  const statusColors = {
+    idle: { color: "#7d8590", dot: "#484f58" },
+    connecting: { color: "#58a6ff", dot: "#58a6ff" },
+    connected: { color: "#4ade80", dot: "#2ea043" },
+    error: { color: "#f85149", dot: "#f85149" },
+  };
+  const sc = statusColors[status] || statusColors.idle;
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-2xl border bg-[hsl(222,47%,6%)] p-5 flex flex-col gap-4 transition-all duration-300 ${
-        isConnected
-          ? 'border-green-500/40 shadow-[0_0_18px_hsl(142,76%,36%,0.08)]'
-          : status === 'error'
-          ? 'border-red-500/30'
-          : 'border-[hsl(217,33%,18%)]'
-      }`}
+      style={{
+        borderRadius: 14, padding: 20,
+        border: `1px solid ${isConnected ? "#2ea043" : status === "error" ? "#f8514950" : "#21262d"}`,
+        background: isConnected ? "#0d33200a" : "#161b22",
+        transition: "all 0.3s"
+      }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${accentBg} shrink-0`}>
-            {icon}
-          </div>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isConnected ? 0 : 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: "#0d1117", border: "1px solid #30363d",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18
+          }}>{icon}</div>
           <div>
-            <p className="font-semibold text-foreground text-sm">{label}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#e6edf3" }}>{label}</div>
+            <div style={{ fontSize: 11, color: "#7d8590" }}>{description}</div>
           </div>
         </div>
-        <div className={`flex items-center gap-1.5 text-xs font-semibold ${style} shrink-0`}>
-          {statusIcon}
-          <span className="hidden sm:inline">{statusLabel}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: sc.color }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: sc.dot, display: "inline-block" }} />
+          {status === "idle" ? "Not connected" : status === "connecting" ? "Connecting…" : status === "connected" ? "Connected" : "Failed"}
         </div>
       </div>
 
-      {/* Fields or success */}
+      {/* Fields */}
       {!isConnected ? (
-        <div className="flex flex-col gap-2.5">
-          {fields.map((field) => {
+        <div>
+          {fields.map(field => {
             const isPass = field.type === 'password';
             const visible = showPwd[field.key];
             return (
-              <div key={field.key}>
-                <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              <div key={field.key} style={{ marginBottom: 12 }}>
+                <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
                   {field.label}
                 </label>
-                <div className="relative">
+                <div style={{ position: "relative" }}>
                   <input
-                    id={`tool-${tool}-${field.key}`}
-                    type={isPass ? (visible ? 'text' : 'password') : field.type}
+                    type={isPass ? (visible ? "text" : "password") : field.type}
                     placeholder={field.placeholder}
                     value={values[field.key]}
                     disabled={isConnecting}
-                    autoComplete={isPass ? 'current-password' : field.type === 'email' ? 'email' : 'username'}
                     onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter' && allFilled) handleConnect(); }}
-                    className="w-full px-3 py-2.5 pr-9 rounded-xl bg-[hsl(222,47%,4%)] border border-[hsl(217,33%,15%)] text-foreground text-sm placeholder:text-[hsl(215,20%,30%)] outline-none focus:border-[hsl(217,91%,60%)] transition-colors"
+                    style={{
+                      width: "100%", padding: "10px 14px", paddingRight: isPass ? 40 : 14,
+                      borderRadius: 10, background: "#0d1117", border: "1px solid #30363d",
+                      color: "#e6edf3", fontSize: 13, outline: "none",
+                      fontFamily: "inherit", transition: "border-color 0.2s",
+                      boxSizing: "border-box"
+                    }}
+                    onFocus={e => e.target.style.borderColor = "#2ea043"}
+                    onBlur={e => e.target.style.borderColor = "#30363d"}
                   />
                   {isPass && (
                     <button
                       type="button"
                       onClick={() => setShowPwd(s => ({ ...s, [field.key]: !s[field.key] }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {visible ? <EyeOff size={13} /> : <Eye size={13} />}
-                    </button>
+                      style={{
+                        position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        background: "none", border: "none", color: "#7d8590", cursor: "pointer", fontSize: 12
+                      }}
+                    >{visible ? "🙈" : "👁"}</button>
                   )}
                 </div>
               </div>
@@ -128,29 +118,31 @@ export default function ToolCard({ tool, icon, label, accentColor, accentBg, des
           })}
 
           <button
-            id={`tool-connect-${tool}`}
             onClick={handleConnect}
             disabled={!allFilled || isConnecting}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 border ${accentColor}`}
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 10,
+              border: "1px solid #2ea043", background: allFilled && !isConnecting ? "#2ea043" : "transparent",
+              color: allFilled && !isConnecting ? "#fff" : "#7d8590",
+              fontSize: 13, fontWeight: 600, cursor: allFilled && !isConnecting ? "pointer" : "default",
+              opacity: !allFilled || isConnecting ? 0.5 : 1,
+              transition: "all 0.2s"
+            }}
           >
-            {isConnecting
-              ? <><Loader2 size={14} className="animate-spin" /> Signing in…</>
-              : `Sign in to ${label}`
-            }
+            {isConnecting ? "⏳ Signing in…" : `Sign in to ${label}`}
           </button>
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-green-400 text-sm font-medium flex items-center gap-1.5">
-            <CheckCircle2 size={14} />
-            {isDeveloper ? state.detail : 'Account connected successfully'}
-          </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+          <span style={{ color: "#4ade80", fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+            ✓ {isDeveloper ? state.detail : 'Account connected successfully'}
+          </span>
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors"
-          >
-            <RefreshCw size={11} /> Disconnect
-          </button>
+            style={{ background: "none", border: "none", color: "#7d8590", cursor: "pointer", fontSize: 11, transition: "color 0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#f85149"}
+            onMouseLeave={e => e.currentTarget.style.color = "#7d8590"}
+          >↻ Disconnect</button>
         </div>
       )}
 
@@ -159,20 +151,20 @@ export default function ToolCard({ tool, icon, label, accentColor, accentBg, des
         {status === 'error' && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 flex items-start gap-2"
+            style={{
+              marginTop: 12, padding: "10px 12px", borderRadius: 10,
+              background: "rgba(248,81,73,0.08)", border: "1px solid rgba(248,81,73,0.2)",
+              color: "#f85149", fontSize: 12
+            }}
           >
-            <XCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-red-400">
-              {isDeveloper
-                ? state.detail
-                : 'Could not sign in. Please check your username and password.'
-              }
-            </p>
+            ⚠️ {isDeveloper ? state.detail : 'Could not sign in. Please check your credentials.'}
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
   );
 }
+
+export default ToolCard;

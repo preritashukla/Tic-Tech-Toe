@@ -62,6 +62,7 @@ class DAGNode(BaseModel):
     # Optional fields for enriched DAGs
     name: Optional[str] = Field(default=None, description="Human-readable step name")
     mock_output: Optional[dict[str, Any]] = Field(default=None, description="Mock output for demo/testing")
+    timeout_ms: Optional[int] = Field(default=None, description="Per-node timeout in milliseconds")
 
     @field_validator("tool")
     @classmethod
@@ -100,6 +101,8 @@ class WorkflowDAG(BaseModel):
     # Optional metadata
     description: Optional[str] = Field(default=None)
     workflow_id: Optional[str] = Field(default=None, description="Unique execution ID")
+    execution_layers: Optional[list[list[str]]] = Field(default=None, description="Manually specified execution layers from the planner")
+    context_refs: Optional[dict[str, str]] = Field(default=None, description="Context template assignments")
 
     @model_validator(mode="after")
     def validate_dag_integrity(self) -> "WorkflowDAG":

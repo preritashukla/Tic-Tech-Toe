@@ -10,6 +10,7 @@ import json
 import re
 import sys
 import time
+import os
 from typing import Any, Dict, List, Optional, Set
 
 # Ensure UTF-8 output for emojis and formatting
@@ -58,24 +59,66 @@ def log_event(status: str, message: str, color_code: str = "0"):
     print(f"[\033[{color_code}m{status}\033[0m] {message}")
 
 
-# --- Mock MCP Router ---
+# --- MCP Router ---
 
-TOOL_PORT_MAP = {
-    "jira_mcp": 8001,
-    "github_mcp": 8002,
-    "slack_mcp": 8003,
-    "sheets_mcp": 8004,
-}
-
-import urllib.request
-import urllib.error
-
-async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_output: Dict[str, Any] = None) -> Dict[str, Any]:
-    """If true MCP servers are up, hit them natively! Otherwise fallback to live integrations or mock JSON."""
+async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentials: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Acts as the router hitting the various MCP Servers or local service integrations.
+    Uses provided credentials first, falling back to environment variables.
+    """
+    log_event("DISPATCH", f"{tool}.{action}", "35")
     
-    # 1. Check for Live Integrations (overriding the mock)
-    if tool in ["slack", "slack_mcp"]:
+    # Extract tool-specific credentials if available
+    tool_creds = (credentials or {}).get(tool.split('_')[0], {})
+    if isinstance(tool_creds, str):
         try:
+            tool_creds = json.loads(tool_creds)
+        except:
+            tool_creds = {"token": tool_creds}
+
+    # 1. GitHub Integration
+    if tool in ["github", "github_mcp"]:
+        try:
+            # Apply dynamic token if provided
+            github_token = tool_creds.get("password") or tool_creds.get("token")
+            if github_token:
+                os.environ["GITHUB_TOKEN"] = github_token
+
+            from .github_mcp import handle_github_tool
+            return await handle_github_tool(action, inputs)
+        except Exception as e:
+            log_event("ERROR", f"GitHub failed: {e}", "31")
+            raise e
+
+    # 2. Jira Integration
+    elif tool in ["jira", "jira_mcp"]:
+        try:
+            # Apply dynamic credentials if provided
+            jira_email = tool_creds.get("email")
+            jira_token = tool_creds.get("password") or tool_creds.get("token")
+            jira_domain = tool_creds.get("domain")
+            
+            if jira_email: os.environ["JIRA_EMAIL"] = jira_email
+            if jira_token: os.environ["JIRA_API_TOKEN"] = jira_token
+            if jira_domain: os.environ["JIRA_DOMAIN"] = jira_domain
+
+            from services.integrations.jira_integration import execute_jira
+            result = await execute_jira(action, inputs)
+            if result.get("status") == "success":
+                return result.get("output", {})
+            else:
+                raise Exception(result.get("error", "Unknown Jira error"))
+        except Exception as e:
+            log_event("ERROR", f"Jira failed: {e}", "31")
+            raise e
+
+    # 3. Slack Integration
+    elif tool in ["slack", "slack_mcp"]:
+        try:
+            slack_token = tool_creds.get("password") or tool_creds.get("token")
+            if slack_token:
+                os.environ["SLACK_BOT_TOKEN"] = slack_token
+
             from services.integrations.slack_integration import execute_slack
             result = await execute_slack(action, inputs, {})
             if result.get("status") == "success":
@@ -83,81 +126,36 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
             else:
                 raise Exception(result.get("error", "Unknown Slack error"))
         except Exception as e:
-            if mock_output:
-                log_event("WARNING", f"Slack failed, using mock: {e}", "33")
-                return mock_output
+            log_event("ERROR", f"Slack failed: {e}", "31")
             raise e
 
-    if tool in ["sheets", "sheets_mcp"]:
+    # 4. Google Sheets Integration
+    elif tool in ["sheets", "sheets_mcp", "sheet"]:
         try:
+            sheets_creds = tool_creds.get("token") 
+            if sheets_creds:
+                os.environ["GOOGLE_SHEETS_CREDENTIALS_JSON"] = sheets_creds
+
             from services.integrations.sheets_integration import execute_sheets
             result = await execute_sheets(action, inputs, {})
-            if result.get("status") in ["success", "ok"]:
-                return result.get("output", result.get("data", {}))
-            else:
-                raise Exception(result.get("error", "Unknown Sheets error"))
-        except Exception as e:
-            if mock_output:
-                log_event("WARNING", f"Sheets failed, using mock: {e}", "33")
-                return mock_output
-            raise e
-
-    if tool in ["github", "github_mcp"]:
-        try:
-            from agentic_mcp_gateway.github_mcp import handle_github_tool
-            return await handle_github_tool(action, inputs)
-        except Exception as e:
-            if mock_output:
-                log_event("WARNING", f"GitHub failed, using mock: {e}", "33")
-                return mock_output
-            raise e
-
-    if tool in ["jira", "jira_mcp"]:
-        try:
-            from services.integrations.jira_integration import execute_jira
-            result = await execute_jira(action, inputs, {})
             if result.get("status") == "success":
                 return result.get("output", {})
             else:
-                raise Exception(result.get("error", "Unknown Jira error"))
+                raise Exception(result.get("error", "Unknown Sheets error"))
         except Exception as e:
-            if mock_output:
-                log_event("WARNING", f"Jira failed, using mock: {e}", "33")
-                return mock_output
+            log_event("ERROR", f"Sheets failed: {e}", "31")
             raise e
 
-    # 2. Check for real MCP server containers
-    if tool in TOOL_PORT_MAP:
-        port = TOOL_PORT_MAP[tool]
-        # Route to exact docker container endpoints
-        url = f"http://localhost:{port}/{action}"
-        
-        # Token mapping for the respective MCP servers
-        auth_header = f"{tool.split('_')[0]}_token" 
-        
-        def _make_req():
-            req = urllib.request.Request(
-                url, 
-                data=json.dumps(inputs).encode('utf-8'), 
-                headers={'Content-Type': 'application/json', 'Authorization': auth_header}
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    return json.loads(resp.read().decode('utf-8'))
-            except Exception as e:
-                raise ConnectionError(f"Real MCP container at {port} unreachable: {e}")
-                
-        return await asyncio.to_thread(_make_req)
-
-    raise ValueError(f"No live integration or MCP server found for tool: {tool}")
+    raise ValueError(f"No integration found for tool: {tool}")
 
 
 # --- Core Executor Engine ---
 
 class DAGExecutor:
-    def __init__(self, dag_json: Dict[str, Any], auto_approve: bool = False):
-        self.nodes: Dict[str, Node] = {}
+    def __init__(self, dag_json: Dict[str, Any], credentials: Dict[str, Any] = None, auto_approve: bool = False):
+        self.credentials = credentials or {}
         self.auto_approve = auto_approve
+        self.nodes: Dict[str, Node] = {}
         for n in dag_json["nodes"]:
             if n["id"] in self.nodes:
                 raise ValueError(f"Duplicate Node ID detected: {n['id']}")
@@ -165,6 +163,7 @@ class DAGExecutor:
             
         self.completed: Set[str] = set()
         self.failed: Set[str] = set()
+        self.execution_id = f"exec-{int(time.time())}"
         
         self._validate_dag()
 
@@ -224,10 +223,8 @@ class DAGExecutor:
             node.attempts += 1
             try:
                 # Prepare generic mock output if provided in DAG
-                dynamic_mock = self._resolve_templates(node.mock_output) if node.mock_output else None
-                # Enforce timeout boundary
                 return await asyncio.wait_for(
-                    dispatch_mcp(node.tool, node.action, inputs, dynamic_mock),
+                    dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials),
                     timeout=node.timeout
                 )
             except Exception as e:
@@ -248,9 +245,6 @@ class DAGExecutor:
         # Human-In-The-Loop Breakpoint
         if node.requires_approval and not self.auto_approve:
             log_event("WAITING", f"{node.id} requires approval", "33")
-            # In a real API, we wait for an external approval signal.
-            # For this hackathon/demo, if auto_approve is false and we reach here, 
-            # we'll log it and skip to avoid hanging the server.
             node.state = TaskState.SKIPPED
             node.error = "Pending human approval (HITL)"
             log_event("WAITING", f"{node.id} (Paused for HITL)", "33")

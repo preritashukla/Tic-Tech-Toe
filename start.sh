@@ -38,7 +38,7 @@ fi
 echo ""
 echo "🚀 Starting backend on http://localhost:$BACKEND_PORT ..."
 cd "$PROJECT_ROOT/backend"
-python main.py &
+python main.py > backend.log 2>&1 &
 BACKEND_PID=$!
 
 # ── Wait for backend to be healthy ───────────────────────────────────────────
@@ -70,7 +70,7 @@ echo "  ✅ Both servers are running!"
 echo "  Backend:  http://localhost:$BACKEND_PORT"
 echo "  Frontend: http://localhost:$FRONTEND_PORT"
 echo "  Press Ctrl+C to stop both."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Keep script alive; kill both on Ctrl+C
 trap "echo ''; echo '🛑 Stopping servers...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" INT TERM

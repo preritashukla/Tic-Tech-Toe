@@ -53,6 +53,10 @@ class ExecuteRequest(BaseModel):
         default=False,
         description="If True, simulate execution without calling real tools"
     )
+    credentials: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="User-specific credentials from the ConnectTools dashboard"
+    )
 
 
 class ExecuteResponse(BaseModel):

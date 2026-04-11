@@ -1,118 +1,110 @@
+// @ts-nocheck
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Github, Slack, Trello, FileSpreadsheet, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
 import ToolCard from '@/components/ToolCard';
 import { useTools } from '@/context/ToolsContext';
 import { useAuth } from '@/context/AuthContext';
 
 const TOOLS = [
   {
-    tool:        'github'  as const,
-    label:       'GitHub',
+    tool: 'github',
+    label: 'GitHub',
     description: 'Code repository & branch management',
-    icon:        <Github size={20} className="text-purple-400" />,
-    accentColor: 'bg-purple-500/15 hover:bg-purple-500/25 border-purple-500/30 text-purple-200',
-    accentBg:    'bg-purple-500/10 border-purple-500/20',
+    icon: '🐙',
     fields: [
-      { key: 'username', label: 'GitHub Username',           placeholder: 'your-username',        type: 'text'     as const },
-      { key: 'password', label: 'Personal Access Token',     placeholder: 'ghp_xxxxxxxxxxxx',     type: 'password' as const },
+      { key: 'username', label: 'GitHub Username', placeholder: 'your-username', type: 'text' },
+      { key: 'password', label: 'Personal Access Token', placeholder: 'ghp_xxxxxxxxxxxx', type: 'password' },
     ],
   },
   {
-    tool:        'jira'    as const,
-    label:       'Jira',
+    tool: 'jira',
+    label: 'Jira',
     description: 'Issue tracking & project management',
-    icon:        <Trello size={20} className="text-blue-400" />,
-    accentColor: 'bg-blue-500/15 hover:bg-blue-500/25 border-blue-500/30 text-blue-200',
-    accentBg:    'bg-blue-500/10 border-blue-500/20',
+    icon: '📋',
     fields: [
-      { key: 'domain',   label: 'Jira Workspace URL',        placeholder: 'team.atlassian.net',   type: 'text'     as const },
-      { key: 'email',    label: 'Atlassian Email',           placeholder: 'you@yourteam.com',     type: 'email'    as const },
-      { key: 'password', label: 'Account Password',          placeholder: '••••••••',             type: 'password' as const },
+      { key: 'domain', label: 'Jira Workspace URL', placeholder: 'team.atlassian.net', type: 'text' },
+      { key: 'email', label: 'Atlassian Email', placeholder: 'you@yourteam.com', type: 'email' },
+      { key: 'password', label: 'Account Password', placeholder: '••••••••', type: 'password' },
     ],
   },
   {
-    tool:        'slack'   as const,
-    label:       'Slack',
+    tool: 'slack',
+    label: 'Slack',
     description: 'Team communication & notifications',
-    icon:        <Slack size={20} className="text-green-400" />,
-    accentColor: 'bg-green-500/15 hover:bg-green-500/25 border-green-500/30 text-green-200',
-    accentBg:    'bg-green-500/10 border-green-500/20',
+    icon: '💬',
     fields: [
-      { key: 'email',    label: 'Slack Email',               placeholder: 'you@yourworkspace.com', type: 'email'    as const },
-      { key: 'password', label: 'Account Password',          placeholder: 'Demo pass: admin123',  type: 'password' as const },
+      { key: 'email', label: 'Slack Email', placeholder: 'you@yourworkspace.com', type: 'email' },
+      { key: 'password', label: 'Account Password', placeholder: 'Demo pass: admin123', type: 'password' },
     ],
   },
   {
-    tool:        'sheets'  as const,
-    label:       'Google Sheets',
+    tool: 'sheets',
+    label: 'Google Sheets',
     description: 'Automated reporting & logging',
-    icon:        <FileSpreadsheet size={20} className="text-yellow-400" />,
-    accentColor: 'bg-yellow-500/15 hover:bg-yellow-500/25 border-yellow-500/30 text-yellow-200',
-    accentBg:    'bg-yellow-500/10 border-yellow-500/20',
+    icon: '📊',
     fields: [
-      { key: 'email',    label: 'Google Account Email',      placeholder: 'you@gmail.com',        type: 'email'    as const },
-      { key: 'password', label: 'Account Password',          placeholder: 'Demo pass: admin123',  type: 'password' as const },
+      { key: 'email', label: 'Google Account Email', placeholder: 'you@gmail.com', type: 'email' },
+      { key: 'password', label: 'Account Password', placeholder: 'Demo pass: admin123', type: 'password' },
     ],
   },
 ];
 
 const ConnectTools = () => {
-  const navigate        = useNavigate();
+  const navigate = useNavigate();
   const { tools, allConnected } = useTools();
-  const { user }        = useAuth();
+  const { user } = useAuth();
 
   const connectedCount = Object.values(tools).filter(t => t.status === 'connected').length;
-  const total          = TOOLS.length;
-  const progressPct    = Math.round((connectedCount / total) * 100);
+  const total = TOOLS.length;
+  const progressPct = Math.round((connectedCount / total) * 100);
 
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden relative">
-      {/* Background */}
-      <div className="grid-bg" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/8 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-purple-600/8 rounded-full blur-3xl pointer-events-none" />
+    <div style={{
+      height: "100vh", background: "#0d1117", color: "#e6edf3",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      display: "flex", flexDirection: "column", overflow: "hidden", position: "relative"
+    }}>
+      {/* Glow */}
+      <div style={{ position: "absolute", top: "15%", left: "25%", width: 400, height: 400, background: "radial-gradient(circle, rgba(46,160,67,0.04) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
 
       {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-[hsl(217,33%,15%)] bg-[hsl(222,47%,4%)/80] backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-[hsl(222,47%,8%)] border border-[hsl(217,33%,15%)]">
-            <Zap size={16} className="text-[hsl(217,91%,60%)]" />
-          </div>
-          <span className="font-semibold text-sm text-foreground">Agentic MCP Gateway</span>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 24px", borderBottom: "1px solid #21262d",
+        background: "#010409", flexShrink: 0
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: "#0d3320", border: "1px solid #2ea043",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#4ade80", fontSize: 12, fontWeight: 700
+          }}>A</div>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Agentic MCP Gateway</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{user?.name}</span>
-          <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-              user?.role === 'developer'
-                ? 'bg-blue-500/15 text-blue-400 border-blue-500/20'
-                : 'bg-purple-500/15 text-purple-400 border-purple-500/20'
-            }`}
-          >
-            {user?.role}
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+          <span style={{ color: "#e6edf3", fontWeight: 600 }}>{user?.name}</span>
+          <span style={{
+            padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: 0.5,
+            background: user?.role === "developer" ? "#0d3320" : "#1c1c3a",
+            color: user?.role === "developer" ? "#4ade80" : "#a78bfa",
+            border: `1px solid ${user?.role === "developer" ? "#2ea04350" : "#a78bfa30"}`
+          }}>{user?.role}</span>
         </div>
       </div>
 
       {/* Scrollable content */}
-      <div className="relative z-10 flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 pt-8 pb-24">
-
+      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 10 }}>
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "32px 16px 100px" }}>
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            style={{ textAlign: "center", marginBottom: 28 }}
           >
-            <h1 className="text-3xl font-black tracking-tight mb-2"
-              style={{
-                background: 'linear-gradient(135deg, hsl(213,31%,95%), hsl(217,91%,70%), hsl(270,91%,75%))',
-                backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>
-              Connect Your Tools
-            </h1>
-            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px" }}>Connect Your Tools</h1>
+            <p style={{ color: "#7d8590", fontSize: 14, margin: 0, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}>
               Connect once — automate everything. Your credentials are stored locally and never sent to our servers.
             </p>
           </motion.div>
@@ -122,25 +114,24 @@ const ConnectTools = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className="mb-6"
+            style={{ marginBottom: 24 }}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-muted-foreground">{connectedCount} of {total} tools connected</span>
-              <span className="text-xs font-bold text-[hsl(217,91%,65%)]">{progressPct}%</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#7d8590" }}>{connectedCount} of {total} tools connected</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{progressPct}%</span>
             </div>
-            <div className="h-1.5 rounded-full bg-[hsl(217,33%,12%)] overflow-hidden">
+            <div style={{ height: 6, borderRadius: 99, background: "#21262d", overflow: "hidden" }}>
               <motion.div
-                className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, hsl(217,91%,60%), hsl(270,91%,70%))' }}
-                initial={{ width: '0%' }}
+                style={{ height: "100%", borderRadius: 99, background: "linear-gradient(90deg, #2ea043, #4ade80)" }}
+                initial={{ width: "0%" }}
                 animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
               />
             </div>
           </motion.div>
 
           {/* Tool cards */}
-          <div className="flex flex-col gap-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {TOOLS.map((t, i) => (
               <motion.div
                 key={t.tool}
@@ -153,44 +144,55 @@ const ConnectTools = () => {
             ))}
           </div>
 
-          {/* Access warning */}
+          {/* Info */}
           {!allConnected && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-5 flex items-center gap-2 px-4 py-3 rounded-xl border border-[hsl(217,33%,18%)] bg-[hsl(222,47%,5%)] text-xs text-muted-foreground"
+              style={{
+                marginTop: 16, display: "flex", alignItems: "center", gap: 8,
+                padding: "12px 16px", borderRadius: 12,
+                border: "1px solid #21262d", background: "#161b22",
+                fontSize: 12, color: "#7d8590"
+              }}
             >
-              <span className="text-[hsl(217,91%,60%)] font-semibold">ℹ️</span>
+              <span style={{ color: "#4ade80", fontWeight: 600 }}>ℹ️</span>
               Connect all tools to unlock the full dashboard. Partial connections are saved automatically.
             </motion.div>
           )}
         </div>
       </div>
 
-      {/* Sticky CTA footer */}
-      <div className="relative z-10 border-t border-[hsl(217,33%,15%)] bg-[hsl(222,47%,4%)] px-6 py-4 shrink-0">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+      {/* Sticky footer */}
+      <div style={{
+        borderTop: "1px solid #21262d", background: "#010409",
+        padding: "14px 24px", flexShrink: 0
+      }}>
+        <div style={{ maxWidth: 580, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button
-            id="skip-tools"
             onClick={() => navigate('/dashboard')}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Skip for now
-          </button>
-
+            style={{ background: "none", border: "none", color: "#7d8590", cursor: "pointer", fontSize: 13, transition: "color 0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#e6edf3"}
+            onMouseLeave={e => e.currentTarget.style.color = "#7d8590"}
+          >Skip for now</button>
           <button
-            id="continue-to-dashboard"
             onClick={() => navigate('/dashboard')}
             disabled={!allConnected}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-black transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 hover:shadow-[0_0_20px_hsl(217,91%,60%,0.35)]"
-            style={{ background: 'linear-gradient(135deg, hsl(217,91%,60%), hsl(240,91%,65%))' }}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 22px", borderRadius: 10, border: "none",
+              background: allConnected ? "#2ea043" : "#21262d",
+              color: allConnected ? "#fff" : "#484f58",
+              fontSize: 13, fontWeight: 600,
+              cursor: allConnected ? "pointer" : "default",
+              transition: "all 0.2s",
+              opacity: allConnected ? 1 : 0.5
+            }}
+            onMouseEnter={e => { if (allConnected) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 0 20px rgba(46,160,67,0.3)"; }}}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
           >
-            {allConnected ? (
-              <><CheckCircle2 size={15} /> All Connected — Go to Dashboard</>
-            ) : (
-              <>Continue <ArrowRight size={15} /></>
-            )}
+            {allConnected ? "✓ All Connected — Go to Dashboard" : "Continue →"}
           </button>
         </div>
       </div>

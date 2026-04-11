@@ -52,6 +52,7 @@ async def execute_workflow(request: ExecuteRequest) -> ExecuteResponse:
         dag=request.dag,
         auto_approve=request.auto_approve,
         dry_run=request.dry_run,
+        credentials=request.credentials,
     )
 
     try:
@@ -105,11 +106,12 @@ async def execute_workflow_stream(request: ExecuteRequest) -> StreamingResponse:
     """
     logger.info(f"Stream execute: {request.dag.workflow_name} ({len(request.dag.nodes)} nodes)")
 
-    # Bridge to Grishma's execution engine with SSE streaming
+    # Bridge to Grishma's execution engine via HTTP adapter
     bridge = ExecutionBridge(
         dag=request.dag,
         auto_approve=request.auto_approve,
         dry_run=request.dry_run,
+        credentials=request.credentials,
     )
 
     async def event_generator():

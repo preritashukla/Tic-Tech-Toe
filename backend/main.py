@@ -212,15 +212,26 @@ async def get_active_workflows():
     """Retrieve all currently active workflow executions."""
     store = get_execution_store()
     executions = store.get_all()
-    return [
-        {
-            "id": exec_id,
-            "name": execution.dag.workflow_name if execution.dag else "Unknown",
-            "status": execution.status.value,
-            "timestamp": execution.started_at
-        }
-        for exec_id, execution in executions.items()
-    ]
+    return {
+        "workflows": [
+            {
+                "workflow_id": e.execution_id,
+                "status": e.status.value,
+                "title": e.dag.workflow_name if e.dag else "Unnamed Workflow",
+                "created_at": e.start_time if hasattr(e, 'start_time') else e.started_at,
+                "nodes": [
+                    {
+                        "id": r.node_id,
+                        "status": r.status.value,
+                        "tool": r.tool,
+                        "action": r.action
+                    }
+                    for r in e.node_results.values()
+                ]
+            }
+            for e in executions.values()
+        ]
+    }
 
 
 @app.websocket("/ws/status/{execution_id}")
@@ -275,6 +286,8 @@ async def websocket_endpoint(websocket: WebSocket, execution_id: str):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         await websocket.close()
+
+
 # ─── Audit Endpoints ──────────────────────────────────────────────
 @app.get("/audit/logs", tags=["Audit"])
 async def get_audit_logs(

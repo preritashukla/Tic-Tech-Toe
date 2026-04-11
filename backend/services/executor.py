@@ -91,10 +91,12 @@ class ExecutionBridge:
         dag: WorkflowDAG,
         auto_approve: bool = True,
         dry_run: bool = False,
+        credentials: Optional[dict] = None
     ):
         self.dag = dag
         self.auto_approve = auto_approve
         self.dry_run = dry_run
+        self.credentials = credentials or {}
 
         # Shivam's context manager — template resolution + state
         self.context = ContextManager(
@@ -177,7 +179,7 @@ class ExecutionBridge:
         dag_dict = _convert_dag_for_grishma(self.dag)
         logger.info(f"[{exec_id}] Using Grishma's DAGExecutor ({len(dag_dict['nodes'])} nodes)")
 
-        executor = GrishmaExecutor(dag_dict, auto_approve=self.auto_approve)
+        executor = GrishmaExecutor(dag_dict, credentials=self.credentials, auto_approve=self.auto_approve)
         await executor.run()
 
         # Collect results from Grishma's executor nodes
@@ -301,6 +303,7 @@ class ExecutionBridge:
                     output = await handle_github_tool(node.action, resolved_params)
                 else:
                     output = _mock_tool_output(node.tool, node.action, resolved_params)
+                
                 elapsed = (time.time() - start) * 1000
 
                 self.context.store(node_id, output)
