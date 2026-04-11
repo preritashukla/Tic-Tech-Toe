@@ -23,7 +23,9 @@ import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.plan import router as plan_router
@@ -105,6 +107,40 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ─── Global Error Handling ─────────────────────────────────────────
+@app.exception_handler(Exception)
+@app.exception_handler(StarletteHTTPException)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global catch-all for any unhandled exceptions in the API."""
+    status_code = getattr(exc, "status_code", 500)
+    detail = getattr(exc, "detail", str(exc))
+
+    # Log for internal debugging
+    # Record to local terminal log
+    logger.error(f"Global Error: {request.method} {request.url.path} - {status_code}: {detail}")
+    
+    # Unified Logging: Record to central Audit Trail
+    audit = get_audit_logger()
+    audit.log_error(
+        execution_id="system-gateway",
+        error=f"{status_code}: {detail}",
+        context={
+            "method": request.method,
+            "path": request.url.path,
+            "client": request.client.host if request.client else "unknown"
+        }
+    )
+    
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "error",
+            "message": detail,
+            "path": request.url.path
+        }
+    )
 
 
 # ─── Mount Routers ─────────────────────────────────────────────────

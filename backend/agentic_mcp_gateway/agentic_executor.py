@@ -61,7 +61,7 @@ def log_event(status: str, message: str, color_code: str = "0"):
 
 # --- MCP Router ---
 
-async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentials: Dict[str, Any] = None) -> Dict[str, Any]:
+async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentials: Dict[str, Any] = None, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Acts as the router hitting the various MCP Servers or local service integrations.
     Uses provided credentials first, falling back to environment variables.
@@ -84,8 +84,8 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
             if github_token:
                 os.environ["GITHUB_TOKEN"] = github_token
 
-            from .github_mcp import handle_github_tool
-            return await handle_github_tool(action, inputs)
+            from github_mcp import handle_github_tool
+            return await handle_github_tool(action, inputs, context)
         except Exception as e:
             log_event("ERROR", f"GitHub failed: {e}", "31")
             raise e
@@ -103,7 +103,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
             if jira_domain: os.environ["JIRA_DOMAIN"] = jira_domain
 
             from services.integrations.jira_integration import execute_jira
-            result = await execute_jira(action, inputs)
+            result = await execute_jira(action, inputs, context)
             if result.get("status") == "success":
                 return result.get("output", {})
             else:
@@ -120,7 +120,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
                 os.environ["SLACK_BOT_TOKEN"] = slack_token
 
             from services.integrations.slack_integration import execute_slack
-            result = await execute_slack(action, inputs, {})
+            result = await execute_slack(action, inputs, context)
             if result.get("status") == "success":
                 return result.get("output", {})
             else:
@@ -137,7 +137,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
                 os.environ["GOOGLE_SHEETS_CREDENTIALS_JSON"] = sheets_creds
 
             from services.integrations.sheets_integration import execute_sheets
-            result = await execute_sheets(action, inputs, {})
+            result = await execute_sheets(action, inputs, context)
             if result.get("status") == "success":
                 return result.get("output", {})
             else:
@@ -152,7 +152,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
 # --- Core Executor Engine ---
 
 class DAGExecutor:
-    def __init__(self, dag_json: Dict[str, Any], credentials: Dict[str, Any] = None, auto_approve: bool = False):
+    def __init__(self, dag_json: Dict[str, Any], credentials: Dict[str, Any] = None, auto_approve: bool = False, execution_id: Optional[str] = None):
         self.credentials = credentials or {}
         self.auto_approve = auto_approve
         self.nodes: Dict[str, Node] = {}
@@ -163,7 +163,7 @@ class DAGExecutor:
             
         self.completed: Set[str] = set()
         self.failed: Set[str] = set()
-        self.execution_id = f"exec-{int(time.time())}"
+        self.execution_id = execution_id or f"exec-{int(time.time())}"
         
         self._validate_dag()
 
@@ -223,8 +223,9 @@ class DAGExecutor:
             node.attempts += 1
             try:
                 # Prepare generic mock output if provided in DAG
+                context = {"metadata": {"execution_id": getattr(self, "execution_id", "system-agentic")}}
                 return await asyncio.wait_for(
-                    dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials),
+                    dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials, context=context),
                     timeout=node.timeout
                 )
             except Exception as e:

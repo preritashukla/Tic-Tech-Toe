@@ -3,6 +3,7 @@ import httpx
 import logging
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
+from services.audit import get_audit_logger
 
 load_dotenv()
 logger = logging.getLogger("mcp_gateway.jira_integration")
@@ -154,4 +155,18 @@ async def execute_jira(action: str, params: Dict[str, Any], context: Optional[Di
             
     except Exception as e:
         logger.error(f"Jira execution failed: {e}")
+        
+        # Log to unified audit trail
+        audit = get_audit_logger()
+        exec_id = (context or {}).get("metadata", {}).get("execution_id", "system-jira")
+        audit.log_error(
+            execution_id=exec_id,
+            error=f"Jira Tool Error: {str(e)}",
+            context={
+                "tool": "jira",
+                "action": action,
+                "params": params
+            }
+        )
+        
         return {"status": "error", "error": str(e)}

@@ -2,6 +2,7 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from dotenv import load_dotenv
+from services.audit import get_audit_logger
 
 # Load env variables
 load_dotenv()
@@ -58,6 +59,20 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
         error_msg = str(e)
         if hasattr(e, 'response') and isinstance(e.response, dict):
              error_msg = e.response.get("error", str(e))
+        
+        # Log to unified audit trail
+        audit = get_audit_logger()
+        exec_id = (context or {}).get("metadata", {}).get("execution_id", "system-slack")
+        audit.log_error(
+            execution_id=exec_id,
+            error=f"Slack Tool Error: {error_msg}",
+            context={
+                "tool": "slack",
+                "action": action,
+                "params": params
+            }
+        )
+        
         return {
             "status": "error",
             "tool": "slack",

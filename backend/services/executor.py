@@ -124,6 +124,9 @@ class ExecutionBridge:
 
         # Save to store so /status endpoint can find it
         get_execution_store().save(self.execution)
+        
+        # Pass execution_id to context so integrations can use it for logging
+        self.context.set_metadata("execution_id", exec_id)
 
         self.audit.log_workflow_start(exec_id, self.dag.workflow_name, str(self.dag.nodes))
         self.execution.status = WorkflowStatus.RUNNING
@@ -182,7 +185,7 @@ class ExecutionBridge:
         dag_dict = _convert_dag_for_grishma(self.dag)
         logger.info(f"[{exec_id}] Using Grishma's DAGExecutor ({len(dag_dict['nodes'])} nodes)")
 
-        executor = GrishmaExecutor(dag_dict, credentials=self.credentials, auto_approve=self.auto_approve)
+        executor = GrishmaExecutor(dag_dict, credentials=self.credentials, auto_approve=self.auto_approve, execution_id=self.execution.execution_id)
         await executor.run()
 
         # Collect results from Grishma's executor nodes
@@ -291,7 +294,13 @@ class ExecutionBridge:
 
                 if node.tool in ["slack", "slack_mcp"]:
                     from services.integrations.slack_integration import execute_slack
-                    result = await execute_slack(node.action, resolved_params, getattr(self.context, '__dict__', {}))
+                    result = await execute_slack(node.action, resolved_params, self.context.get_execution_context())
+                    if result.get("status") == "error":
+                        raise Exception(result.get("error"))
+                    output = result.get("output", {})
+                elif node.tool in ["jira", "jira_mcp"]:
+                    from services.integrations.jira_integration import execute_jira
+                    result = await execute_jira(node.action, resolved_params, self.context.get_execution_context())
                     if result.get("status") == "error":
                         raise Exception(result.get("error"))
                     output = result.get("output", {})
@@ -303,7 +312,7 @@ class ExecutionBridge:
                     output = sheets_res.get("output", sheets_res.get("data", {}))
                 elif node.tool in ["github", "github_mcp"]:
                     from agentic_mcp_gateway.github_mcp import handle_github_tool
-                    output = await handle_github_tool(node.action, resolved_params)
+                    output = await handle_github_tool(node.action, resolved_params, self.context.get_execution_context())
                 else:
                     output = _mock_tool_output(node.tool, node.action, resolved_params)
                 

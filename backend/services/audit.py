@@ -9,6 +9,7 @@ Author: Shivam Kumar (LLM Systems Developer)
 from __future__ import annotations
 import json
 import time
+import os
 import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -80,10 +81,17 @@ class AuditLogger:
     - Permission checks audited
     - Full query support for audit review
     """
-
     def __init__(self):
         self._entries: list[AuditEntry] = []
         self._start_time = time.time()
+        
+        # Setup persistent file logger
+        self.audit_file = os.path.join(os.getcwd(), "audit.log")
+        file_handler = logging.FileHandler(self.audit_file)
+        file_handler.setFormatter(logging.Formatter('%(message)s'))
+        self.file_logger = logging.getLogger("mcp_gateway.audit_file")
+        self.file_logger.addHandler(file_handler)
+        self.file_logger.setLevel(logging.INFO)
 
     # ─── Event Recording ───────────────────────────────────────────
 
@@ -225,6 +233,11 @@ class AuditLogger:
     def _record(self, event_type: AuditEventType, details: dict[str, Any], **kwargs) -> None:
         entry = AuditEntry(event_type=event_type, details=details, **kwargs)
         self._entries.append(entry)
+        
+        # Log to persistent file
+        entry_dict = entry.to_dict()
+        self.file_logger.info(json.dumps(entry_dict))
+        
         logger.debug(f"[AUDIT] {event_type.value}: {json.dumps(details)[:200]}")
 
     @staticmethod

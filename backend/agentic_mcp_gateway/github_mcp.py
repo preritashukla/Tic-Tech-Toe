@@ -1,8 +1,9 @@
 import os
 import httpx
 import base64
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from dotenv import load_dotenv
+from services.audit import get_audit_logger
 
 load_dotenv()
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -248,88 +249,102 @@ async def create_release(owner: str, repo: str, tag_name: str, name: str, body: 
         "release_upload_url": data["upload_url"]
     }
 
-async def handle_github_tool(action: str, inputs: dict) -> dict:
+async def handle_github_tool(action: str, inputs: dict, context: Optional[Dict] = None) -> dict:
     """Dispatcher for GitHub tools."""
-    owner = inputs.get("owner")
-    repo = inputs.get("repo")
-
-    # ── Flexible owner/repo resolution ─────────────────────────────────────────
-    # The LLM often passes "owner/repo" as a single field under various key names.
-    # Also handles GitHub URLs like https://github.com/owner/repo
-    if not owner or not repo:
-        for key in ("repo_full_name", "full_name", "repository", "repo_name"):
-            val = inputs.get(key, "")
-            if val and "/" in str(val):
-                # Strip any leading URL prefix e.g. https://github.com/owner/repo
-                slug = str(val).split("github.com/")[-1].strip("/")
-                parts = slug.split("/")
-                if len(parts) >= 2:
-                    owner, repo = parts[0], parts[1]
-                    break
-
-    if not owner or not repo:
-        raise ValueError(
-            f"Missing 'owner' and 'repo' in GitHub tool inputs. "
-            f"Received: {list(inputs.keys())}"
-        )
-
-    if action == "get_repository":
-        return await get_repository(owner, repo)
-    elif action == "list_branches":
-        return await list_branches(owner, repo, inputs.get("per_page", 30))
-    elif action == "create_branch":
-        return await create_branch(owner, repo, inputs.get("branch_name"), inputs.get("from_branch"))
-    elif action == "get_branch":
-        return await get_branch(owner, repo, inputs.get("branch"))
-    elif action == "list_issues":
-        return await list_issues(owner, repo, inputs.get("state", "open"), inputs.get("labels"), inputs.get("assignee"))
-    elif action == "get_issue":
-        return await get_issue(owner, repo, int(inputs.get("issue_number")))
-    elif action == "create_issue":
-        return await create_issue(owner, repo, inputs.get("title"), inputs.get("body"), inputs.get("labels"), inputs.get("assignees"))
-    elif action == "add_issue_comment":
-        return await add_issue_comment(owner, repo, int(inputs.get("issue_number")), inputs.get("body"))
-    elif action == "update_issue":
-        return await update_issue(owner, repo, int(inputs.get("issue_number")), 
-                                   state=inputs.get("state"), title=inputs.get("title"), 
-                                   body=inputs.get("body"), labels=inputs.get("labels"), 
-                                   assignees=inputs.get("assignees"))
-    elif action == "create_pull_request":
-        payload = {
-            "title": inputs.get("title"),
-            "head": inputs.get("head"),
-            "base": inputs.get("base"),
-            "body": inputs.get("body"),
-            "draft": inputs.get("draft", False)
-        }
-        data = await call_github_api("POST", f"/repos/{owner}/{repo}/pulls", data=payload)
-        return {
-            "pr_number": data["number"],
-            "pr_url": data["html_url"],
-            "pr_api_url": data["url"],
-            "pr_title": data["title"],
-            "pr_state": data["state"],
-            "pr_diff_url": data["diff_url"]
-        }
-    elif action == "list_pull_requests":
-        return await list_pull_requests(owner, repo, inputs.get("state", "open"), inputs.get("head"), inputs.get("base"))
-    elif action == "get_pull_request":
-        return await get_pull_request(owner, repo, int(inputs.get("pr_number")))
-    elif action == "merge_pull_request":
-        return await merge_pull_request(owner, repo, int(inputs.get("pr_number")), 
-                                        inputs.get("merge_method", "merge"), inputs.get("commit_title"))
-    elif action == "add_labels":
-        return await add_labels(owner, repo, int(inputs.get("issue_number")), inputs.get("labels"))
-    elif action == "get_file_content":
-        return await get_file_content(owner, repo, inputs.get("path"), inputs.get("ref"))
-    elif action == "create_or_update_file":
-        return await create_or_update_file(owner, repo, inputs.get("path"), inputs.get("message"), 
-                                           inputs.get("content"), inputs.get("branch"), inputs.get("sha"))
-    elif action == "list_commits":
-        return await list_commits(owner, repo, inputs.get("sha"), inputs.get("path"), inputs.get("per_page", 10))
-    elif action == "create_release":
-        return await create_release(owner, repo, inputs.get("tag_name"), inputs.get("name"), 
-                                     inputs.get("body"), inputs.get("draft", False), 
-                                     inputs.get("prerelease", False), inputs.get("target_commitish"))
+    try:
+        owner = inputs.get("owner")
+        repo = inputs.get("repo")
     
-    raise ValueError(f"Unknown GitHub action: {action}")
+        # ── Flexible owner/repo resolution ─────────────────────────────────────────
+        # The LLM often passes "owner/repo" as a single field under various key names.
+        # Also handles GitHub URLs like https://github.com/owner/repo
+        if not owner or not repo:
+            for key in ("repo_full_name", "full_name", "repository", "repo_name"):
+                val = inputs.get(key, "")
+                if val and "/" in str(val):
+                    # Strip any leading URL prefix e.g. https://github.com/owner/repo
+                    slug = str(val).split("github.com/")[-1].strip("/")
+                    parts = slug.split("/")
+                    if len(parts) >= 2:
+                        owner, repo = parts[0], parts[1]
+                        break
+    
+        if not owner or not repo:
+            raise ValueError(
+                f"Missing 'owner' and 'repo' in GitHub tool inputs. "
+                f"Received: {list(inputs.keys())}"
+            )
+    
+        if action == "get_repository":
+            return await get_repository(owner, repo)
+        elif action == "list_branches":
+            return await list_branches(owner, repo, inputs.get("per_page", 30))
+        elif action == "create_branch":
+            return await create_branch(owner, repo, inputs.get("branch_name"), inputs.get("from_branch"))
+        elif action == "get_branch":
+            return await get_branch(owner, repo, inputs.get("branch"))
+        elif action == "list_issues":
+            return await list_issues(owner, repo, inputs.get("state", "open"), inputs.get("labels"), inputs.get("assignee"))
+        elif action == "get_issue":
+            return await get_issue(owner, repo, int(inputs.get("issue_number")))
+        elif action == "create_issue":
+            return await create_issue(owner, repo, inputs.get("title"), inputs.get("body"), inputs.get("labels"), inputs.get("assignees"))
+        elif action == "add_issue_comment":
+            return await add_issue_comment(owner, repo, int(inputs.get("issue_number")), inputs.get("body"))
+        elif action == "update_issue":
+            return await update_issue(owner, repo, int(inputs.get("issue_number")), 
+                                       state=inputs.get("state"), title=inputs.get("title"), 
+                                       body=inputs.get("body"), labels=inputs.get("labels"), 
+                                       assignees=inputs.get("assignees"))
+        elif action == "create_pull_request":
+            payload = {
+                "title": inputs.get("title"),
+                "head": inputs.get("head"),
+                "base": inputs.get("base"),
+                "body": inputs.get("body"),
+                "draft": inputs.get("draft", False)
+            }
+            data = await call_github_api("POST", f"/repos/{owner}/{repo}/pulls", data=payload)
+            return {
+                "pr_number": data["number"],
+                "pr_url": data["html_url"],
+                "pr_api_url": data["url"],
+                "pr_title": data["title"],
+                "pr_state": data["state"],
+                "pr_diff_url": data["diff_url"]
+            }
+        elif action == "list_pull_requests":
+            return await list_pull_requests(owner, repo, inputs.get("state", "open"), inputs.get("head"), inputs.get("base"))
+        elif action == "get_pull_request":
+            return await get_pull_request(owner, repo, int(inputs.get("pr_number")))
+        elif action == "merge_pull_request":
+            return await merge_pull_request(owner, repo, int(inputs.get("pr_number")), 
+                                            inputs.get("merge_method", "merge"), inputs.get("commit_title"))
+        elif action == "add_labels":
+            return await add_labels(owner, repo, int(inputs.get("issue_number")), inputs.get("labels"))
+        elif action == "get_file_content":
+            return await get_file_content(owner, repo, inputs.get("path"), inputs.get("ref"))
+        elif action == "create_or_update_file":
+            return await create_or_update_file(owner, repo, inputs.get("path"), inputs.get("message"), 
+                                               inputs.get("content"), inputs.get("branch"), inputs.get("sha"))
+        elif action == "list_commits":
+            return await list_commits(owner, repo, inputs.get("sha"), inputs.get("path"), inputs.get("per_page", 10))
+        elif action == "create_release":
+            return await create_release(owner, repo, inputs.get("tag_name"), inputs.get("name"), 
+                                         inputs.get("body"), inputs.get("draft", False), 
+                                         inputs.get("prerelease", False), inputs.get("target_commitish"))
+    
+    except Exception as e:
+        # Log to unified audit trail
+        audit = get_audit_logger()
+        exec_id = (context or {}).get("metadata", {}).get("execution_id", "system-github")
+        audit.log_error(
+            execution_id=exec_id,
+            error=f"GitHub Tool Error: {str(e)}",
+            context={
+                "tool": "github",
+                "action": action,
+                "params": inputs
+            }
+        )
+        raise

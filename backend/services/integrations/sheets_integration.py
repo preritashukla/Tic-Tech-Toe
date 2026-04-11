@@ -5,6 +5,7 @@ import asyncio
 import logging
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
+from services.audit import get_audit_logger
 load_dotenv()
 logger = logging.getLogger("mcp_gateway.sheets_integration")
 
@@ -136,6 +137,20 @@ async def execute_sheets(action: str, params: Dict[str, Any], context: Optional[
 
     except Exception as e:
         logger.error(f"Sheets execution failed: {e}")
+        
+        # Log to unified audit trail
+        audit = get_audit_logger()
+        exec_id = (context or {}).get("metadata", {}).get("execution_id", "system-sheets")
+        audit.log_error(
+            execution_id=exec_id,
+            error=f"Sheets Tool Error: {str(e)}",
+            context={
+                "tool": "sheets",
+                "action": action,
+                "params": params
+            }
+        )
+        
         return {
             "status": "error",
             "tool": "sheets",
