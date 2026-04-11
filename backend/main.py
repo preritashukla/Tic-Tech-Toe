@@ -28,6 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.plan import router as plan_router
 from routers.execute import router as execute_router
+from routers.auth import router as auth_router
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
 from api_schemas.execution import WorkflowStatus
@@ -109,6 +110,7 @@ app.add_middleware(
 # ─── Mount Routers ─────────────────────────────────────────────────
 app.include_router(plan_router)
 app.include_router(execute_router)
+app.include_router(auth_router)
 
 
 # ─── Root Endpoint ────────────────────────────────────────────────

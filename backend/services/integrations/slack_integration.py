@@ -6,10 +6,13 @@ from dotenv import load_dotenv
 # Load env variables
 load_dotenv()
 
-def get_slack_client() -> WebClient:
-    token = os.getenv("SLACK_BOT_TOKEN")
+def get_slack_client(context: dict = None) -> WebClient:
+    # Priority: Context (frontend OAuth) > Env (server default)
+    ctx_creds = (context or {}).get("credentials", {}).get("slack", {})
+    token = ctx_creds.get("access_token") or ctx_creds.get("token") or os.getenv("SLACK_BOT_TOKEN")
+    
     if not token:
-        raise ValueError("SLACK_BOT_TOKEN environment variable not set.")
+        raise ValueError("Slack Credentials Missing: Please connect your Slack account.")
     return WebClient(token=token)
 
 async def execute_slack(action: str, params: dict, context: dict = None) -> dict:
@@ -20,7 +23,7 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
         context = {}
         
     try:
-        client = get_slack_client()
+        client = get_slack_client(context)
         
         if action == "send_message":
             # For send_message, message template values are already resolved in params by the ContextManager.

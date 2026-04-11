@@ -1,10 +1,4 @@
-// @ts-nocheck
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTools } from '@/context/ToolsContext';
-import { useAuth } from '@/context/AuthContext';
-
-function ToolCard({ tool, icon, label, description, fields }) {
+function ToolCard({ tool, icon, label, description, fields, isOAuth, authUrl }) {
   const { tools, connect, reset } = useTools();
   const { user } = useAuth();
   const isDeveloper = user?.role === 'developer';
@@ -24,6 +18,19 @@ function ToolCard({ tool, icon, label, description, fields }) {
   const allFilled = fields.every(f => values[f.key]?.trim());
 
   const handleConnect = () => {
+    if (isOAuth) {
+      // For Google Sheets, we still need the Spreadsheet ID
+      if (tool === 'sheets') {
+        const spreadsheetId = values['spreadsheet_id'];
+        if (spreadsheetId) {
+          localStorage.setItem('google_sheets_id', spreadsheetId);
+        }
+      }
+      // Redirect to the backend OAuth URL
+      window.location.href = authUrl;
+      return;
+    }
+
     if (!allFilled || isConnecting) return;
     connect(tool, JSON.stringify(values));
   };

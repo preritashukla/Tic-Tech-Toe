@@ -8,22 +8,32 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger("mcp_gateway.sheets_integration")
 
-def get_sheets_client():
+def get_sheets_client(context: Optional[Dict] = None):
+    # Priority 1: User OAuth Token (from context)
+    ctx_creds = (context or {}).get("credentials", {}).get("sheets", {}) or (context or {}).get("credentials", {}).get("google", {})
+    oauth_token = ctx_creds.get("access_token") or ctx_creds.get("token")
+    
+    if oauth_token:
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+        creds = OAuthCredentials(token=oauth_token)
+        logger.info("Sheets API: Using user OAuth token")
+        return gspread.authorize(creds)
+
+    # Priority 2: Service Account (from env)
     creds_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON")
     if not creds_path:
-        # Default fallback relative to project root
         creds_path = os.path.join(os.getcwd(), "credentials", "service_account.json")
     
-    if not os.path.exists(creds_path):
-        raise FileNotFoundError(f"Google Sheets credentials not found at: {creds_path}")
+    if os.path.exists(creds_path):
+        scopes = [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
+        ]
+        creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
+        logger.info("Sheets API: Using service account credentials")
+        return gspread.authorize(creds)
 
-    scopes = [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive'
-    ]
-    
-    creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
-    return gspread.authorize(creds)
+    raise Exception("Google Sheets Credentials Missing: Please connect your Google account.")
 
 def _read_row_sync(worksheet: gspread.Worksheet, row_key: str) -> Dict[str, Any]:
     try:
@@ -89,9 +99,9 @@ async def execute_sheets(action: str, params: Dict[str, Any], context: Optional[
     """
     try:
         client = await asyncio.to_thread(get_sheets_client)
-        sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+        sheet_id = ctx_creds.get("spreadsheet_id") or os.getenv("GOOGLE_SHEETS_ID")
         if not sheet_id:
-            raise ValueError("GOOGLE_SHEETS_ID not found in environment")
+            raise ValueError("Spreadsheet ID Missing: Please provide a Spreadsheet ID in the 'Connect Tools' dashboard.")
             
         spreadsheet = await asyncio.to_thread(client.open_by_key, sheet_id)
         sheet_name = params.get("sheet_name", "Sheet1")

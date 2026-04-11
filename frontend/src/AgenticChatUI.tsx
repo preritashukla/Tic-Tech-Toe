@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTools } from "./context/ToolsContext";
 
 const SUGGESTED_PROMPTS = [
@@ -230,6 +230,29 @@ export default function App() {
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Capture Jira OAuth credentials from URL on mount
+    const jiraToken = searchParams.get("jira_token");
+    const jiraCloudId = searchParams.get("jira_cloud_id");
+    const slackToken = searchParams.get("slack_token");
+    const googleToken = searchParams.get("google_token");
+
+    if (jiraToken && jiraCloudId) {
+      localStorage.setItem("jira_access_token", jiraToken);
+      localStorage.setItem("jira_cloud_id", jiraCloudId);
+    }
+    if (slackToken) {
+      localStorage.setItem("slack_access_token", slackToken);
+    }
+    if (googleToken) {
+      localStorage.setItem("google_access_token", googleToken);
+    }
+
+    if (jiraToken || slackToken || googleToken) {
+      // Clean URL
+      setSearchParams({});
+    }
 
   const [history, setHistory] = useState([]);
 
@@ -299,14 +322,41 @@ export default function App() {
 
       const dag = planData.dag;
 
-      // Extract real credentials from context to bridge to backend
+      const jiraToken = localStorage.getItem("jira_access_token");
+      const jiraCloudId = localStorage.getItem("jira_cloud_id");
+      const slackToken = localStorage.getItem("slack_access_token");
+      const googleToken = localStorage.getItem("google_access_token");
+      
       const userCredentials = {};
+      
+      // Preferred: OAuth credentials from localStorage
+      if (jiraToken && jiraCloudId) {
+        userCredentials.jira = {
+          access_token: jiraToken,
+          cloud_id: jiraCloudId
+        };
+      }
+      if (slackToken) {
+        userCredentials.slack = { access_token: slackToken };
+      }
+      if (googleToken) {
+        const spreadsheetId = localStorage.getItem("google_sheets_id");
+        userCredentials.sheets = { 
+          access_token: googleToken,
+          spreadsheet_id: spreadsheetId
+        };
+        userCredentials.google = { access_token: googleToken };
+      }
+
       Object.entries(tools).forEach(([name, state]) => {
         if (state.status === 'connected' && state.token) {
-          try {
-            userCredentials[name] = JSON.parse(state.token);
-          } catch {
-            userCredentials[name] = { token: state.token };
+          // Only add if not already set by OAuth
+          if (!userCredentials[name]) {
+            try {
+              userCredentials[name] = JSON.parse(state.token);
+            } catch {
+              userCredentials[name] = { token: state.token };
+            }
           }
         }
       });
@@ -477,6 +527,22 @@ export default function App() {
             }}
           >
             <span style={{ fontSize: 16 }}>+</span> New workflow
+          </button>
+        </div>
+
+        {/* Jira OAuth Login */}
+        <div style={{ padding: "0 12px 12px" }}>
+          <button
+            onClick={() => window.location.href = "http://localhost:8000/auth/jira/login"}
+            style={{
+              width: "100%", padding: "8px 12px", 
+              background: localStorage.getItem("jira_access_token") ? "#0d3320" : "#1f6feb",
+              border: "1px solid #30363d", borderRadius: 8, color: "#fff",
+              fontSize: 13, cursor: "pointer", textAlign: "center",
+              fontWeight: 600, transition: "background 0.2s"
+            }}
+          >
+            {localStorage.getItem("jira_access_token") ? "✅ Jira Connected" : "Connect Jira (OAuth)"}
           </button>
         </div>
 

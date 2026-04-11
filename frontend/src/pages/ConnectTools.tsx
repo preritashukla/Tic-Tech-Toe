@@ -32,19 +32,19 @@ const TOOLS = [
     label: 'Slack',
     description: 'Team communication & notifications',
     icon: '💬',
-    fields: [
-      { key: 'email', label: 'Slack Email', placeholder: 'you@yourworkspace.com', type: 'email' },
-      { key: 'password', label: 'Account Password', placeholder: 'Demo pass: admin123', type: 'password' },
-    ],
+    isOAuth: true,
+    authUrl: 'http://localhost:8000/auth/slack/login',
+    fields: [],
   },
   {
     tool: 'sheets',
     label: 'Google Sheets',
     description: 'Automated reporting & logging',
     icon: '📊',
+    isOAuth: true,
+    authUrl: 'http://localhost:8000/auth/google/login',
     fields: [
-      { key: 'email', label: 'Google Account Email', placeholder: 'you@gmail.com', type: 'email' },
-      { key: 'password', label: 'Account Password', placeholder: 'Demo pass: admin123', type: 'password' },
+      { key: 'spreadsheet_id', label: 'Spreadsheet ID', placeholder: '1NZ0DljGTjF2RsEU...', type: 'text' },
     ],
   },
 ];
