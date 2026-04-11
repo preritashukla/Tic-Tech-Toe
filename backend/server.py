@@ -23,6 +23,11 @@ from agentic_mcp_gateway.mock_mcp_servers import dispatch_mcp_call
 
 app = FastAPI(title="Workflow Maestro API")
 
+@app.get("/health")
+async def health_check():
+    """Liveness probe — frontend polls this to confirm backend is ready."""
+    return {"status": "ok"}
+
 # Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
@@ -96,6 +101,19 @@ async def plan_workflow(req: PlanRequest):
 
     return PlanResponse(workflow_id=wf_id, message="Execution started")
 
+@app.get("/mock-db")
+async def get_mock_db():
+    """Returns the mock database for frontend simulation views like Slack/GitHub."""
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mock_database.json")
+    if os.path.exists(db_path):
+        import json
+        try:
+            with open(db_path, "r") as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
 @app.get("/active-workflows")
 async def get_active_workflows():
     """Return status of all active workflows for the logs page."""
@@ -152,6 +170,7 @@ async def get_status(id: str):
         if "github" in str(node.tool).lower(): tool_name = "github"
         if "slack" in str(node.tool).lower(): tool_name = "slack"
         if "sheet" in str(node.tool).lower(): tool_name = "sheets"
+        if "system" in str(node.tool).lower(): tool_name = "system"
 
         frontend_node = {
             "id": node.id,

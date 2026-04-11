@@ -57,17 +57,17 @@ class DAGExecutor:
         Supports templates embedded within longer strings.
         """
         resolved = {}
-        pattern = re.compile(r"\{\{([^.]+)\.output\.([^}]+)\}\}")
+        pattern = re.compile(r"\{\{([^.]+)\.([^}]+)\}\}")
         
         def repl(match):
             ref_task, field = match.groups()
             if ref_task in self.completed_nodes:
                 val = self.completed_nodes[ref_task].output.get(field)
                 if val is None:
-                    raise ValueError(f"Template parsing failed: field '{field}' not found in {ref_task}.output")
+                    return f"[missing {field}]"
                 return str(val)
             else:
-                raise ValueError(f"Template parsing failed: {ref_task} not found in completed nodes")
+                return f"[{ref_task} not run]"
 
         for key, value in node.inputs.items():
             if isinstance(value, str):

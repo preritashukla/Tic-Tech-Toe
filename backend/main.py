@@ -28,6 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.plan import router as plan_router
 from routers.execute import router as execute_router
 from services.audit import get_audit_logger
+from services.execution_store import get_execution_store
 
 # ─── Environment & Logging ─────────────────────────────────────────
 load_dotenv()
@@ -139,6 +140,41 @@ async def health_check():
     }
 
 
+@app.get("/status", tags=["Execution"])
+async def get_execution_status(id: str):
+    """Retrieve the current status of a workflow execution by ID."""
+    store = get_execution_store()
+    execution = store.get(id)
+    
+    if not execution:
+        # If not found in live store, check audit logs or return 404
+        logger.warning(f"Status requested for unknown execution: {id}")
+        raise HTTPException(status_code=404, detail="Workflow execution not found")
+
+    return {
+        "execution_id": execution.execution_id,
+        "status": execution.status.value,
+        "workflow_name": execution.dag.workflow_name if execution.dag else "Unknown",
+        "nodes": [
+            {
+                "id": r.node_id,
+                "name": r.node_name,
+                "tool": r.tool,
+                "action": r.action,
+                "status": r.status.value,
+                "output": r.output,
+                "error": r.error,
+                "duration_ms": round(r.duration_ms, 1),
+                "retries": r.retries
+            }
+            for r in execution.node_results.values()
+        ],
+        "total_nodes": execution.total_nodes,
+        "succeeded": execution.succeeded,
+        "failed": execution.failed,
+        "skipped": execution.skipped,
+        "timestamp": execution.start_time
+    }
 # ─── Audit Endpoints ──────────────────────────────────────────────
 @app.get("/audit/logs", tags=["Audit"])
 async def get_audit_logs(

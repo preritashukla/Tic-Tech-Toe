@@ -27,14 +27,13 @@ dist-ssr
 .env
 __pycache__/
 *.pyc
-<<<<<<< HEAD
 .next/
-=======
+backend/credentials/service_account.json
+backend/credentials/
+.env
 node_modules/
-.next/
 *.egg-info/
 dist/
 build/
 .venv/
 venv/
->>>>>>> 82c809b (fastapi backend)

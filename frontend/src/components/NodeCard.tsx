@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Box, Typography, Chip } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -15,6 +15,16 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
 import StorageIcon from '@mui/icons-material/Storage';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import HubIcon from '@mui/icons-material/Hub';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { NodeStatus, MCPTool } from '@/lib/types';
 
 const statusConfig: Record<NodeStatus, { color: string; bg: string; border: string; icon: React.ReactNode; label: string }> = {
@@ -79,10 +89,20 @@ const toolIcons: Record<MCPTool, React.ReactNode> = {
   trello: <ViewKanbanIcon sx={{ fontSize: 16, color: 'hsl(200, 82%, 55%)' }} />,
   airtable: <StorageIcon sx={{ fontSize: 16, color: 'hsl(265, 67%, 55%)' }} />,
   generic: <SmartToyIcon sx={{ fontSize: 16, color: 'hsl(215, 20%, 55%)' }} />,
+  system: <HubIcon sx={{ fontSize: 16, color: 'hsl(280, 80%, 65%)' }} />,
 };
 
 interface NodeCardProps {
-  data: { title: string; status: NodeStatus; description?: string; tool?: MCPTool; duration?: string };
+  data: { 
+    id: string;
+    title: string; 
+    status: NodeStatus; 
+    description?: string; 
+    tool?: MCPTool; 
+    duration?: string;
+    inputs?: Record<string, any>;
+    outputs?: Record<string, any>;
+  };
 }
 
 const NodeCard = memo(({ data }: NodeCardProps) => {
@@ -181,6 +201,62 @@ const NodeCard = memo(({ data }: NodeCardProps) => {
             </Typography>
           )}
         </Box>
+
+        {/* Inspect Outputs Button */}
+        {data.outputs && Object.keys(data.outputs).length > 0 && (
+          <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px border-neutral-800', display: 'flex', justifyContent: 'flex-end' }}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Chip
+                  icon={<VisibilityIcon sx={{ fontSize: '12px !important' }} />}
+                  label="Inspect Result"
+                  size="small"
+                  clickable
+                  sx={{
+                    height: 20,
+                    fontSize: 9,
+                    fontWeight: 600,
+                    bgcolor: 'hsl(217, 33%, 15%)',
+                    color: 'hsl(213, 31%, 70%)',
+                    border: '1px solid hsl(217, 33%, 25%)',
+                    '&:hover': {
+                      bgcolor: 'hsl(217, 33%, 20%)',
+                      color: 'hsl(213, 31%, 91%)',
+                    }
+                  }}
+                />
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] bg-neutral-950 border-neutral-800 text-neutral-100">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-lg">
+                    {toolIcons[data.tool || 'generic']}
+                    {data.title} — Output Logs
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <ScrollArea className="mt-4 max-h-[60vh] rounded-md border border-neutral-800 bg-black/50 p-4">
+                  <div className="space-y-6">
+                    {data.inputs && Object.keys(data.inputs).length > 0 && (
+                      <section>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Parameters Sent</h4>
+                        <pre className="text-xs font-mono text-blue-400 overflow-x-auto">
+                          {JSON.stringify(data.inputs, null, 2)}
+                        </pre>
+                      </section>
+                    )}
+                    
+                    <section>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-green-500 mb-2">Response Received</h4>
+                      <pre className="text-xs font-mono text-neutral-300 overflow-x-auto whitespace-pre-wrap">
+                        {JSON.stringify(data.outputs, null, 2)}
+                      </pre>
+                    </section>
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+          </Box>
+        )}
       </Box>
       <Handle type="source" position={Position.Right} style={{ background: 'hsl(217, 33%, 30%)', border: 'none', width: 8, height: 8 }} />
     </>

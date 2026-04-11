@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Alert, Chip, IconButton, Tooltip } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PanelRightClose, PanelRightOpen } from 'lucide-react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -17,6 +19,7 @@ const WorkflowDashboard = () => {
   const [status, setStatus] = useState<WorkflowStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auditLogOpen, setAuditLogOpen] = useState(true);
 
   const fetchStatus = useCallback(async () => {
     if (!id) return;
@@ -207,6 +210,15 @@ const WorkflowDashboard = () => {
                 }}
               />
             )}
+            <Tooltip title={auditLogOpen ? "Hide Audit Log" : "Show Audit Log"}>
+              <IconButton
+                size="small"
+                onClick={() => setAuditLogOpen(!auditLogOpen)}
+                sx={{ color: 'hsl(215, 20%, 45%)', '&:hover': { color: 'hsl(213, 31%, 91%)' } }}
+              >
+                {auditLogOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+              </IconButton>
+            </Tooltip>
             {statusCounts['running'] && (
               <Chip
                 icon={<FiberManualRecordIcon sx={{ fontSize: '8px !important', color: 'hsl(217, 91%, 60%) !important', animation: 'pulse 2s infinite' }} />}
@@ -265,12 +277,22 @@ const WorkflowDashboard = () => {
       </Box>
 
       {/* Audit Log Sidebar */}
-      <Box
-        className="w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l flex flex-col h-full min-h-0 overflow-hidden flex-shrink-0 relative z-10 bg-background p-4"
-        sx={{ borderColor: 'hsl(217, 33%, 12%)' }}
-      >
-        <AuditLog nodes={status?.nodes ?? []} loading={loading} />
-      </Box>
+      <AnimatePresence initial={false}>
+        {auditLogOpen && (
+          <motion.div
+            key="audit-log"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 384, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="shrink-0 overflow-hidden border-t lg:border-t-0 lg:border-l border-[hsl(217,33%,12%)] bg-background flex flex-col h-full min-h-0"
+          >
+            <div className="w-96 flex flex-col h-full p-4">
+              <AuditLog nodes={status?.nodes ?? []} loading={loading} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <HITLModal node={approvalNode} onApprove={handleApprove} onReject={handleReject} />
     </Box>

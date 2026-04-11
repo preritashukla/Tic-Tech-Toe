@@ -17,8 +17,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from models.requests import ExecuteRequest, ExecuteResponse
-from models.dag import WorkflowDAG
+from api_schemas.requests import ExecuteRequest, ExecuteResponse
+from api_schemas.dag import WorkflowDAG
 from services.executor import ExecutionBridge
 from services.audit import get_audit_logger
 

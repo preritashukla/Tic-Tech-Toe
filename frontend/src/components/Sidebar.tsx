@@ -1,7 +1,7 @@
-
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import { LayoutDashboard, Activity, GitBranch, MessageSquare, Kanban, Server } from 'lucide-react';
+import { LayoutDashboard, Activity, GitBranch, MessageSquare, Kanban, Server, FileSpreadsheet } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -12,18 +12,19 @@ const mockTools = [
   { name: 'GitHub Mock', href: '/mock/github', icon: GitBranch },
   { name: 'Jira Mock', href: '/mock/jira', icon: Kanban },
   { name: 'Slack Mock', href: '/mock/slack', icon: MessageSquare },
+  { name: 'Sheets Mock', href: '/mock/sheets', icon: FileSpreadsheet },
 ];
 
-export default function Sidebar({ className = '' }: { className?: string }) {
+export default function Sidebar() {
   const pathname = useLocation().pathname;
 
   return (
-    <aside className={`${className} flex flex-col h-full`}>
-      <Link to="/" className="p-6 flex items-center gap-3 border-b border-[#27272a] hover:bg-[#18181b] transition-colors">
+    <aside className="flex flex-col h-full bg-card">
+      <Link to="/" className="p-6 flex items-center gap-3 border-b border-border hover:bg-secondary transition-colors">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shrink-0">
           <Server size={18} className="text-white" />
         </div>
-        <h1 className="font-semibold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400">
+        <h1 className="font-semibold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-muted-foreground to-foreground">
           Agentic MCP
         </h1>
       </Link>
@@ -41,11 +42,11 @@ export default function Sidebar({ className = '' }: { className?: string }) {
                   to={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#27272a] text-cyan-400 font-medium'
-                      : 'text-gray-400 hover:text-white hover:bg-[#18181b]'
+                      ? 'bg-secondary text-primary font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
                 >
-                  <item.icon size={18} className={isActive ? 'text-cyan-400' : 'text-gray-500'} />
+                  <item.icon size={18} className={isActive ? 'text-primary' : 'text-muted-foreground'} />
                   {item.name}
                 </Link>
               );
@@ -65,11 +66,11 @@ export default function Sidebar({ className = '' }: { className?: string }) {
                   to={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#27272a] text-purple-400 font-medium'
-                      : 'text-gray-400 hover:text-white hover:bg-[#18181b]'
+                      ? 'bg-secondary text-primary font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
                 >
-                  <item.icon size={18} className={isActive ? 'text-purple-400' : 'text-gray-500'} />
+                  <item.icon size={18} className={isActive ? 'text-primary' : 'text-muted-foreground'} />
                   {item.name}
                 </Link>
               );
@@ -79,14 +80,15 @@ export default function Sidebar({ className = '' }: { className?: string }) {
       </div>
       
       {/* Status Footer */}
-      <div className="p-4 border-t border-[#27272a] bg-[#0c0c0e]">
+      <div className="p-4 border-t border-border bg-card flex justify-between items-center">
         <div className="flex items-center gap-3 px-2">
           <div className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
           </div>
-          <span className="text-xs text-gray-400 font-medium">Gateway Active</span>
+          <span className="text-xs text-muted-foreground font-medium">Gateway Active</span>
         </div>
+        <ThemeToggle />
       </div>
     </aside>
   );
