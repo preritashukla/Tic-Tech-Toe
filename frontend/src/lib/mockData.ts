@@ -123,6 +123,52 @@ const MOCK_WORKFLOWS: Record<string, WorkflowStatus> = {
       { source: 'c3', target: 'c5' },
     ],
   },
+  'wf-pdf-invoices': {
+    workflow_id: 'wf-pdf-invoices',
+    title: 'Parse PDF Invoices → Google Sheets → Trello Review',
+    nodes: [
+      {
+        id: 'i1', title: 'Receive PDF Invoice', description: 'Webhook triggers when new invoice email with PDF is received', status: 'done', tool: 'generic', result: 'Received Acme_Corp_Invoice.pdf', outputs: { file_name: 'Acme_Corp_Invoice.pdf' }
+      },
+      {
+        id: 'i2', title: 'Extract Line Items', description: 'Use OCR & LLM to extract tabular line items and amounts', status: 'done', tool: 'generic', result: 'Extracted 12 line items', outputs: { total: '$4,520.00' }
+      },
+      {
+        id: 'i3', title: 'Update Google Sheets', description: 'Append invoice totals to Q4 Financials sheet', status: 'running', tool: 'sheets', inputs: { spreadsheet: 'Q4 Financials', sheet: 'Invoices' }
+      },
+      {
+        id: 'i4', title: 'Create Trello Card', description: 'Create a review task for the finance team on Trello', status: 'pending', tool: 'generic', inputs: { board: 'Finance Ops' }
+      },
+    ],
+    edges: [
+      { source: 'i1', target: 'i2' },
+      { source: 'i2', target: 'i3' },
+      { source: 'i2', target: 'i4' },
+    ],
+  },
+  'wf-aws-cloudwatch': {
+    workflow_id: 'wf-aws-cloudwatch',
+    title: 'AWS CloudWatch → Jira Ticket → Slack Alert → Status Page',
+    nodes: [
+      {
+        id: 'a1', title: 'Detect CloudWatch Alarm', description: 'Monitor AWS CloudWatch for high CPU alarms', status: 'done', tool: 'generic', result: 'Alarm triggered: DB-Cluster-CPU > 90%', outputs: { resource: 'db-cluster-prod' }
+      },
+      {
+        id: 'a2', title: 'Create Jira Ticket', description: 'Auto-create Jira issue for database load anomaly', status: 'done', tool: 'jira', result: 'Created Ticket SYS-9902', outputs: { ticket_key: 'SYS-9902' }
+      },
+      {
+        id: 'a3', title: 'Notify Slack', description: 'Alert the #infra-alerts channel regarding the DB load', status: 'running', tool: 'slack', inputs: { channel: '#infra-alerts' }
+      },
+      {
+        id: 'a4', title: 'Update Status Page', description: 'Human-in-the-loop gate: update external status page', status: 'waiting_approval', tool: 'generic', inputs: { status: 'Degraded Performance' }
+      },
+    ],
+    edges: [
+      { source: 'a1', target: 'a2' },
+      { source: 'a2', target: 'a3' },
+      { source: 'a2', target: 'a4' },
+    ],
+  },
 };
 
 // ─── Simulation Engine ───────────────────────────────────────────────────────
@@ -131,13 +177,30 @@ const MOCK_WORKFLOWS: Record<string, WorkflowStatus> = {
 const simulationState: Record<string, { nodes: WorkflowNode[]; startTime: number }> = {};
 
 function getSimulatedStatus(workflowId: string): WorkflowStatus {
-  const base = MOCK_WORKFLOWS[workflowId];
+  const isInstance = workflowId.match(/-\d{13}$/);
+  const baseId = isInstance ? workflowId.substring(0, workflowId.lastIndexOf('-')) : workflowId;
+  let base = MOCK_WORKFLOWS[baseId];
   if (!base) {
-    // Default to first workflow for any unknown ID
-    const defaultWf = MOCK_WORKFLOWS['wf-jira-incident'];
-    return simulateProgress(defaultWf);
+    if (baseId.startsWith('wf-dynamic-')) {
+       // Convert custom prompt text into dynamic DAG
+       const prompt = decodeURIComponent(baseId.replace('wf-dynamic-', '')).trim();
+       const words = prompt.split(' ').filter((w: string) => w.length > 2);
+       base = {
+         workflow_id: baseId,
+         title: prompt ? `Dynamic: ${prompt.substring(0, 45)}...` : 'Dynamic Agentic Workflow',
+         nodes: [
+           { id: 'd1', title: `Detect: ${words[0] || 'Event'}`, description: `Initial Trigger for ${prompt}`, status: 'done', tool: 'generic', result: 'Trigger identified and parsed' },
+           { id: 'd2', title: `Process: ${words[1] || 'Data'}`, description: 'Executing intermediate data transformation', status: 'running', tool: 'generic', inputs: { query: prompt } },
+           { id: 'd3', title: `Action: ${words.slice(2, 4).join(' ') || 'Resolution'}`, description: 'Final integration step', status: 'pending', tool: 'generic', inputs: { proceed: true } }
+         ],
+         edges: [ { source: 'd1', target: 'd2' }, { source: 'd2', target: 'd3' } ]
+       }
+    } else {
+      base = MOCK_WORKFLOWS['wf-jira-incident'];
+    }
   }
-  return simulateProgress(base);
+  const instance = { ...base, workflow_id: workflowId };
+  return simulateProgress(instance);
 }
 
 function simulateProgress(wf: WorkflowStatus): WorkflowStatus {

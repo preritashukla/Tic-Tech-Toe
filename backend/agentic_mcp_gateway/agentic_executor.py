@@ -60,15 +60,45 @@ def log_event(status: str, message: str, color_code: str = "0"):
 
 # --- Mock MCP Router ---
 
+TOOL_PORT_MAP = {
+    "jira_mcp": 8001,
+    "github_mcp": 8002,
+    "slack_mcp": 8003,
+    "sheets_mcp": 8004,
+}
+
+import urllib.request
+import urllib.error
+
 async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_output: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Stub to simulate external tool execution over MCP."""
-    await asyncio.sleep(0.5) # Simulate network latency
-    
-    if action == "link_issue": # Simulate a transient failure for demonstration
-        if not hasattr(dispatch_mcp, "failed_once"):
-            dispatch_mcp.failed_once = True
-            raise ConnectionError("External API rate limit exceeded")
+    """If true MCP servers are up, hit them natively! Otherwise fallback to mock JSON payload."""
+    if tool in TOOL_PORT_MAP:
+        port = TOOL_PORT_MAP[tool]
+        # Route to exact docker container endpoints
+        url = f"http://localhost:{port}/{action}"
+        
+        # Token mapping for the respective MCP servers
+        auth_header = f"{tool.split('_')[0]}_token" 
+        
+        def _make_req():
+            req = urllib.request.Request(
+                url, 
+                data=json.dumps(inputs).encode('utf-8'), 
+                headers={'Content-Type': 'application/json', 'Authorization': auth_header}
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    return json.loads(resp.read().decode('utf-8'))
+            except Exception as e:
+                raise ConnectionError(f"Real MCP container at {port} unreachable: {e}")
+                
+        try:
+            return await asyncio.to_thread(_make_req)
+        except ConnectionError as e:
+            # Container isn't up, just fallback gracefully to the JSON dict mock!
+            log_event("FALLBACK", f"{tool} HTTP failed - routing to mock payload", "90")
             
+    await asyncio.sleep(0.5) 
     return mock_output or {"status": "ok"}
 
 
