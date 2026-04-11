@@ -250,9 +250,26 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
     """Dispatcher for GitHub tools."""
     owner = inputs.get("owner")
     repo = inputs.get("repo")
-    
+
+    # ── Flexible owner/repo resolution ─────────────────────────────────────────
+    # The LLM often passes "owner/repo" as a single field under various key names.
+    # Also handles GitHub URLs like https://github.com/owner/repo
     if not owner or not repo:
-        raise ValueError("Missing 'owner' or 'repo' in GitHub tool inputs")
+        for key in ("repo_full_name", "full_name", "repository", "repo_name"):
+            val = inputs.get(key, "")
+            if val and "/" in str(val):
+                # Strip any leading URL prefix e.g. https://github.com/owner/repo
+                slug = str(val).split("github.com/")[-1].strip("/")
+                parts = slug.split("/")
+                if len(parts) >= 2:
+                    owner, repo = parts[0], parts[1]
+                    break
+
+    if not owner or not repo:
+        raise ValueError(
+            f"Missing 'owner' and 'repo' in GitHub tool inputs. "
+            f"Received: {list(inputs.keys())}"
+        )
 
     if action == "get_repository":
         return await get_repository(owner, repo)

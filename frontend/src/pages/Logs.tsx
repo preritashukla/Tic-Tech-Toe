@@ -4,7 +4,7 @@ import { Terminal } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api'; // Proxied through Vite → localhost:8000
 
 interface LogEntry {
   level: string;

@@ -23,6 +23,11 @@ from agentic_mcp_gateway.mock_mcp_servers import dispatch_mcp_call
 
 app = FastAPI(title="Workflow Maestro API")
 
+@app.get("/health")
+async def health_check():
+    """Liveness probe — frontend polls this to confirm backend is ready."""
+    return {"status": "ok"}
+
 # Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
