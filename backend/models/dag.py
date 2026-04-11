@@ -21,15 +21,28 @@ class RetryConfig(BaseModel):
     timeout: int = Field(default=10, ge=1, description="Per-attempt timeout in seconds")
 
 
-# ─── Valid Tools & Actions (aligned with Prerita's prompt) ──────────
+# ─── Valid Tools & Actions ───────────────────────────────────────────
 VALID_TOOLS: dict[str, set[str]] = {
     "jira":    {"get_issue", "create_issue", "update_issue"},
-    "github":  {"create_branch", "create_pr", "merge_pr"},
+    "github":  {
+        "get_repository", "list_branches", "create_branch", "get_branch",
+        "list_issues", "get_issue", "create_issue", "add_issue_comment",
+        "update_issue", "create_pull_request", "list_pull_requests", 
+        "get_pull_request", "merge_pull_request", "add_labels",
+        "get_file_content", "create_or_update_file", "list_commits", "create_release"
+    },
     "slack":   {"send_message", "create_channel"},
     "sheets":  {"read_row", "update_row", "append_row"},
-    # MCP-suffixed versions (from Grishma's executor)
-    "jira_mcp":    {"create_ticket", "get_issue", "update_issue"},
-    "github_mcp":  {"create_branch", "create_pr", "merge_pr", "link_issue"},
+    # MCP-suffixed versions
+    "jira_mcp":    {"create_ticket", "get_issue", "update_issue", "create_issue"},
+    "github_mcp":  {
+        "get_repository", "list_branches", "create_branch", "get_branch",
+        "list_issues", "get_issue", "create_issue", "add_issue_comment",
+        "update_issue", "create_pull_request", "list_pull_requests", 
+        "get_pull_request", "merge_pull_request", "add_labels",
+        "get_file_content", "create_or_update_file", "list_commits", "create_release",
+        "link_issue"
+    },
     "slack_mcp":   {"send_message", "create_channel", "post_message"},
     "sheets_mcp":  {"read_row", "update_row", "append_row"},
 }

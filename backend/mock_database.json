@@ -428,5 +428,99 @@
     "payload_received": {
       "pr_id": "{{node_6.params.pr_id}}"
     }
+  },
+  {
+    "timestamp": "2026-04-11T11:21:15.586162",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "octocat",
+      "repo": "my-project"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:21:19.532018",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "octocat",
+      "repo": "hello-world"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:34:45.549722",
+    "tool": "github_mcp",
+    "action": "create_issue",
+    "payload_received": {
+      "owner": "itejas29",
+      "repo": "itejas29",
+      "title": "Hackathon Test",
+      "body": "Testing Agentic Gateway"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:34:48.900172",
+    "tool": "github_mcp",
+    "action": "create_issue",
+    "payload_received": {
+      "owner": "itejas29",
+      "repo": "itejas29",
+      "title": "Hackathon Test",
+      "body": "Testing Agentic Gateway",
+      "auth": true
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:34:53.092459",
+    "tool": "github_mcp",
+    "action": "create_issue",
+    "payload_received": {
+      "owner": "itejas29",
+      "repo": "itejas29",
+      "title": "Hackathon Test",
+      "body": "Testing Agentic Gateway",
+      "auth": true,
+      "username": "your-github-username",
+      "password": "your-github-password"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:35:13.891290",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "octocat",
+      "repo": "my-project"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:35:17.276415",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "octocat",
+      "repo": "my-project",
+      "username": "your-username",
+      "password": "your-password"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:35:21.366651",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "octocat",
+      "repo": "my-project",
+      "token": "your-github-personal-access-token"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T11:39:37.095974",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
   }
 ]
