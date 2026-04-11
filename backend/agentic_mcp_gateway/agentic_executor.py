@@ -71,7 +71,25 @@ import urllib.request
 import urllib.error
 
 async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_output: Dict[str, Any] = None) -> Dict[str, Any]:
-    """If true MCP servers are up, hit them natively! Otherwise fallback to mock JSON payload."""
+    """If true MCP servers are up, hit them natively! Otherwise fallback to live integrations or mock JSON."""
+    
+    # 1. Check for Live Slack Integration (overriding the mock)
+    if tool in ["slack", "slack_mcp"]:
+        try:
+            from services.integrations.slack_integration import execute_slack
+            # execute_slack takes (action, params, context)
+            result = await execute_slack(action, inputs, {})
+            if result.get("status") == "success":
+                return result.get("output", {})
+            else:
+                raise Exception(result.get("error", "Unknown Slack error"))
+        except ImportError:
+            log_event("WARNING", "Slack live integration module not found, falling back to mock", "33")
+        except Exception as e:
+            log_event("ERROR", f"Slack execution failed: {e}", "31")
+            raise e
+
+    # 2. Check for real MCP server containers
     if tool in TOOL_PORT_MAP:
         port = TOOL_PORT_MAP[tool]
         # Route to exact docker container endpoints
@@ -140,18 +158,22 @@ class DAGExecutor:
             visit(n_id)
 
     def _resolve_templates(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Resolve templated variables {{task_id.output.field}} via regex."""
+        """Resolve templated variables {{task_id.output.field}} via regex, supporting nested keys."""
         resolved = {}
         pattern = re.compile(r"\{\{([^.]+)\.output\.([^}]+)\}\}")
         
         def interpolator(match):
-            ref_task, field = match.groups()
+            ref_task, field_path = match.groups()
             if ref_task not in self.completed:
                 raise ValueError(f"Missing dependency payload for {ref_task}")
             
-            val = self.nodes[ref_task].output.get(field)
-            if val is None:
-                raise ValueError(f"Field '{field}' missing from {ref_task} output")
+            # Navigate nested dictionary (e.g., "channel.id")
+            val = self.nodes[ref_task].output
+            for part in field_path.split('.'):
+                if isinstance(val, dict) and part in val:
+                    val = val[part]
+                else:
+                    raise ValueError(f"Field path '{field_path}' missing from {ref_task} output at '{part}'")
             return str(val)
 
         for key, value in payload.items():

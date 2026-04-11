@@ -20,8 +20,8 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-# Add Grishma's module to path
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "agentic_mcp_gateway"))
+# Add Grishma's module to path at the end to avoid shadowing root packages (like models/)
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "agentic_mcp_gateway"))
 
 from models.dag import WorkflowDAG, DAGNode
 from models.execution import (
@@ -277,7 +277,17 @@ class ExecutionBridge:
                 if random.random() < 0.10 and attempt < node.retry.max_attempts:
                     raise ConnectionError(f"{node.tool}.{node.action}: transient 502")
 
-                output = _mock_tool_output(node.tool, node.action, resolved_params)
+                if node.tool == "slack":
+                    from services.integrations.slack_integration import execute_slack
+                    # Convert ContextManager to dict if necessary, or just pass it - the execute_slack function
+                    # currently uses context parameter but doesn't strictly need it to be a dict if it ignores it
+                    # but we'll try to pass dict representation or just None since context is already resolved anyway.
+                    result = await execute_slack(node.action, resolved_params, getattr(self.context, '__dict__', {}))
+                    if result.get("status") == "error":
+                        raise Exception(result.get("error"))
+                    output = result.get("output", {})
+                else:
+                    output = _mock_tool_output(node.tool, node.action, resolved_params)
                 elapsed = (time.time() - start) * 1000
 
                 self.context.store(node_id, output)
@@ -361,8 +371,7 @@ def _mock_tool_output(tool: str, action: str, params: dict) -> dict:
         ("github", "create_branch"): {"branch_name": params.get("branch_name", f"fix/{rand}"), "branch_url": f"https://github.com/org/repo/tree/fix/{rand}"},
         ("github", "create_pr"):     {"pr_number": int(rand), "pr_url": f"https://github.com/org/repo/pull/{rand}"},
         ("github", "merge_pr"):      {"merged": True, "sha": f"a1b2c3{rand}"},
-        ("slack", "send_message"):   {"delivered": True, "timestamp": "1684562000.123", "channel": params.get("channel", "#general")},
-        ("slack", "create_channel"): {"channel_id": f"C0{rand}", "channel_name": params.get("name", "new-channel")},
+
         ("sheets", "read_row"):      {"data": {"col_a": "value1", "col_b": "value2"}},
         ("sheets", "update_row"):    {"success": True, "row_updated": random.randint(1, 100)},
         ("sheets", "append_row"):    {"success": True, "row_id": random.randint(40, 100)},
