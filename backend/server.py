@@ -60,9 +60,12 @@ async def plan_workflow(req: PlanRequest):
     
     # Generate an ID if one isn't provided by the prompt engine
     import uuid
-    wf_id = raw_dag_json.get("workflow_name", f"wf-{uuid.uuid4().hex[:8]}")
-    title = req.input
+    wf_id = raw_dag_json.get("workflow_id", f"wf-{uuid.uuid4().hex[:8]}")
+    title = raw_dag_json.get("title", raw_dag_json.get("name", req.input))
     raw_dag_json["workflow_id"] = wf_id
+    # Ensure workflow_name exists for dag_from_dict
+    if "workflow_name" not in raw_dag_json:
+        raw_dag_json["workflow_name"] = title
 
     # 2. Parse DAG into python objects
     if "error" in raw_dag_json:

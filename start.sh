@@ -38,7 +38,7 @@ fi
 echo ""
 echo "🚀 Starting backend on http://localhost:$BACKEND_PORT ..."
 cd "$PROJECT_ROOT/backend"
-python server.py &
+python main.py > backend.log 2>&1 &
 BACKEND_PID=$!
 
 # ── Wait for backend to be healthy ───────────────────────────────────────────

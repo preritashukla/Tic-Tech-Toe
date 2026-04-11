@@ -11,8 +11,8 @@ from prompts.system_prompt import SYSTEM_PROMPT
 
 def validate_dag(dag: dict) -> list[str]:
     errors = []
-    if "workflow_name" not in dag and "name" not in dag:
-        errors.append("Missing 'workflow_name' or 'name'")
+    if "workflow_name" not in dag and "name" not in dag and "title" not in dag:
+        errors.append("Missing 'workflow_name', 'name', or 'title'")
     
     steps = dag.get("steps") or dag.get("nodes")
     if not isinstance(steps, list):

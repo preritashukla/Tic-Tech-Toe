@@ -1623,5 +1623,176 @@
       "channel": "general",
       "message": "Hello from the workflow system"
     }
+  },
+  {
+    "timestamp": "2026-04-11T16:45:02.403877",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "sha": "HEAD",
+      "per_page": 10
+    }
+  },
+  {
+    "timestamp": "2026-04-11T16:45:04.443688",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Commits: 666bd9701f6f60f43dcb131c59a5f98a8552eed7, feat: update frontend UI with ThemeToggle, sheets mock, and database mock, 2026-04-11T11:13:19Z"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T16:45:07.707263",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Latest commits: Commits: 666bd9701f6f60f43dcb131c59a5f98a8552eed7, feat: update frontend UI with ThemeToggle, sheets mock, and database mock, 2026-04-11T11:13:19Z"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:44:00.787873",
+    "tool": "github",
+    "action": "list_commits",
+    "payload_received": {
+      "repo_name": "your-username/your-repo-name"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:44:53.082885",
+    "tool": "github",
+    "action": "get_repo",
+    "payload_received": {
+      "repo_name": "<insert repository name>",
+      "owner_name": "<insert owner name>"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:44:54.602019",
+    "tool": "github",
+    "action": "list_commits",
+    "payload_received": {
+      "repo_url": "[missing output.repo_url]"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:44:56.109338",
+    "tool": "github",
+    "action": "get_commit",
+    "payload_received": {
+      "repo_url": "[missing output.repo_url]",
+      "commit_id": "[missing output.committed_by]"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:44:56.113817",
+    "tool": "slack",
+    "action": "send_message",
+    "payload_received": {
+      "message": "Latest Commits:\n[missing output.commits]",
+      "channel": "#general"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:46:44.408471",
+    "tool": "jira",
+    "action": "get_issue",
+    "payload_received": {
+      "issue_key": "[user_input not run]",
+      "fields": [
+        "summary",
+        "description"
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:46:45.917056",
+    "tool": "github",
+    "action": "create_branch",
+    "payload_received": {
+      "repo": "{{node_1.output.repo}",
+      "branch_name": "critical_bug/[missing output.issue_key]",
+      "message": "[missing output.issue_key]: [missing output.summary]"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:46:45.919983",
+    "tool": "slack",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "#critical-bugs",
+      "text": "Critical bug filed: [missing output.issue_key]: [missing output.summary]\n[missing output.description]",
+      "attachments": []
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:47:06.421522",
+    "tool": "jira",
+    "action": "get_issue",
+    "payload_received": {
+      "issue_type": "critical"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:47:07.929338",
+    "tool": "github",
+    "action": "create_branch",
+    "payload_received": {
+      "branch_name": "fix/[missing output.issue_id]"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:47:07.941160",
+    "tool": "slack",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "#critical-bugs",
+      "message": "[missing output.issue_summary] "
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:47:32.369023",
+    "tool": "slack",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "#general",
+      "message": "Hello from workflow"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T17:54:01.788252",
+    "tool": "slack",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "#general",
+      "message": "Hello from your workflow system"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T18:12:47.866521",
+    "tool": "slack",
+    "action": "send_message",
+    "payload_received": {
+      "channel_id": "#general",
+      "message": "Hello World"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T18:15:09.271858",
+    "tool": "jira",
+    "action": "get_issues",
+    "payload_received": {
+      "issue_type": "bug"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T18:15:09.278798",
+    "tool": "github",
+    "action": "list_commits",
+    "payload_received": {
+      "repo_name": "[user_input not run]"
+    }
   }
 ]

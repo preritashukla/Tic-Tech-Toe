@@ -70,32 +70,99 @@ TOOL_PORT_MAP = {
 import urllib.request
 import urllib.error
 
-async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_output: Dict[str, Any] = None) -> Dict[str, Any]:
-    """If true MCP servers are up, hit them natively! Otherwise fallback to live integrations or mock JSON."""
+async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentials: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Acts as the router hitting the various MCP Servers or local service integrations.
+    Uses provided credentials first, falling back to environment variables.
+    """
+    log_event("DISPATCH", f"{tool}.{action}", "35")
     
-    # 1. Check for Live Slack Integration (overriding the mock)
-    if tool in ["slack", "slack_mcp"]:
+    # Extract tool-specific credentials if available
+    tool_creds = (credentials or {}).get(tool.split('_')[0], {})
+    if isinstance(tool_creds, str):
         try:
+            tool_creds = json.loads(tool_creds)
+        except:
+            tool_creds = {"token": tool_creds}
+
+    # 1. GitHub Integration
+    if tool in ["github", "github_mcp"]:
+        try:
+            import os
+            # Apply dynamic token if provided
+            github_token = tool_creds.get("password") or tool_creds.get("token")
+            if github_token:
+                os.environ["GITHUB_TOKEN"] = github_token
+
+            from .github_mcp import handle_github_tool
+            return await handle_github_tool(action, inputs)
+        except Exception as e:
+            log_event("ERROR", f"GitHub failed: {e}", "31")
+            raise e
+
+    # 2. Jira Integration
+    elif tool in ["jira", "jira_mcp"]:
+        try:
+            import os
+            # Apply dynamic credentials if provided
+            jira_email = tool_creds.get("email")
+            jira_token = tool_creds.get("password") or tool_creds.get("token")
+            jira_domain = tool_creds.get("domain")
+            
+            if jira_email: os.environ["JIRA_EMAIL"] = jira_email
+            if jira_token: os.environ["JIRA_API_TOKEN"] = jira_token
+            if jira_domain: os.environ["JIRA_DOMAIN"] = jira_domain
+
+            from services.integrations.jira_integration import execute_jira
+            result = await execute_jira(action, inputs)
+            if result.get("status") == "success":
+                return result.get("output", {})
+            else:
+                raise Exception(result.get("error", "Unknown Jira error"))
+        except Exception as e:
+            log_event("ERROR", f"Jira failed: {e}", "31")
+            raise e
+
+    # 3. Slack Integration
+    elif tool in ["slack", "slack_mcp"]:
+        try:
+            import os
+            slack_token = tool_creds.get("password") or tool_creds.get("token")
+            if slack_token:
+                os.environ["SLACK_BOT_TOKEN"] = slack_token
+
             from services.integrations.slack_integration import execute_slack
-            # execute_slack takes (action, params, context)
             result = await execute_slack(action, inputs, {})
             if result.get("status") == "success":
                 return result.get("output", {})
             else:
                 raise Exception(result.get("error", "Unknown Slack error"))
-        except ImportError:
-            log_event("WARNING", "Slack live integration module not found, falling back to mock", "33")
         except Exception as e:
-            log_event("ERROR", f"Slack execution failed: {e}", "31")
+            log_event("ERROR", f"Slack failed: {e}", "31")
             raise e
 
-    # 2. Check for real MCP server containers
+    # 4. Google Sheets Integration
+    elif tool in ["sheets", "sheets_mcp", "sheet"]:
+        try:
+            import os
+            sheets_creds = tool_creds.get("token") # Often a JSON string
+            if sheets_creds:
+                os.environ["GOOGLE_SHEETS_CREDENTIALS_JSON"] = sheets_creds
+
+            from services.integrations.sheets_integration import execute_sheets
+            result = await execute_sheets(action, inputs, {})
+            if result.get("status") == "success":
+                return result.get("output", {})
+            else:
+                raise Exception(result.get("error", "Unknown Sheets error"))
+        except Exception as e:
+            log_event("ERROR", f"Sheets failed: {e}", "31")
+            raise e
+
+    # 5. Check for real MCP server containers (Legacy support)
     if tool in TOOL_PORT_MAP:
         port = TOOL_PORT_MAP[tool]
-        # Route to exact docker container endpoints
         url = f"http://localhost:{port}/{action}"
-        
-        # Token mapping for the respective MCP servers
         auth_header = f"{tool.split('_')[0]}_token" 
         
         def _make_req():
@@ -104,26 +171,22 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
                 data=json.dumps(inputs).encode('utf-8'), 
                 headers={'Content-Type': 'application/json', 'Authorization': auth_header}
             )
-            try:
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    return json.loads(resp.read().decode('utf-8'))
-            except Exception as e:
-                raise ConnectionError(f"Real MCP container at {port} unreachable: {e}")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return json.loads(resp.read().decode('utf-8'))
                 
         try:
             return await asyncio.to_thread(_make_req)
-        except ConnectionError as e:
-            # Container isn't up, just fallback gracefully to the JSON dict mock!
-            log_event("FALLBACK", f"{tool} HTTP failed - routing to mock payload", "90")
-            
-    await asyncio.sleep(0.5) 
-    return mock_output or {"status": "ok"}
+        except Exception as e:
+            raise ConnectionError(f"Protocol error: MCP container {tool} at {port} unreachable: {e}")
+
+    raise ValueError(f"No integration found for tool: {tool}")
 
 
 # --- Core Executor Engine ---
 
 class DAGExecutor:
-    def __init__(self, dag_json: Dict[str, Any]):
+    def __init__(self, dag_json: Dict[str, Any], credentials: Dict[str, Any] = None):
+        self.credentials = credentials or {}
         self.nodes: Dict[str, Node] = {}
         for n in dag_json["nodes"]:
             if n["id"] in self.nodes:
@@ -132,6 +195,7 @@ class DAGExecutor:
             
         self.completed: Set[str] = set()
         self.failed: Set[str] = set()
+        self.execution_id = f"exec-{int(time.time())}"
         
         self._validate_dag()
 
@@ -191,10 +255,10 @@ class DAGExecutor:
             node.attempts += 1
             try:
                 # Prepare generic mock output if provided in DAG
-                dynamic_mock = self._resolve_templates(node.mock_output) if node.mock_output else None
+                # (Note: we use credentials=self.credentials instead of mock_output)
                 # Enforce timeout boundary
                 return await asyncio.wait_for(
-                    dispatch_mcp(node.tool, node.action, inputs, dynamic_mock),
+                    dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials),
                     timeout=node.timeout
                 )
             except Exception as e:

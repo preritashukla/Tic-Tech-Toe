@@ -90,10 +90,12 @@ class ExecutionBridge:
         dag: WorkflowDAG,
         auto_approve: bool = True,
         dry_run: bool = False,
+        credentials: Optional[dict] = None
     ):
         self.dag = dag
         self.auto_approve = auto_approve
         self.dry_run = dry_run
+        self.credentials = credentials or {}
 
         # Shivam's context manager — template resolution + state
         self.context = ContextManager(
@@ -170,7 +172,7 @@ class ExecutionBridge:
         dag_dict = _convert_dag_for_grishma(self.dag)
         logger.info(f"[{exec_id}] Using Grishma's DAGExecutor ({len(dag_dict['nodes'])} nodes)")
 
-        executor = GrishmaExecutor(dag_dict)
+        executor = GrishmaExecutor(dag_dict, credentials=self.credentials)
         await executor.run()
 
         # Collect results from Grishma's executor nodes
@@ -277,23 +279,27 @@ class ExecutionBridge:
                 if random.random() < 0.10 and attempt < node.retry.max_attempts:
                     raise ConnectionError(f"{node.tool}.{node.action}: transient 502")
 
-<<<<<<< HEAD
                 if node.tool == "slack":
                     from services.integrations.slack_integration import execute_slack
-                    # Convert ContextManager to dict if necessary, or just pass it - the execute_slack function
-                    # currently uses context parameter but doesn't strictly need it to be a dict if it ignores it
-                    # but we'll try to pass dict representation or just None since context is already resolved anyway.
                     result = await execute_slack(node.action, resolved_params, getattr(self.context, '__dict__', {}))
                     if result.get("status") == "error":
                         raise Exception(result.get("error"))
                     output = result.get("output", {})
-=======
-                if node.tool == "sheets":
+                elif node.tool == "sheets":
                     from services.integrations.sheets_integration import execute_sheets
-                    output = await execute_sheets(node.action, resolved_params, self.context.get_all())
->>>>>>> 666bd9701f6f60f43dcb131c59a5f98a8552eed7
+                    result = await execute_sheets(node.action, resolved_params, getattr(self.context, '__dict__', {}))
+                    if result.get("status") == "error":
+                        raise Exception(result.get("error"))
+                    output = result.get("output", {})
+                elif node.tool == "github":
+                    # For GitHub, import the real github_mcp handler and use it natively
+                    import sys
+                    from agentic_mcp_gateway.github_mcp import handle_github_tool
+                    # handle_github_tool doesn't use standard status/output wrapping, it just returns data
+                    output = await handle_github_tool(node.action, resolved_params)
                 else:
                     output = _mock_tool_output(node.tool, node.action, resolved_params)
+                
                 elapsed = (time.time() - start) * 1000
 
                 self.context.store(node_id, output)
@@ -377,15 +383,11 @@ def _mock_tool_output(tool: str, action: str, params: dict) -> dict:
         ("github", "create_branch"): {"branch_name": params.get("branch_name", f"fix/{rand}"), "branch_url": f"https://github.com/org/repo/tree/fix/{rand}"},
         ("github", "create_pr"):     {"pr_number": int(rand), "pr_url": f"https://github.com/org/repo/pull/{rand}"},
         ("github", "merge_pr"):      {"merged": True, "sha": f"a1b2c3{rand}"},
-<<<<<<< HEAD
 
         ("sheets", "read_row"):      {"data": {"col_a": "value1", "col_b": "value2"}},
         ("sheets", "update_row"):    {"success": True, "row_updated": random.randint(1, 100)},
         ("sheets", "append_row"):    {"success": True, "row_id": random.randint(40, 100)},
-=======
         ("slack", "send_message"):   {"delivered": True, "timestamp": "1684562000.123", "channel": params.get("channel", "#general")},
         ("slack", "create_channel"): {"channel_id": f"C0{rand}", "channel_name": params.get("name", "new-channel")},
-        # sheets replaced by live integration in _execute_fallback_node
->>>>>>> 666bd9701f6f60f43dcb131c59a5f98a8552eed7
     }
     return mocks.get((tool, action), {"status": "ok", "action": action})

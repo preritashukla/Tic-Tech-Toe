@@ -175,6 +175,34 @@ async def get_execution_status(id: str):
         "skipped": execution.skipped,
         "timestamp": execution.start_time
     }
+@app.get("/active-workflows", tags=["Execution"])
+async def list_active_workflows():
+    """List all current and past executions in the store."""
+    store = get_execution_store()
+    executions = store.get_all()
+    
+    return {
+        "workflows": [
+            {
+                "workflow_id": e.execution_id,
+                "status": e.status.value,
+                "title": e.dag.workflow_name if e.dag else "Unnamed Workflow",
+                "created_at": e.start_time,
+                "nodes": [
+                    {
+                        "id": r.node_id,
+                        "status": r.status.value,
+                        "tool": r.tool,
+                        "action": r.action
+                    }
+                    for r in e.node_results.values()
+                ]
+            }
+            for e in executions.values()
+        ]
+    }
+
+
 # ─── Audit Endpoints ──────────────────────────────────────────────
 @app.get("/audit/logs", tags=["Audit"])
 async def get_audit_logs(
