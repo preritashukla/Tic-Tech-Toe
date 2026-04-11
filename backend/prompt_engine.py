@@ -67,12 +67,12 @@ def extract_json(text: str) -> str:
     return text.strip()
 
 def generate_dag(user_input: str, retries: int = 2) -> dict:
-    client = Groq()  # reads GROQ_API_KEY from env
     last_error = None
 
     for attempt in range(1, retries + 2):
         try:
             print(f"[Attempt {attempt}] Calling Groq API...")
+            client = Groq()  # reads GROQ_API_KEY from env
 
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",  # best Llama on Groq
@@ -112,6 +112,33 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
         "error": last_error,
         "nodes": []
     }
+
+def generate_recovery_params(tool: str, action: str, failed_inputs: dict, error_message: str, original_prompt: str) -> dict:
+    system_prompt = f"""You are a recovery agent. A workflow node previously executed '{tool}.{action}'.
+The original goal was: "{original_prompt}"
+The execution failed with error: "{error_message}"
+The parameters used were: {json.dumps(failed_inputs)}
+
+Your job is to generate a fixed JSON payload of parameters for this tool and action so it succeeds.
+Rules:
+1. Output ONLY a valid JSON object representing the fixed 'params'.
+2. Do not include markdown fences, explanations, or code blocks.
+3. Fix the parameters based on the error message.
+"""
+    try:
+        client = Groq()
+        print(f"[Self-Healing] Attempting to heal node {tool}.{action} after failure...")
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=512,
+            messages=[{"role": "system", "content": system_prompt}]
+        )
+        raw = response.choices[0].message.content
+        clean = extract_json(raw)
+        return json.loads(clean)
+    except Exception as e:
+        print(f"[Self-Healing] Failed to generate recovery params: {e}")
+        return failed_inputs # fallback to original
 
 TEST_CASES = [
     "Critical bug filed in Jira -> Create GitHub branch -> Notify Slack -> Update incident tracker",

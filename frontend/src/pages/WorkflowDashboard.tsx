@@ -8,7 +8,7 @@ import Layout from '@/components/Layout';
 import DAGViewer from '@/components/DAGViewer';
 import AuditLog from '@/components/AuditLog';
 import HITLModal from '@/components/HITLModal';
-import { getWorkflowStatus, approveNode } from '@/lib/api';
+import { getWorkflowStatus, approveNode, WS_BASE } from '@/lib/api';
 import type { WorkflowNode, WorkflowStatus } from '@/lib/types';
 
 const WorkflowDashboard = () => {
@@ -31,12 +31,38 @@ const WorkflowDashboard = () => {
     }
   }, [id]);
 
-  // Poll every 2 seconds
+  // Connect to WebSocket for real-time updates
   useEffect(() => {
+    if (!id) return;
+    
+    // Initial fetch
     fetchStatus();
-    const interval = setInterval(fetchStatus, 2000);
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
+
+    const ws = new WebSocket(`${WS_BASE}/ws/status/${id}`);
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setStatus(data);
+        setError(null);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to parse websocket message', err);
+      }
+    };
+    
+    ws.onerror = (err) => {
+      console.error('WebSocket error', err);
+      // Fallback to polling if WS fails
+      const interval = setInterval(fetchStatus, 2000);
+      ws.close();
+      return () => clearInterval(interval);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [id, fetchStatus]);
 
   const approvalNode: WorkflowNode | null =
     status?.nodes.find((n) => n.status === 'waiting_approval') ?? null;

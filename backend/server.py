@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
@@ -8,6 +8,7 @@ import os
 
 # Adjust path so we can import from agentic_mcp_gateway and prompt_engine
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "agentic_mcp_gateway"))
 
 from prompt_engine import generate_dag as llm_generate_dag
 from agentic_mcp_gateway.models import dag_from_dict, TaskStatus
@@ -68,7 +69,8 @@ async def plan_workflow(req: PlanRequest):
         dag=dag,
         mcp_dispatcher=dispatch_mcp_call,
         hitl=hitl,
-        logger=logger
+        logger=logger,
+        original_prompt=req.input
     )
 
     # 4. Store in memory
@@ -148,6 +150,59 @@ async def approve_node(req: ApproveRequest):
         raise HTTPException(status_code=400, detail="Node is not pending approval")
         
     return {"status": "ok", "message": f"Approval ({req.approved}) registered for {req.node_id}"}
+
+
+@app.websocket("/ws/status/{id}")
+async def websocket_status(websocket: WebSocket, id: str):
+    await websocket.accept()
+    if id not in ACTIVE_WORKFLOWS:
+        await websocket.close(code=1008)
+        return
+        
+    try:
+        while True:
+            # Reusing the existing generic status generator format
+            wf = ACTIVE_WORKFLOWS[id]
+            dag = wf["dag_obj"]
+            nodes_out = []
+            edges_out = []
+
+            for node in dag.nodes.values():
+                raw_status = node.status.value.lower()
+                if raw_status == 'waiting approval':
+                    raw_status = 'waiting_approval'
+
+                tool_name = "generic"
+                if "jira" in str(node.tool).lower(): tool_name = "jira"
+                if "github" in str(node.tool).lower(): tool_name = "github"
+                if "slack" in str(node.tool).lower(): tool_name = "slack"
+                if "sheet" in str(node.tool).lower(): tool_name = "sheets"
+
+                nodes_out.append({
+                    "id": node.id,
+                    "title": node.name or node.action,
+                    "description": f"Tool: {node.tool} Action: {node.action}",
+                    "status": raw_status,
+                    "tool": tool_name,
+                    "inputs": node.inputs,
+                    "outputs": node.output
+                })
+
+                for dep in getattr(node, 'depends_on', []):
+                    edges_out.append({"source": dep, "target": node.id})
+
+            payload = {
+                "workflow_id": id,
+                "title": wf.get("title", id),
+                "nodes": nodes_out,
+                "edges": edges_out
+            }
+            
+            await websocket.send_json(payload)
+            await asyncio.sleep(0.5) # Send updates every 500ms for smooth real-time UI UI
+            
+    except WebSocketDisconnect:
+        pass
 
 if __name__ == "__main__":
     import uvicorn

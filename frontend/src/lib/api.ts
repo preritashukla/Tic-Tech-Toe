@@ -6,6 +6,7 @@ import { getMockWorkflowStatus, getRandomWorkflowId, resetSimulation } from './m
 // When true, the app works fully standalone with simulated real-time execution.
 
 const API_BASE = 'http://localhost:8000';
+export const WS_BASE = 'ws://localhost:8000';
 const USE_MOCK = false;
 
 // ─── API Functions ───────────────────────────────────────────────────────────
