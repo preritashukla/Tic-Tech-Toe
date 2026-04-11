@@ -74,8 +74,25 @@ class DAGNode(BaseModel):
     @field_validator("action")
     @classmethod
     def validate_action(cls, v: str, info) -> str:
-        # We validate action against tool in model_validator instead
-        return v
+        # Transparently map common LLM hallucinations and aliases to the canonical actions
+        aliases = {
+            "post_message": "send_message",
+            "notify": "send_message",
+            "send": "send_message",
+            "get_ticket": "get_issue",
+            "get_issues": "get_issue",
+            "get_tickets": "get_issue",
+            "create_ticket": "create_issue",
+            "update_ticket": "update_issue",
+            "get_repo": "get_repository",
+            "get_commits": "list_commits",
+            "create_pr": "create_pull_request",
+            "merge_pr": "merge_pull_request",
+            "write_row": "append_row",
+            "add_row": "append_row",
+            "log_row": "append_row",
+        }
+        return aliases.get(v, v)
 
     @model_validator(mode="after")
     def validate_tool_action_pair(self) -> "DAGNode":

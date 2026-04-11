@@ -12,8 +12,8 @@ const TOOLS = [
     description: 'Code repository & branch management',
     icon: '🐙',
     fields: [
-      { key: 'username', label: 'GitHub Username', placeholder: 'your-username', type: 'text' },
-      { key: 'password', label: 'Personal Access Token', placeholder: 'ghp_xxxxxxxxxxxx', type: 'password' },
+      { key: 'username', label: 'GitHub Username', placeholder: 'your-username (optional — uses .env)', type: 'text' },
+      { key: 'password', label: 'Personal Access Token', placeholder: 'ghp_xxxxxxxxxxxx (optional — uses .env)', type: 'password' },
     ],
   },
   {
@@ -22,9 +22,9 @@ const TOOLS = [
     description: 'Issue tracking & project management',
     icon: '📋',
     fields: [
-      { key: 'domain', label: 'Jira Workspace URL', placeholder: 'team.atlassian.net', type: 'text' },
-      { key: 'email', label: 'Atlassian Email', placeholder: 'you@yourteam.com', type: 'email' },
-      { key: 'password', label: 'Account Password', placeholder: '••••••••', type: 'password' },
+      { key: 'domain', label: 'Jira Workspace URL', placeholder: 'team.atlassian.net (optional — uses .env)', type: 'text' },
+      { key: 'email', label: 'Atlassian Email', placeholder: 'you@yourteam.com (optional — uses .env)', type: 'email' },
+      { key: 'password', label: 'API Token', placeholder: 'ATATT3x... (optional — uses .env)', type: 'password' },
     ],
   },
   {
@@ -33,8 +33,7 @@ const TOOLS = [
     description: 'Team communication & notifications',
     icon: '💬',
     fields: [
-      { key: 'email', label: 'Slack Email', placeholder: 'you@yourworkspace.com', type: 'email' },
-      { key: 'password', label: 'Account Password', placeholder: 'Demo pass: admin123', type: 'password' },
+      { key: 'token', label: 'Bot Token', placeholder: 'xoxb-... (optional — uses .env)', type: 'password' },
     ],
   },
   {
@@ -43,20 +42,20 @@ const TOOLS = [
     description: 'Automated reporting & logging',
     icon: '📊',
     fields: [
-      { key: 'email', label: 'Google Account Email', placeholder: 'you@gmail.com', type: 'email' },
-      { key: 'password', label: 'Account Password', placeholder: 'Demo pass: admin123', type: 'password' },
+      { key: 'sheet_id', label: 'Spreadsheet ID', placeholder: '(optional — uses .env)', type: 'text' },
     ],
   },
 ];
 
 const ConnectTools = () => {
   const navigate = useNavigate();
-  const { tools, allConnected } = useTools();
+  const { tools, allConnected, refreshFromBackend } = useTools();
   const { user } = useAuth();
 
   const connectedCount = Object.values(tools).filter(t => t.status === 'connected').length;
   const total = TOOLS.length;
   const progressPct = Math.round((connectedCount / total) * 100);
+  const isLoading = Object.values(tools).some(t => t.status === 'connecting');
 
   return (
     <div style={{
@@ -104,8 +103,9 @@ const ConnectTools = () => {
             style={{ textAlign: "center", marginBottom: 28 }}
           >
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px" }}>Connect Your Tools</h1>
-            <p style={{ color: "#7d8590", fontSize: 14, margin: 0, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}>
-              Connect once — automate everything. Your credentials are stored locally and never sent to our servers.
+            <p style={{ color: "#7d8590", fontSize: 14, margin: 0, maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>
+              Pre-configured integrations are verified automatically from your server environment.
+              You can also enter custom credentials below to override them.
             </p>
           </motion.div>
 
@@ -114,11 +114,27 @@ const ConnectTools = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
-            style={{ marginBottom: 24 }}
+            style={{ marginBottom: 20 }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: "#7d8590" }}>{connectedCount} of {total} tools connected</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{progressPct}%</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{progressPct}%</span>
+                <button
+                  onClick={refreshFromBackend}
+                  disabled={isLoading}
+                  style={{
+                    background: "none", border: "1px solid #30363d", borderRadius: 6,
+                    color: "#7d8590", cursor: isLoading ? "default" : "pointer",
+                    fontSize: 11, padding: "3px 8px", transition: "all 0.2s",
+                    opacity: isLoading ? 0.5 : 1
+                  }}
+                  onMouseEnter={e => { if (!isLoading) e.currentTarget.style.borderColor = "#4ade80"; e.currentTarget.style.color = "#4ade80"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#30363d"; e.currentTarget.style.color = "#7d8590"; }}
+                >
+                  {isLoading ? "⏳ Verifying…" : "↺ Re-verify"}
+                </button>
+              </div>
             </div>
             <div style={{ height: 6, borderRadius: 99, background: "#21262d", overflow: "hidden" }}>
               <motion.div
@@ -128,6 +144,25 @@ const ConnectTools = () => {
                 transition={{ duration: 0.4, ease: "easeOut" }}
               />
             </div>
+          </motion.div>
+
+          {/* Pre-configured note */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            style={{
+              marginBottom: 20, padding: "10px 14px", borderRadius: 10,
+              background: "#0d3320", border: "1px solid #2ea04330",
+              fontSize: 12, color: "#4ade80", display: "flex", alignItems: "center", gap: 8
+            }}
+          >
+            <span>ℹ️</span>
+            <span style={{ color: "#7d8590" }}>
+              Integrations marked <span style={{ color: "#4ade80", fontWeight: 600 }}>Connected</span> are using
+              pre-configured credentials from the server <code style={{ background: "#0d1117", padding: "1px 5px", borderRadius: 4 }}>.env</code> file.
+              Leave fields empty to use them, or enter custom credentials to override.
+            </span>
           </motion.div>
 
           {/* Tool cards */}
@@ -143,24 +178,6 @@ const ConnectTools = () => {
               </motion.div>
             ))}
           </div>
-
-          {/* Info */}
-          {!allConnected && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              style={{
-                marginTop: 16, display: "flex", alignItems: "center", gap: 8,
-                padding: "12px 16px", borderRadius: 12,
-                border: "1px solid #21262d", background: "#161b22",
-                fontSize: 12, color: "#7d8590"
-              }}
-            >
-              <span style={{ color: "#4ade80", fontWeight: 600 }}>ℹ️</span>
-              Connect all tools to unlock the full dashboard. Partial connections are saved automatically.
-            </motion.div>
-          )}
         </div>
       </div>
 
@@ -178,21 +195,19 @@ const ConnectTools = () => {
           >Skip for now</button>
           <button
             onClick={() => navigate('/dashboard')}
-            disabled={!allConnected}
             style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "10px 22px", borderRadius: 10, border: "none",
-              background: allConnected ? "#2ea043" : "#21262d",
-              color: allConnected ? "#fff" : "#484f58",
+              background: allConnected ? "#2ea043" : "#1a7f37",
+              color: "#fff",
               fontSize: 13, fontWeight: 600,
-              cursor: allConnected ? "pointer" : "default",
+              cursor: "pointer",
               transition: "all 0.2s",
-              opacity: allConnected ? 1 : 0.5
             }}
-            onMouseEnter={e => { if (allConnected) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 0 20px rgba(46,160,67,0.3)"; }}}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 0 20px rgba(46,160,67,0.3)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
           >
-            {allConnected ? "✓ All Connected — Go to Dashboard" : "Continue →"}
+            {allConnected ? "✓ All Connected — Go to Dashboard" : "Go to Dashboard →"}
           </button>
         </div>
       </div>

@@ -11,6 +11,7 @@ export interface WorkflowNode {
   timestamp?: string;
   duration?: string;
   result?: string;
+  error?: string;
   inputs?: Record<string, string>;
   outputs?: Record<string, string>;
 }

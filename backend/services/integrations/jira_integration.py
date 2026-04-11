@@ -71,24 +71,30 @@ async def create_issue(project_key: str, summary: str, description: str = "", is
         "fields": {
             "project": {"key": project_key},
             "summary": summary,
-            "description": {
-                "type": "doc",
-                "version": 1,
-                "content": [
-                    {
-                        "type": "paragraph",
-                        "content": [{"type": "text", "text": description}]
-                    }
-                ]
-            },
             "issuetype": {"name": issue_type}
         }
     }
+    
+    if description:
+        payload["fields"]["description"] = {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": description}]
+                }
+            ]
+        }
+        
     data = await call_jira_api("POST", "/issue", data=payload)
+
     return {
         "key": data.get("key"),
         "id": data.get("id"),
-        "url": f"{get_jira_domain()}/browse/{data['key']}"
+        "issue_id": data.get("key"),  # Alias for templating consistency
+        "url": f"{get_jira_domain()}/browse/{data['key']}",
+        "summary": summary
     }
 
 async def update_issue(issue_id: str, status: Optional[str] = None, summary: Optional[str] = None) -> Dict:
@@ -112,11 +118,13 @@ async def execute_jira(action: str, params: Dict[str, Any], context: Optional[Di
             
         elif action == "create_issue" or action == "create_ticket":
             # Check for JIRA_PROJECT_KEY env if not in params
-            default_project = os.environ.get("JIRA_PROJECT_KEY", "PROJ")
-            project_key = params.get("project_key") or params.get("project") or default_project
-            summary = params.get("summary") or params.get("title") or "New Issue"
-            description = params.get("description") or ""
-            issue_type = params.get("issue_type") or "Bug"
+            default_project = os.environ.get("JIRA_PROJECT_KEY") or "PROJ"
+            project_key = params.get("project_key") or params.get("project") or params.get("projectKey") or default_project
+            summary = params.get("summary") or params.get("title") or params.get("text", "New Issue")
+            description = params.get("description") or params.get("body") or ""
+            issue_type = params.get("issue_type") or params.get("issuetype") or params.get("type") or "Task"
+            
+            logger.info(f"Creating Jira issue in project {project_key} with summary: {summary}")
             output = await create_issue(project_key, summary, description, issue_type)
             return {"status": "success", "output": output}
             

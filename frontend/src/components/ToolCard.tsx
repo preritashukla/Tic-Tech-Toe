@@ -21,10 +21,11 @@ function ToolCard({ tool, icon, label, description, fields }) {
 
   const isConnecting = status === 'connecting';
   const isConnected = status === 'connected';
-  const allFilled = fields.every(f => values[f.key]?.trim());
+  // Fields are optional — if all empty, the backend uses .env credentials
+  const allFilled = true; // Always allow connect; backend falls back to .env
 
   const handleConnect = () => {
-    if (!allFilled || isConnecting) return;
+    if (isConnecting) return;
     connect(tool, JSON.stringify(values));
   };
 

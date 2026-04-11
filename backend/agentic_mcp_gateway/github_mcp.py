@@ -5,21 +5,25 @@ from typing import Any, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 BASE_URL = "https://api.github.com"
 
 async def call_github_api(method: str, endpoint: str, data: Optional[dict] = None, params: Optional[dict] = None) -> dict:
     """Helper to call the real GitHub REST API."""
+    token = os.getenv("GITHUB_TOKEN")
     headers = {
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "Agentic-MCP-Gateway"
     }
-    if GITHUB_TOKEN:
-        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+    if token:
+        # Use 'Bearer' format which is modern and handles both Classic and Fine-grained PATs
+        headers["Authorization"] = f"Bearer {token}"
         
     async with httpx.AsyncClient() as client:
         url = f"{BASE_URL}{endpoint}"
-        response = await client.request(method, url, json=data, params=params, headers=headers)
+        try:
+            response = await client.request(method, url, json=data, params=params, headers=headers)
+        except Exception as e:
+            raise Exception(f"GitHub Connection Error: {str(e)}")
         
         if response.status_code >= 400:
             try:
@@ -49,7 +53,8 @@ async def list_branches(owner: str, repo: str, per_page: int = 30) -> dict:
         "branch_count": len(data)
     }
 
-async def create_branch(owner: str, repo: str, branch_name: str, from_branch: str) -> dict:
+async def create_branch(owner: str, repo: str, branch_name: str, from_branch: Optional[str] = "main") -> dict:
+    from_branch = from_branch or "main"
     # 1. Get SHA of from_branch
     ref_data = await call_github_api("GET", f"/repos/{owner}/{repo}/git/refs/heads/{from_branch}")
     sha = ref_data["object"]["sha"]
@@ -77,6 +82,7 @@ async def list_issues(owner: str, repo: str, state: str = "open", labels: Option
     
     result = {
         "issues_json": issues,
+        "issues": issues, # Alias for better LLM compatibility
         "issue_count": len(issues)
     }
     if issues:
@@ -221,7 +227,7 @@ async def list_commits(owner: str, repo: str, sha: Optional[str] = None, path: O
     if sha: params["sha"] = sha
     if path: params["path"] = path
     data = await call_github_api("GET", f"/repos/{owner}/{repo}/commits", params=params)
-    result = {"commit_count": len(data), "commits_json": data}
+    result = {"commit_count": len(data), "commits_json": data, "commits": data}
     if data:
         result.update({
             "latest_commit_sha": data[0]["sha"],
@@ -266,6 +272,13 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
                 if len(parts) >= 2:
                     owner, repo = parts[0], parts[1]
                     break
+    
+    # Fallback to .env GITHUB_REPO if still not found
+    if not owner or not repo:
+        env_repo = os.getenv("GITHUB_REPO")
+        if env_repo and "/" in env_repo:
+            parts = env_repo.split("/")
+            owner, repo = parts[0], parts[1]
 
     if not owner or not repo:
         raise ValueError(
@@ -278,7 +291,11 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
     elif action == "list_branches":
         return await list_branches(owner, repo, inputs.get("per_page", 30))
     elif action == "create_branch":
-        return await create_branch(owner, repo, inputs.get("branch_name"), inputs.get("from_branch"))
+        branch_name = inputs.get("branch_name") or inputs.get("name")
+        from_branch = inputs.get("from_branch") or inputs.get("base") or "main"
+        if not branch_name:
+             raise ValueError("Missing 'branch_name' for create_branch")
+        return await create_branch(owner, repo, branch_name, from_branch)
     elif action == "get_branch":
         return await get_branch(owner, repo, inputs.get("branch"))
     elif action == "list_issues":

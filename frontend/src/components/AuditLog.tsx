@@ -132,13 +132,19 @@ const AuditLog = ({ nodes, loading }: AuditLogProps) => {
                   width: 28,
                   height: 28,
                   borderRadius: '8px',
-                  bgcolor: (n.status === 'done' || n.status === 'success') ? 'hsl(142, 71%, 45% / 0.12)' : 'hsl(0, 84%, 60% / 0.12)',
+                  bgcolor: (n.status === 'done' || n.status === 'success') 
+                    ? 'hsl(142, 71%, 45% / 0.12)' 
+                    : (n.status === 'skipped') 
+                      ? 'hsl(215, 20%, 35% / 0.12)'
+                      : 'hsl(0, 84%, 60% / 0.12)',
                   flexShrink: 0,
                   mt: 0.25,
                 }}
               >
                 {(n.status === 'done' || n.status === 'success') ? (
                   <CheckCircleIcon sx={{ color: 'hsl(142, 71%, 45%)', fontSize: 16 }} />
+                ) : (n.status === 'skipped') ? (
+                  <AccessTimeIcon sx={{ color: 'hsl(215, 20%, 50%)', fontSize: 16 }} />
                 ) : (
                   <ErrorIcon sx={{ color: 'hsl(0, 84%, 60%)', fontSize: 16 }} />
                 )}
@@ -186,6 +192,30 @@ const AuditLog = ({ nodes, loading }: AuditLogProps) => {
                   >
                     {n.result}
                   </Typography>
+                )}
+                {n.error && (
+                  <Box 
+                    sx={{ 
+                      mt: 1, 
+                      p: 1, 
+                      borderRadius: '6px', 
+                      bgcolor: 'hsl(0, 84%, 60% / 0.08)',
+                      border: '1px solid hsl(0, 84%, 60% / 0.2)'
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 10,
+                        color: 'hsl(0, 84%, 70%)',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        lineHeight: 1.4,
+                        wordBreak: 'break-all',
+                        whiteSpace: 'pre-wrap'
+                      }}
+                    >
+                      Error: {n.error}
+                    </Typography>
+                  </Box>
                 )}
               </Box>
             </Box>
