@@ -85,18 +85,6 @@ agentic_mcp/
 
 ---
 
-## Team Responsibilities
-
-| Member | Role | Deliverable |
-|---|---|---|
-| **Prerita Shukla** | Prompt Engineer | System prompt, DAG schema design, `prompt_engine.py` |
-| **Shivam Kumar** | LLM Systems Developer | FastAPI backend, Groq integration, context manager, `/plan` + `/execute` APIs, execution bridge |
-| **Grishma** | Execution Engine | Core DAG executor with retry, parallel scheduling, HITL gates, observability logging |
-| **Hemaksh** | Infrastructure | Mock MCP servers (Docker), deployment |
-| **Tejas** | Frontend | React/Vite UI — chat input, live DAG viz, HITL approval modal |
-
----
-
 ## API Endpoints
 
 | Method | Endpoint | Description |
