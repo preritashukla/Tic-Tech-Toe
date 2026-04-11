@@ -38,11 +38,13 @@ class LLMService:
 
     def __init__(self):
         api_key = os.getenv("GROQ_API_KEY")
-        if not api_key or api_key == "your_groq_api_key_here":
-            raise ValueError(
-                "GROQ_API_KEY not set! Get your free key at https://console.groq.com"
-            )
-        self.client = Groq(api_key=api_key)
+        self.is_mock = not api_key or api_key == "your_groq_api_key_here"
+        
+        if self.is_mock:
+            logger.warning("Using MOCK LLM Service - GROQ_API_KEY not set!")
+            self.client = None
+        else:
+            self.client = Groq(api_key=api_key)
         self.model = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
         self.max_tokens = int(os.getenv("LLM_MAX_TOKENS", "2048"))
         self.temperature = float(os.getenv("LLM_TEMPERATURE", "0.1"))
@@ -57,20 +59,10 @@ class LLMService:
         context: Optional[dict] = None,
         max_retries: int = 2
     ) -> dict:
-        """
-        Generate a validated workflow DAG from natural language input.
-        
-        This is the function Prerita's prompt_engine.py called generate_dag().
-        Drop-in compatible — call generate_dag(user_input) → returns validated DAG dict.
-        
-        Args:
-            user_input: Natural language workflow description
-            context: Optional context from previous interactions
-            max_retries: Number of retry attempts on failure
-            
-        Returns:
-            dict with keys: success, dag (WorkflowDAG or None), raw, errors, attempts, model
-        """
+        if self.is_mock:
+            # Return a standard sample DAG for the demo
+            return self._generate_mock_dag(user_input)
+
         errors: list[str] = []
         raw_output = ""
         last_dag = None
@@ -272,6 +264,60 @@ class LLMService:
             "latency_ms": round(latency_ms, 1),
             "timestamp": time.time()
         })
+
+
+    def _generate_mock_dag(self, user_input: str) -> dict:
+        """Generates a static dummy DAG for demonstration when no LLM key is present."""
+        logger.info(f"Generating mock DAG for input: {user_input}")
+        
+        # Simple heuristic to pick a template
+        dag_dict = {
+            "workflow_id": "wf-mock-" + str(int(time.time())),
+            "workflow_name": "Demo: " + user_input[:30],
+            "description": f"Mock workflow generated for: {user_input}",
+            "nodes": [
+                {
+                    "id": "task_1",
+                    "name": "Scan Input",
+                    "tool": "jira",
+                    "action": "get_issue",
+                    "params": {"issue_id": "MOCK-101"},
+                    "depends_on": [],
+                    "requires_approval": False,
+                    "retry": {"max_attempts": 3, "backoff_factor": 2.0, "initial_delay": 1.0, "timeout": 10}
+                },
+                {
+                    "id": "task_2",
+                    "name": "Sync with Github",
+                    "tool": "github",
+                    "action": "create_branch",
+                    "params": {"branch_name": "fix/mock-101", "ref": "{{task_1.output.id}}"},
+                    "depends_on": ["task_1"],
+                    "requires_approval": False,
+                    "retry": {"max_attempts": 3, "backoff_factor": 2.0, "initial_delay": 1.0, "timeout": 10}
+                },
+                {
+                    "id": "task_3",
+                    "name": "Notify Team",
+                    "tool": "slack",
+                    "action": "send_message",
+                    "params": {"channel": "#alerts", "message": "Started work on {{task_1.output.title}}"},
+                    "depends_on": ["task_1"],
+                    "requires_approval": False,
+                    "retry": {"max_attempts": 3, "backoff_factor": 2.0, "initial_delay": 1.0, "timeout": 10}
+                }
+            ]
+        }
+        
+        return {
+            "success": True,
+            "dag": WorkflowDAG(**dag_dict),
+            "raw": json.dumps(dag_dict, indent=2),
+            "errors": [],
+            "attempts": 1,
+            "model": "mock-mode",
+            "latency_ms": 150.0
+        }
 
 
 # ─── Module-level convenience (backward compatible with prompt_engine.py) ───

@@ -82,14 +82,33 @@ export async function createWorkflow(input: string): Promise<{ workflow_id: stri
     resolvedId = `${baseId}-${Date.now()}`;
     resetSimulation(resolvedId);
   } else {
-    const res = await fetchWithRetry(`${API_BASE}/plan`, {
+    const planRes = await fetchWithRetry(`${API_BASE}/plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input }),
+      body: JSON.stringify({ user_input: input }),
     });
-    if (!res.ok) throw new Error(`Failed to create workflow: ${res.statusText}`);
-    const data = await res.json();
-    resolvedId = data.workflow_id;
+    if (!planRes.ok) throw new Error(`Planning failed: ${planRes.statusText}`);
+    const planData = await planRes.json();
+    
+    if (!planData.success || !planData.dag) {
+      throw new Error(planData.errors?.join(', ') || 'Failed to generate execution plan');
+    }
+
+    // Step 2: Execute the generated DAG
+    const execRes = await fetch(`${API_BASE}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        dag: planData.dag,
+        auto_approve: true, // Default to true for zero-latency hackathon demo
+        dry_run: false
+      }),
+    });
+    if (!execRes.ok) throw new Error(`Execution failed: ${execRes.statusText}`);
+    const execData = await execRes.json();
+    // Use execution_id if available, fallback to workflow_id from DAG
+    resolvedId = execData.execution_id || planData.dag.workflow_id;
+    console.log('[API] Execution response:', { execution_id: execData.execution_id, workflow_id: planData.dag.workflow_id, resolvedId });
   }
 
   // Store in history
@@ -126,10 +145,9 @@ export async function approveNode(
     return { success: true };
   }
 
-  const res = await fetchWithRetry(`${API_BASE}/approve`, {
+  const res = await fetchWithRetry(`${API_BASE}/execute/approve/${workflowId}/${nodeId}?approved=${approved}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ workflow_id: workflowId, node_id: nodeId, approved }),
   });
   if (!res.ok) throw new Error(`Failed to approve node: ${res.statusText}`);
   return res.json();

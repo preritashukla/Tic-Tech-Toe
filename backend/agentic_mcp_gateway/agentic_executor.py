@@ -73,7 +73,7 @@ import urllib.error
 async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_output: Dict[str, Any] = None) -> Dict[str, Any]:
     """If true MCP servers are up, hit them natively! Otherwise fallback to live integrations or mock JSON."""
     
-    # 1. Check for Live Slack Integration (overriding the mock)
+    # 1. Check for Live Integrations (overriding the mock)
     if tool in ["slack", "slack_mcp"]:
         try:
             from services.integrations.slack_integration import execute_slack
@@ -87,6 +87,31 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
             log_event("WARNING", "Slack live integration module not found, falling back to mock", "33")
         except Exception as e:
             log_event("ERROR", f"Slack execution failed: {e}", "31")
+            raise e
+
+    if tool in ["sheets", "sheets_mcp"]:
+        try:
+            from services.integrations.sheets_integration import execute_sheets
+            result = await execute_sheets(action, inputs, {})
+            if result.get("status") in ["success", "ok"]:
+                return result.get("output", result.get("data", {}))
+            else:
+                raise Exception(result.get("error", "Unknown Sheets error"))
+        except ImportError:
+            log_event("WARNING", "Sheets live integration module not found, falling back to mock", "33")
+        except Exception as e:
+            log_event("ERROR", f"Sheets execution failed: {e}", "31")
+            raise e
+
+    if tool in ["github", "github_mcp"]:
+        try:
+            from agentic_mcp_gateway.github_mcp import handle_github_tool
+            # handle_github_tool returns the output dict directly
+            return await handle_github_tool(action, inputs)
+        except ImportError:
+            log_event("WARNING", "GitHub live integration module not found, falling back to mock", "33")
+        except Exception as e:
+            log_event("ERROR", f"GitHub execution failed: {e}", "31")
             raise e
 
     # 2. Check for real MCP server containers
@@ -123,8 +148,9 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
 # --- Core Executor Engine ---
 
 class DAGExecutor:
-    def __init__(self, dag_json: Dict[str, Any]):
+    def __init__(self, dag_json: Dict[str, Any], auto_approve: bool = False):
         self.nodes: Dict[str, Node] = {}
+        self.auto_approve = auto_approve
         for n in dag_json["nodes"]:
             if n["id"] in self.nodes:
                 raise ValueError(f"Duplicate Node ID detected: {n['id']}")
@@ -213,15 +239,16 @@ class DAGExecutor:
         log_event("RUNNING", f"{node.id}: {node.name}", "36")
         
         # Human-In-The-Loop Breakpoint
-        if node.requires_approval:
+        if node.requires_approval and not self.auto_approve:
             log_event("WAITING", f"{node.id} requires approval", "33")
-            response = await asyncio.to_thread(input, "Approve? (y/n): ")
-            if response.strip().lower() != 'y':
-                node.state = TaskState.SKIPPED
-                node.error = "Rejected by operator"
-                log_event("SKIPPED", f"{node.id} (Rejected)", "90")
-                self.failed.add(node.id)  # Treat rejection as failure to block downstream
-                return
+            # In a real API, we wait for an external approval signal.
+            # For this hackathon/demo, if auto_approve is false and we reach here, 
+            # we'll log it and skip to avoid hanging the server.
+            node.state = TaskState.SKIPPED
+            node.error = "Pending human approval (HITL)"
+            log_event("WAITING", f"{node.id} (Paused for HITL)", "33")
+            self.failed.add(node.id) 
+            return
 
         # Resolve templates & execution Context
         try:

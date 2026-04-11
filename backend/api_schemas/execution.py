@@ -11,6 +11,7 @@ from typing import Any, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 import uuid
+from .dag import WorkflowDAG
 
 
 class NodeStatus(str, Enum):
@@ -54,6 +55,7 @@ class WorkflowExecution(BaseModel):
     """Full state of a workflow execution session."""
     execution_id: str = Field(default_factory=lambda: f"exec-{uuid.uuid4().hex[:12]}")
     workflow_name: str = ""
+    dag: Optional[WorkflowDAG] = None
     status: WorkflowStatus = WorkflowStatus.PENDING
     node_results: dict[str, NodeExecutionResult] = Field(default_factory=dict)
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

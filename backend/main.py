@@ -18,17 +18,19 @@ Endpoints:
 
 from __future__ import annotations
 import os
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.plan import router as plan_router
 from routers.execute import router as execute_router
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
+from api_schemas.execution import WorkflowStatus
 
 # ─── Environment & Logging ─────────────────────────────────────────
 load_dotenv()
@@ -109,6 +111,29 @@ app.include_router(plan_router)
 app.include_router(execute_router)
 
 
+# ─── Root Endpoint ────────────────────────────────────────────────
+@app.get("/", tags=["System"])
+async def root():
+    """Welcome endpoint with API information."""
+    return {
+        "message": "🚀 Agentic MCP Gateway",
+        "version": "1.0.0",
+        "status": "running",
+        "documentation": {
+            "swagger": "http://localhost:8000/docs",
+            "redoc": "http://localhost:8000/redoc"
+        },
+        "endpoints": {
+            "plan": {"method": "POST", "path": "/plan", "description": "Generate DAG from natural language"},
+            "plan_validate": {"method": "POST", "path": "/plan/validate", "description": "Validate DAG schema"},
+            "execute": {"method": "POST", "path": "/execute", "description": "Execute DAG (sync)"},
+            "execute_stream": {"method": "POST", "path": "/execute/stream", "description": "Execute DAG (SSE streaming)"},
+            "health": {"method": "GET", "path": "/health", "description": "System health check"},
+            "audit_logs": {"method": "GET", "path": "/audit/logs", "description": "Audit trail"}
+        }
+    }
+
+
 # ─── Health Check ──────────────────────────────────────────────────
 @app.get("/health", tags=["System"])
 async def health_check():
@@ -154,27 +179,102 @@ async def get_execution_status(id: str):
     return {
         "execution_id": execution.execution_id,
         "status": execution.status.value,
-        "workflow_name": execution.dag.workflow_name if execution.dag else "Unknown",
+        "title": execution.workflow_name,
         "nodes": [
             {
                 "id": r.node_id,
-                "name": r.node_name,
+                "title": r.node_name or r.node_id,
                 "tool": r.tool,
                 "action": r.action,
                 "status": r.status.value,
-                "output": r.output,
+                "outputs": r.output,
                 "error": r.error,
-                "duration_ms": round(r.duration_ms, 1),
+                "duration": f"{round(r.duration_ms / 1000, 1)}s" if r.duration_ms > 0 else None,
                 "retries": r.retries
             }
             for r in execution.node_results.values()
         ],
+        "edges": [
+            {"source": dep, "target": n.id}
+            for n in execution.dag.nodes
+            for dep in n.depends_on
+        ] if execution.dag else [],
         "total_nodes": execution.total_nodes,
         "succeeded": execution.succeeded,
         "failed": execution.failed,
         "skipped": execution.skipped,
-        "timestamp": execution.start_time
+        "timestamp": execution.started_at
     }
+
+
+@app.get("/active-workflows", tags=["Execution"])
+async def get_active_workflows():
+    """Retrieve all currently active workflow executions."""
+    store = get_execution_store()
+    executions = store.get_all()
+    return [
+        {
+            "id": exec_id,
+            "name": execution.dag.workflow_name if execution.dag else "Unknown",
+            "status": execution.status.value,
+            "timestamp": execution.start_time
+        }
+        for exec_id, execution in executions.items()
+    ]
+
+
+@app.websocket("/ws/status/{execution_id}")
+async def websocket_endpoint(websocket: WebSocket, execution_id: str):
+    """
+    WebSocket endpoint for real-time execution status updates.
+    Frontend connects to receive live updates as the DAG runs.
+    """
+    await websocket.accept()
+    logger.info(f"WebSocket connected: {execution_id}")
+    
+    store = get_execution_store()
+    
+    try:
+        while True:
+            # Check for updates in the store
+            execution = store.get(execution_id)
+            if execution:
+                # Send current status
+                await websocket.send_json({
+                    "execution_id": execution.execution_id,
+                    "status": execution.status.value,
+                    "title": execution.workflow_name,
+                    "nodes": [
+                        {
+                            "id": r.node_id,
+                            "title": r.node_name or r.node_id,
+                            "status": r.status.value,
+                            "outputs": r.output,
+                            "error": r.error
+                        }
+                        for r in execution.node_results.values()
+                    ],
+                    "edges": [
+                        {"source": dep, "target": n.id}
+                        for n in execution.dag.nodes
+                        for dep in n.depends_on
+                    ] if execution.dag else []
+                })
+                
+                # If terminal state, close connection after a short delay
+                if execution.status in [WorkflowStatus.COMPLETED, WorkflowStatus.FAILED]:
+                    await asyncio.sleep(2)
+                    await websocket.close()
+                    break
+            
+            # Simple polling interval for the websocket broadcast loop
+            await asyncio.sleep(1)
+            
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected: {execution_id}")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        await websocket.close()
 # ─── Audit Endpoints ──────────────────────────────────────────────
 @app.get("/audit/logs", tags=["Audit"])
 async def get_audit_logs(

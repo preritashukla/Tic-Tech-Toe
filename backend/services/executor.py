@@ -29,6 +29,7 @@ from api_schemas.execution import (
 )
 from services.context import ContextManager
 from services.audit import get_audit_logger
+from services.execution_store import get_execution_store
 
 logger = logging.getLogger("mcp_gateway.execution_bridge")
 
@@ -102,6 +103,7 @@ class ExecutionBridge:
         self.audit = get_audit_logger()
         self.execution = WorkflowExecution(
             workflow_name=dag.workflow_name,
+            dag=dag,
             total_nodes=len(dag.nodes),
         )
 
@@ -118,8 +120,12 @@ class ExecutionBridge:
         exec_id = self.execution.execution_id
         start_time = time.time()
 
+        # Save to store so /status endpoint can find it
+        get_execution_store().save(self.execution)
+
         self.audit.log_workflow_start(exec_id, self.dag.workflow_name, str(self.dag.nodes))
         self.execution.status = WorkflowStatus.RUNNING
+        get_execution_store().save(self.execution)
         await self._emit("workflow_start", {
             "execution_id": exec_id,
             "workflow_name": self.dag.workflow_name,
@@ -139,6 +145,7 @@ class ExecutionBridge:
         # Finalize
         elapsed_ms = (time.time() - start_time) * 1000
         self.execution.mark_complete()
+        get_execution_store().save(self.execution)
         self.audit.log_workflow_complete(
             exec_id, self.execution.succeeded,
             self.execution.failed, self.execution.total_nodes, elapsed_ms,
@@ -170,7 +177,7 @@ class ExecutionBridge:
         dag_dict = _convert_dag_for_grishma(self.dag)
         logger.info(f"[{exec_id}] Using Grishma's DAGExecutor ({len(dag_dict['nodes'])} nodes)")
 
-        executor = GrishmaExecutor(dag_dict)
+        executor = GrishmaExecutor(dag_dict, auto_approve=self.auto_approve)
         await executor.run()
 
         # Collect results from Grishma's executor nodes
@@ -277,21 +284,21 @@ class ExecutionBridge:
                 if random.random() < 0.10 and attempt < node.retry.max_attempts:
                     raise ConnectionError(f"{node.tool}.{node.action}: transient 502")
 
-<<<<<<< HEAD
-                if node.tool == "slack":
+                if node.tool in ["slack", "slack_mcp"]:
                     from services.integrations.slack_integration import execute_slack
-                    # Convert ContextManager to dict if necessary, or just pass it - the execute_slack function
-                    # currently uses context parameter but doesn't strictly need it to be a dict if it ignores it
-                    # but we'll try to pass dict representation or just None since context is already resolved anyway.
                     result = await execute_slack(node.action, resolved_params, getattr(self.context, '__dict__', {}))
                     if result.get("status") == "error":
                         raise Exception(result.get("error"))
                     output = result.get("output", {})
-=======
-                if node.tool == "sheets":
+                elif node.tool in ["sheets", "sheets_mcp"]:
                     from services.integrations.sheets_integration import execute_sheets
-                    output = await execute_sheets(node.action, resolved_params, self.context.get_all())
->>>>>>> 666bd9701f6f60f43dcb131c59a5f98a8552eed7
+                    sheets_res = await execute_sheets(node.action, resolved_params, self.context.get_all())
+                    if sheets_res.get("status") == "error":
+                        raise Exception(sheets_res.get("error"))
+                    output = sheets_res.get("output", sheets_res.get("data", {}))
+                elif node.tool in ["github", "github_mcp"]:
+                    from agentic_mcp_gateway.github_mcp import handle_github_tool
+                    output = await handle_github_tool(node.action, resolved_params)
                 else:
                     output = _mock_tool_output(node.tool, node.action, resolved_params)
                 elapsed = (time.time() - start) * 1000
@@ -377,15 +384,10 @@ def _mock_tool_output(tool: str, action: str, params: dict) -> dict:
         ("github", "create_branch"): {"branch_name": params.get("branch_name", f"fix/{rand}"), "branch_url": f"https://github.com/org/repo/tree/fix/{rand}"},
         ("github", "create_pr"):     {"pr_number": int(rand), "pr_url": f"https://github.com/org/repo/pull/{rand}"},
         ("github", "merge_pr"):      {"merged": True, "sha": f"a1b2c3{rand}"},
-<<<<<<< HEAD
-
+        ("slack", "send_message"):   {"delivered": True, "timestamp": "1684562000.123", "channel": params.get("channel", "#general")},
+        ("slack", "create_channel"): {"channel_id": f"C0{rand}", "channel_name": params.get("name", "new-channel")},
         ("sheets", "read_row"):      {"data": {"col_a": "value1", "col_b": "value2"}},
         ("sheets", "update_row"):    {"success": True, "row_updated": random.randint(1, 100)},
         ("sheets", "append_row"):    {"success": True, "row_id": random.randint(40, 100)},
-=======
-        ("slack", "send_message"):   {"delivered": True, "timestamp": "1684562000.123", "channel": params.get("channel", "#general")},
-        ("slack", "create_channel"): {"channel_id": f"C0{rand}", "channel_name": params.get("name", "new-channel")},
-        # sheets replaced by live integration in _execute_fallback_node
->>>>>>> 666bd9701f6f60f43dcb131c59a5f98a8552eed7
     }
     return mocks.get((tool, action), {"status": "ok", "action": action})

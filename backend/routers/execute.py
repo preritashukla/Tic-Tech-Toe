@@ -14,13 +14,14 @@ import json
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from api_schemas.requests import ExecuteRequest, ExecuteResponse
 from api_schemas.dag import WorkflowDAG
 from services.executor import ExecutionBridge
 from services.audit import get_audit_logger
+from services.execution_store import get_execution_store
 
 logger = logging.getLogger("mcp_gateway.router.execute")
 
@@ -160,6 +161,58 @@ async def execute_workflow_stream(request: ExecuteRequest) -> StreamingResponse:
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         }
     )
+
+
+@router.get(
+    "/status",
+    summary="Get execution status",
+    description="Retrieves the current status and results of a workflow execution by ID."
+)
+async def get_execution_status(id: str = Query(..., description="Execution ID")) -> dict:
+    """
+    GET /execute/status?id={execution_id}
+    
+    Returns the current execution status, node results, and audit log.
+    Called by frontend to poll execution progress.
+    Also searches by workflow_id if execution_id not found.
+    """
+    store = get_execution_store()
+    execution = store.get(id)
+    
+    # If not found by execution_id, try searching by workflow_id
+    if not execution:
+        for exec_id, exec_record in store.get_all().items():
+            if exec_record.execution_id == id or (hasattr(exec_record, 'dag') and exec_record.dag.workflow_id == id):
+                execution = exec_record
+                break
+    
+    if not execution:
+        raise HTTPException(status_code=404, detail=f"Execution {id} not found")
+    
+    return {
+        "execution_id": execution.execution_id,
+        "workflow_id": execution.dag.workflow_id if execution.dag else id,
+        "status": execution.status.value,
+        "succeeded": execution.succeeded,
+        "failed": execution.failed,
+        "skipped": execution.skipped,
+        "total_nodes": execution.total_nodes,
+        "results": [
+            {
+                "node_id": r.node_id,
+                "name": r.node_name,
+                "tool": r.tool,
+                "action": r.action,
+                "status": r.status.value,
+                "output": r.output,
+                "error": r.error,
+                "duration_ms": round(r.duration_ms, 1),
+                "retries": r.retries
+            }
+            for r in execution.node_results.values()
+        ],
+        "audit_log": get_audit_logger().get_logs_by_execution(execution.execution_id)
+    }
 
 
 @router.post(

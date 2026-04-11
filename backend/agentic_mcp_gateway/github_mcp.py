@@ -2,7 +2,9 @@ import os
 import httpx
 import base64
 from typing import Any, Optional
+from dotenv import load_dotenv
 
+load_dotenv()
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 BASE_URL = "https://api.github.com"
 
