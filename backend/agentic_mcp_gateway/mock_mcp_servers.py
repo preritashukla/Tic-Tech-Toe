@@ -33,7 +33,7 @@ def _save_to_db(tool: str, action: str, data: dict):
     with open(DB_FILE, "w") as f:
         json.dump(records, f, indent=2)
 
-async def _simulate_network(delay: float = 0.1):
+async def _simulate_network(delay: float = 1.5):
     """Simulate network latency."""
     await asyncio.sleep(delay)
 

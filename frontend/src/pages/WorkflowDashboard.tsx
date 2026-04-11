@@ -35,15 +35,41 @@ const WorkflowDashboard = () => {
   useEffect(() => {
     if (!id) return;
     
-    // Initial fetch
-    fetchStatus();
-
     let pollingInterval: ReturnType<typeof setInterval> | null = null;
     let ws: WebSocket | null = null;
 
+    const checkCompletion = (data: WorkflowStatus) => {
+      // Check if all nodes are in terminal states
+      const isFinished = data.nodes.every(n => 
+        ['done', 'success', 'failed', 'skipped'].includes(n.status)
+      );
+      if (isFinished) {
+        if (ws) ws.close(1000, "Workflow Complete");
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+    };
+
+    const fetchStatusWrapper = async () => {
+      try {
+        const data = await getWorkflowStatus(id);
+        setStatus(data);
+        setError(null);
+        checkCompletion(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch workflow status');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Initial fetch
+    fetchStatusWrapper();
+
     const startPolling = () => {
+      // Only start polling if we don't have a final state yet
       if (!pollingInterval) {
-        pollingInterval = setInterval(fetchStatus, 1500);
+        pollingInterval = setInterval(fetchStatusWrapper, 1500);
       }
     };
 
@@ -56,6 +82,7 @@ const WorkflowDashboard = () => {
           setStatus(data);
           setError(null);
           setLoading(false);
+          checkCompletion(data);
         } catch (err) {
           console.error('Failed to parse websocket message', err);
         }
@@ -64,21 +91,25 @@ const WorkflowDashboard = () => {
       ws.onerror = () => {
         console.warn('WebSocket error, falling back to polling');
         ws?.close();
+        ws = null;
         startPolling();
       };
 
-      ws.onclose = () => {
-        startPolling();
+      ws.onclose = (e) => {
+        // Code 1000 means intentional normal closure (we closed it)
+        if (e.code !== 1000) {
+          startPolling();
+        }
       };
     } catch {
       startPolling();
     }
 
     return () => {
-      ws?.close();
+      if (ws) ws.close(1000, "Component Unmounting");
       if (pollingInterval) clearInterval(pollingInterval);
     };
-  }, [id, fetchStatus]);
+  }, [id]);
 
   const approvalNode: WorkflowNode | null =
     status?.nodes.find((n) => n.status === 'waiting_approval') ?? null;

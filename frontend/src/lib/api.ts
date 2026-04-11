@@ -12,6 +12,8 @@ const USE_MOCK = false;
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 export async function createWorkflow(input: string): Promise<{ workflow_id: string }> {
+  let resolvedId: string;
+
   if (USE_MOCK) {
     // Simulate network delay
     await new Promise((r) => setTimeout(r, 1500));
@@ -33,24 +35,25 @@ export async function createWorkflow(input: string): Promise<{ workflow_id: stri
     }
     
     // Make ID unique to allow parallel executions
-    const id = `${baseId}-${Date.now()}`;
-    resetSimulation(id);
-    
-    // Store in history
-    const history = JSON.parse(localStorage.getItem('workflow_history') || '[]');
-    history.unshift({ id, name: input.substring(0, 40) + '...', timestamp: Date.now() });
-    localStorage.setItem('workflow_history', JSON.stringify(history));
-
-    return { workflow_id: id };
+    resolvedId = `${baseId}-${Date.now()}`;
+    resetSimulation(resolvedId);
+  } else {
+    const res = await fetch(`${API_BASE}/plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input }),
+    });
+    if (!res.ok) throw new Error(`Failed to create workflow: ${res.statusText}`);
+    const data = await res.json();
+    resolvedId = data.workflow_id;
   }
 
-  const res = await fetch(`${API_BASE}/plan`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input }),
-  });
-  if (!res.ok) throw new Error(`Failed to create workflow: ${res.statusText}`);
-  return res.json();
+  // Store in history
+  const history = JSON.parse(localStorage.getItem('workflow_history') || '[]');
+  history.unshift({ id: resolvedId, name: input.substring(0, 40) + '...', timestamp: Date.now() });
+  localStorage.setItem('workflow_history', JSON.stringify(history));
+
+  return { workflow_id: resolvedId };
 }
 
 export async function getWorkflowStatus(id: string): Promise<WorkflowStatus> {
