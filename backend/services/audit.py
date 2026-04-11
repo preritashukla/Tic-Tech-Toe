@@ -173,6 +173,14 @@ class AuditLogger:
             "context": context or {}
         }, execution_id=execution_id)
 
+    def log_event(self, execution_id: str, event_type: str, message: str, details: Optional[dict] = None) -> None:
+        """Log a generic event (used by rollback engine, session manager, etc.)."""
+        self._record(AuditEventType.WORKFLOW_COMPLETE, {
+            "custom_event": event_type,
+            "message": message,
+            **(details or {})
+        }, execution_id=execution_id)
+
     # ─── Query API ─────────────────────────────────────────────────
 
     def get_all_logs(self) -> list[dict[str, Any]]:

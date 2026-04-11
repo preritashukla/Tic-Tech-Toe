@@ -22,6 +22,7 @@ from api_schemas.dag import WorkflowDAG
 from services.executor import ExecutionBridge
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
+from services.session import get_session_manager
 
 logger = logging.getLogger("mcp_gateway.router.execute")
 
@@ -53,6 +54,7 @@ async def execute_workflow(request: ExecuteRequest) -> ExecuteResponse:
         auto_approve=request.auto_approve,
         dry_run=request.dry_run,
         credentials=request.credentials,
+        rollback_policy=request.rollback_policy,
     )
 
     try:
@@ -60,6 +62,31 @@ async def execute_workflow(request: ExecuteRequest) -> ExecuteResponse:
     except Exception as e:
         logger.error(f"Execution engine error: {e}")
         raise HTTPException(status_code=500, detail=f"Execution failed: {e}")
+
+    # Inject execution results into conversation session (ChatGPT-like feedback)
+    if request.session_id:
+        try:
+            session_mgr = get_session_manager()
+            session = session_mgr.get(request.session_id)
+            if session:
+                session.add_execution_feedback(
+                    execution_id=execution.execution_id,
+                    results={
+                        "status": execution.status.value,
+                        "succeeded": execution.succeeded,
+                        "failed": execution.failed,
+                        "skipped": execution.skipped,
+                        "node_errors": {
+                            r.node_id: r.error
+                            for r in execution.node_results.values()
+                            if r.error
+                        },
+                        "rollback": getattr(execution, 'rollback_result', None)
+                    }
+                )
+                logger.info(f"[Session {request.session_id}] Injected execution feedback")
+        except Exception as e:
+            logger.warning(f"Failed to inject session feedback: {e}")
 
     return ExecuteResponse(
         execution_id=execution.execution_id,
@@ -112,6 +139,7 @@ async def execute_workflow_stream(request: ExecuteRequest) -> StreamingResponse:
         auto_approve=request.auto_approve,
         dry_run=request.dry_run,
         credentials=request.credentials,
+        rollback_policy=request.rollback_policy,
     )
 
     async def event_generator():

@@ -248,6 +248,69 @@ async def create_release(owner: str, repo: str, tag_name: str, name: str, body: 
         "release_upload_url": data["upload_url"]
     }
 
+
+# ── Rollback / Compensating Actions ────────────────────────────────────────
+
+async def delete_branch(owner: str, repo: str, branch_name: str) -> dict:
+    """Delete a branch (compensating action for create_branch)."""
+    try:
+        await call_github_api("DELETE", f"/repos/{owner}/{repo}/git/refs/heads/{branch_name}")
+        return {
+            "deleted": True,
+            "branch_name": branch_name,
+            "message": f"Branch '{branch_name}' deleted successfully"
+        }
+    except Exception as e:
+        if "422" in str(e) or "Reference does not exist" in str(e):
+            return {
+                "deleted": False,
+                "branch_name": branch_name,
+                "message": f"Branch '{branch_name}' does not exist (already deleted?)"
+            }
+        raise
+
+
+async def close_pull_request(owner: str, repo: str, pr_number: int) -> dict:
+    """Close a PR without merging (compensating action for create_pull_request)."""
+    # First check if PR is already merged
+    try:
+        pr_data = await call_github_api("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}")
+        if pr_data.get("merged", False):
+            return {
+                "pr_number": pr_number,
+                "state": "merged",
+                "message": f"PR #{pr_number} already merged — cannot close. Manual intervention required.",
+                "rollback_skipped": True
+            }
+    except Exception:
+        pass  # Continue trying to close
+
+    data = await call_github_api(
+        "PATCH",
+        f"/repos/{owner}/{repo}/pulls/{pr_number}",
+        data={"state": "closed"}
+    )
+    return {
+        "pr_number": data["number"],
+        "state": "closed",
+        "pr_url": data.get("html_url", ""),
+        "message": f"PR #{pr_number} closed successfully"
+    }
+
+
+async def close_issue(owner: str, repo: str, issue_number: int) -> dict:
+    """Close an issue (compensating action for create_issue)."""
+    data = await call_github_api(
+        "PATCH",
+        f"/repos/{owner}/{repo}/issues/{issue_number}",
+        data={"state": "closed"}
+    )
+    return {
+        "issue_number": data["number"],
+        "state": "closed",
+        "message": f"Issue #{issue_number} closed successfully"
+    }
+
 async def handle_github_tool(action: str, inputs: dict) -> dict:
     """Dispatcher for GitHub tools."""
     owner = inputs.get("owner")
@@ -331,5 +394,12 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
         return await create_release(owner, repo, inputs.get("tag_name"), inputs.get("name"), 
                                      inputs.get("body"), inputs.get("draft", False), 
                                      inputs.get("prerelease", False), inputs.get("target_commitish"))
+    # ── Rollback Actions ──────────────────────────────────────────────────────
+    elif action == "delete_branch":
+        return await delete_branch(owner, repo, inputs.get("branch_name"))
+    elif action == "close_pull_request":
+        return await close_pull_request(owner, repo, int(inputs.get("pr_number")))
+    elif action == "close_issue":
+        return await close_issue(owner, repo, int(inputs.get("issue_number")))
     
     raise ValueError(f"Unknown GitHub action: {action}")

@@ -6,14 +6,18 @@ Author: Shivam Kumar (LLM Systems Developer)
 Team: Quintessential Quincoders — Tic Tech Toe '26
 
 Endpoints:
-  GET  /health          — Health check + system status
-  POST /plan            — Generate DAG from natural language
-  POST /plan/validate   — Validate an existing DAG
-  POST /execute         — Execute DAG (synchronous response)
-  POST /execute/stream  — Execute DAG (SSE streaming)
-  POST /execute/approve — HITL approval gate
-  GET  /audit/logs      — Retrieve audit trail
-  GET  /audit/stats     — Audit statistics
+  GET  /health                  — Health check + system status
+  POST /plan                    — Generate DAG from natural language (multi-turn)
+  POST /plan/validate           — Validate an existing DAG
+  POST /execute                 — Execute DAG (synchronous response)
+  POST /execute/stream          — Execute DAG (SSE streaming)
+  POST /execute/approve         — HITL approval gate
+  GET  /audit/logs              — Retrieve audit trail
+  GET  /audit/stats             — Audit statistics
+  GET  /session/active          — Active conversation sessions
+  GET  /session/{id}/history    — Conversation history
+  POST /workflow/epic           — Jira Epic → multi-branch workflow
+  POST /workflow/epic/{id}/rollback — Manual rollback
 """
 
 from __future__ import annotations
@@ -28,8 +32,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.plan import router as plan_router
 from routers.execute import router as execute_router
+from routers.session import router as session_router
+from routers.epic import router as epic_router
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
+from services.session import get_session_manager
 from api_schemas.execution import WorkflowStatus
 
 # ─── Environment & Logging ─────────────────────────────────────────
@@ -64,20 +71,28 @@ async def lifespan(app: FastAPI):
     logger.info(f"✅ LLM Model: {model}")
     logger.info(f"✅ CORS Origins: {os.getenv('CORS_ORIGINS', 'http://localhost:3000')}")
     logger.info("✅ Audit logger initialized")
+    logger.info("✅ Session manager initialized")
+    logger.info("✅ Rollback engine ready")
     logger.info("─" * 60)
     logger.info("  Server ready — Endpoints:")
-    logger.info("    POST /plan           → Generate DAG from NL")
-    logger.info("    POST /plan/validate  → Validate DAG schema")
-    logger.info("    POST /execute        → Run DAG (sync)")
+    logger.info("    POST /plan           → Generate DAG from NL (multi-turn)")
+    logger.info("    POST /execute        → Run DAG (sync + auto-rollback)")
     logger.info("    POST /execute/stream → Run DAG (SSE)")
+    logger.info("    GET  /session/active → Active conversations")
+    logger.info("    POST /workflow/epic  → Jira Epic → multi-branch")
     logger.info("    GET  /health         → System health")
     logger.info("    GET  /audit/logs     → Audit trail")
     logger.info("─" * 60)
 
+    # Initialize session manager
+    get_session_manager()
+
     yield
 
     # ── Shutdown ──
-    logger.info("Agentic MCP Gateway — Shutting down")
+    session_mgr = get_session_manager()
+    active = session_mgr.get_session_count()
+    logger.info(f"Agentic MCP Gateway — Shutting down ({active} active sessions)")
 
 
 # ─── FastAPI Application ───────────────────────────────────────────
@@ -106,9 +121,11 @@ app.add_middleware(
 )
 
 
-# ─── Mount Routers ─────────────────────────────────────────────────
+# ─── Mount Routers ─────────────────────────────────────────────
 app.include_router(plan_router)
 app.include_router(execute_router)
+app.include_router(session_router)
+app.include_router(epic_router)
 
 
 # ─── Root Endpoint ────────────────────────────────────────────────

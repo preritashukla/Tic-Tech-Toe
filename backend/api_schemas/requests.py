@@ -24,6 +24,14 @@ class PlanRequest(BaseModel):
             "Critical bug filed in Jira → Create GitHub branch → Notify Slack → Update incident tracker"
         ]}
     )
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Conversation session ID for multi-turn context. If omitted, a new session is created."
+    )
+    edit_index: Optional[int] = Field(
+        default=None,
+        description="If editing a previous message, the index to discard messages after (edit/regeneration support)"
+    )
     context: Optional[dict[str, Any]] = Field(
         default=None,
         description="Optional context from previous interactions"
@@ -38,6 +46,7 @@ class PlanResponse(BaseModel):
     errors: list[str] = Field(default_factory=list, description="Validation or generation errors")
     attempts: int = Field(default=1, description="Number of LLM attempts made")
     model_used: str = Field(default="llama-3.3-70b-versatile", description="LLM model used")
+    session_id: Optional[str] = Field(default=None, description="Conversation session ID for multi-turn follow-ups")
 
 
 # ─── Execute Endpoint ───────────────────────────────────────────────
@@ -45,6 +54,10 @@ class PlanResponse(BaseModel):
 class ExecuteRequest(BaseModel):
     """POST /execute — request body."""
     dag: WorkflowDAG = Field(..., description="The DAG to execute")
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Conversation session ID — execution results are injected as feedback"
+    )
     auto_approve: bool = Field(
         default=True,
         description="If True, skip HITL approval gates (demo mode)"
@@ -52,6 +65,10 @@ class ExecuteRequest(BaseModel):
     dry_run: bool = Field(
         default=False,
         description="If True, simulate execution without calling real tools"
+    )
+    rollback_policy: str = Field(
+        default="auto",
+        description="Rollback policy on failure: 'auto' (rollback on any failure), 'manual' (user triggers), 'none' (no rollback)"
     )
     credentials: Optional[dict[str, Any]] = Field(
         default=None,

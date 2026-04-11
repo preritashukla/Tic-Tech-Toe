@@ -217,6 +217,7 @@ export default function App() {
   const [chatStarted, setChatStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeNav, setActiveNav] = useState("dashboard");
+  const [sessionId, setSessionId] = useState(null);  // Multi-turn conversation session
   const { tools } = useTools();
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
@@ -271,11 +272,22 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      // Step 1: Generate Plan (DAG)
+      // Compute edit_index for edit/regeneration support
+      let editIndex = undefined;
+      if (editingMsg) {
+        const idx = messages.findIndex(m => m.id === editingMsg.id);
+        if (idx >= 0) editIndex = idx;
+      }
+
+      // Step 1: Generate Plan (DAG) — with session context for multi-turn
       const planRes = await fetch('/api/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_input: content })
+        body: JSON.stringify({ 
+          user_input: content,
+          session_id: sessionId || undefined,
+          edit_index: editIndex,
+        })
       });
 
       if (!planRes.ok) {
@@ -290,6 +302,11 @@ export default function App() {
 
       const dag = planData.dag;
 
+      // Track session for multi-turn conversation
+      if (planData.session_id && !sessionId) {
+        setSessionId(planData.session_id);
+      }
+
       // Extract real credentials from context to bridge to backend
       const userCredentials = {};
       Object.entries(tools).forEach(([name, state]) => {
@@ -302,14 +319,16 @@ export default function App() {
         }
       });
 
-      // Step 2: Execute the Plan
+      // Step 2: Execute the Plan — with session_id for feedback injection
       const execRes = await fetch('/api/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           dag: dag,
+          session_id: sessionId || planData.session_id || undefined,
           auto_approve: true, // Auto-approve for demo
           dry_run: false,      // RUN FOR REAL
+          rollback_policy: 'auto', // Auto-rollback on failure
           credentials: userCredentials
         })
       });

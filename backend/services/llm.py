@@ -12,13 +12,13 @@ import re
 import os
 import time
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from groq import Groq
 from dotenv import load_dotenv
 
 from api_schemas.dag import WorkflowDAG
-from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX
+from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX, CONVERSATION_CONTEXT_PROMPT
 
 load_dotenv()
 logger = logging.getLogger("mcp_gateway.llm")
@@ -57,11 +57,16 @@ class LLMService:
         self,
         user_input: str,
         context: Optional[dict] = None,
+        session_id: Optional[str] = None,
         max_retries: int = 2
     ) -> dict:
         if self.is_mock:
             # Return a standard sample DAG for the demo
-            return self._generate_mock_dag(user_input)
+            mock_result = self._generate_mock_dag(user_input)
+            # Still store in session for multi-turn support
+            if session_id:
+                self._store_in_session(session_id, user_input, mock_result)
+            return mock_result
 
         errors: list[str] = []
         raw_output = ""
@@ -74,9 +79,13 @@ class LLMService:
                 if attempt > 1:
                     system_content += RETRY_SUFFIX
 
-                user_content = user_input
-                if context:
-                    user_content += f"\n\nAdditional context: {json.dumps(context)}"
+                # Build messages array — multi-turn if session exists
+                messages = self._build_messages(
+                    system_content=system_content,
+                    user_input=user_input,
+                    session_id=session_id,
+                    context=context
+                )
 
                 # Call Groq API
                 start_time = time.time()
@@ -84,10 +93,7 @@ class LLMService:
                     model=self.model,
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
-                    messages=[
-                        {"role": "system", "content": system_content},
-                        {"role": "user", "content": user_content}
-                    ]
+                    messages=messages
                 )
                 elapsed_ms = (time.time() - start_time) * 1000
 
@@ -116,7 +122,8 @@ class LLMService:
                 try:
                     dag = WorkflowDAG(**dag_dict)
                     logger.info(f"[Attempt {attempt}] ✅ DAG validated — {len(dag.nodes)} nodes")
-                    return {
+
+                    result = {
                         "success": True,
                         "dag": dag,
                         "raw": raw_output,
@@ -125,6 +132,12 @@ class LLMService:
                         "model": self.model,
                         "latency_ms": elapsed_ms
                     }
+
+                    # Store in session for multi-turn follow-ups
+                    if session_id:
+                        self._store_in_session(session_id, user_input, result)
+
+                    return result
                 except Exception as e:
                     error_msg = f"Attempt {attempt}: Pydantic validation error — {e}"
                     errors.append(error_msg)
@@ -176,6 +189,144 @@ class LLMService:
         except Exception as e:
             logger.warning(f"Summarization failed, truncating: {e}")
             return text[:max_chars] + "...[truncated]"
+
+    # ─── Multi-Turn Conversation Support ─────────────────────────
+
+    def _build_messages(
+        self,
+        system_content: str,
+        user_input: str,
+        session_id: Optional[str] = None,
+        context: Optional[dict] = None
+    ) -> list[dict]:
+        """
+        Build the full messages[] array for the Groq API call.
+        
+        Without session: Single system + user message (original behavior)
+        With session: System prompt + conversation history + current input
+        """
+        messages = [{"role": "system", "content": system_content}]
+
+        # If we have a session, inject conversation history
+        if session_id:
+            try:
+                from services.session import get_session_manager
+                session = get_session_manager().get(session_id)
+                if session:
+                    # Add conversation context prompt for multi-turn
+                    messages.append({
+                        "role": "system",
+                        "content": CONVERSATION_CONTEXT_PROMPT
+                    })
+
+                    # Get session messages formatted for LLM
+                    session_messages = session.get_messages_for_llm()
+                    messages.extend(session_messages)
+
+                    logger.info(
+                        f"[Session {session_id}] Built {len(session_messages)} "
+                        f"history messages for LLM context"
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to load session {session_id}: {e}")
+
+        # Add current user input (always the last message)
+        user_content = user_input
+        if context:
+            user_content += f"\n\nAdditional context: {json.dumps(context)}"
+        messages.append({"role": "user", "content": user_content})
+
+        return messages
+
+    def _store_in_session(
+        self,
+        session_id: str,
+        user_input: str,
+        result: dict
+    ) -> None:
+        """
+        Store the DAG generation result in the conversation session.
+        Called after successful DAG generation for multi-turn follow-up support.
+        """
+        try:
+            from services.session import get_session_manager
+            session = get_session_manager().get(session_id)
+            if not session:
+                return
+
+            # Store the DAG for follow-up modifications
+            dag = result.get("dag")
+            if dag:
+                session.last_dag = dag
+                session.last_dag_json = dag.model_dump() if hasattr(dag, 'model_dump') else None
+
+            # Store assistant response (the raw LLM output)
+            raw = result.get("raw", "")
+            if raw:
+                session.add_message("assistant", raw, metadata={
+                    "type": "dag_generation",
+                    "node_count": len(dag.nodes) if dag else 0,
+                    "model": result.get("model", self.model),
+                    "latency_ms": result.get("latency_ms", 0)
+                })
+
+            # Check if session needs summarization
+            if session.needs_summarization():
+                # Schedule async summarization (non-blocking)
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.create_task(self._summarize_session(session))
+                except RuntimeError:
+                    pass  # No event loop — skip summarization
+
+            logger.debug(f"Stored DAG result in session {session_id}")
+        except Exception as e:
+            logger.warning(f"Failed to store in session {session_id}: {e}")
+
+    async def _summarize_session(self, session) -> None:
+        """
+        Summarize older conversation turns to save context window space.
+        Called automatically when conversation exceeds MAX_RECENT_TURNS.
+        """
+        if not self.client or self.is_mock:
+            return
+
+        try:
+            from services.session import MAX_RECENT_TURNS
+            recent_start = max(0, len(session.messages) - MAX_RECENT_TURNS * 2)
+            old_messages = session.messages[session._summary_cutoff:recent_start]
+
+            if len(old_messages) < 3:
+                return  # Not enough to summarize
+
+            # Build text of old messages
+            old_text = "\n".join([
+                f"{m.role}: {m.content[:300]}" for m in old_messages
+            ])
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                max_tokens=512,
+                temperature=0.0,
+                messages=[{
+                    "role": "user",
+                    "content": (
+                        "Summarize this conversation history into a brief context paragraph. "
+                        "Focus on: what workflows were discussed, what tools/actions were used, "
+                        "what paramters were specified, and any execution outcomes.\n\n"
+                        f"{old_text}\n\n"
+                        "Output a concise summary paragraph, no JSON."
+                    )
+                }]
+            )
+
+            summary = response.choices[0].message.content
+            session.mark_summarized(summary, recent_start)
+            logger.info(f"Auto-summarized session {session.session_id}: {len(summary)} chars")
+        except Exception as e:
+            logger.warning(f"Session summarization failed: {e}")
 
     def get_call_history(self) -> list[dict]:
         """Return full LLM call history for audit."""

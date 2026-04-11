@@ -12,6 +12,7 @@ def get_jira_auth() -> tuple:
     api_token = os.getenv("JIRA_API_TOKEN")
     if not email or not api_token:
         logger.warning("JIRA_EMAIL or JIRA_API_TOKEN not set in environment.")
+        return None
     return (email, api_token)
 
 def get_jira_domain() -> str:
@@ -101,6 +102,66 @@ async def update_issue(issue_id: str, status: Optional[str] = None, summary: Opt
     
     return {"status": "success", "issue_id": issue_id}
 
+
+async def get_epic_children(epic_key: str) -> Dict:
+    """
+    Fetch all child issues of a Jira Epic using JQL.
+    Supports both "Epic Link" and "parent" relationships.
+    """
+    jql = f'"Epic Link" = {epic_key} OR parent = {epic_key}'
+    try:
+        data = await call_jira_api("GET", "/search/jql", params={
+            "jql": jql,
+            "fields": "summary,status,issuetype,priority,assignee",
+            "maxResults": 100
+        })
+    except Exception:
+        # Fallback: some Jira configs don't support "Epic Link"
+        jql_fallback = f'parent = {epic_key}'
+        data = await call_jira_api("GET", "/search/jql", params={
+            "jql": jql_fallback,
+            "fields": "summary,status,issuetype,priority,assignee",
+            "maxResults": 100
+        })
+    
+    issues = []
+    for item in data.get("issues", []):
+        fields = item.get("fields", {})
+        issues.append({
+            "key": item["key"],
+            "summary": fields.get("summary", ""),
+            "status": fields.get("status", {}).get("name"),
+            "issue_type": fields.get("issuetype", {}).get("name"),
+            "priority": fields.get("priority", {}).get("name"),
+            "assignee": fields.get("assignee", {}).get("displayName") if fields.get("assignee") else None,
+        })
+    
+    return {
+        "epic_key": epic_key,
+        "children": issues,
+        "count": len(issues)
+    }
+
+
+async def bulk_update_status(issue_keys: list, status: str) -> Dict:
+    """Update status for multiple Jira issues (best-effort)."""
+    results = []
+    for key in issue_keys:
+        try:
+            await update_issue(key, status=status)
+            results.append({"key": key, "status": "updated"})
+        except Exception as e:
+            results.append({"key": key, "status": "failed", "error": str(e)})
+    
+    succeeded = sum(1 for r in results if r["status"] == "updated")
+    return {
+        "updated": results,
+        "succeeded": succeeded,
+        "failed": len(results) - succeeded,
+        "total": len(results)
+    }
+
+
 async def execute_jira(action: str, params: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     try:
         if action == "get_issue" or action == "get_ticket":
@@ -126,6 +187,19 @@ async def execute_jira(action: str, params: Dict[str, Any], context: Optional[Di
                 raise ValueError("issue_id is required")
             output = await update_issue(issue_id, status=params.get("status"), summary=params.get("summary"))
             return {"status": "success", "output": output}
+
+        elif action == "get_epic_children" or action == "get_epic_issues":
+            epic_key = params.get("epic_key") or params.get("issue_id")
+            if not epic_key:
+                raise ValueError("epic_key is required")
+            output = await get_epic_children(epic_key)
+            return {"status": "success", "output": output}
+
+        elif action == "bulk_update_status":
+            issue_keys = params.get("issue_keys", [])
+            status = params.get("status", "In Progress")
+            output = await bulk_update_status(issue_keys, status)
+            return {"status": "success", "output": output}
             
         else:
             raise ValueError(f"Unknown Jira action: {action}")
@@ -133,3 +207,4 @@ async def execute_jira(action: str, params: Dict[str, Any], context: Optional[Di
     except Exception as e:
         logger.error(f"Jira execution failed: {e}")
         return {"status": "error", "error": str(e)}
+

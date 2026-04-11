@@ -30,6 +30,7 @@ from api_schemas.execution import (
 from services.context import ContextManager
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
+from services.rollback import get_rollback_engine
 
 logger = logging.getLogger("mcp_gateway.execution_bridge")
 
@@ -91,18 +92,21 @@ class ExecutionBridge:
         dag: WorkflowDAG,
         auto_approve: bool = True,
         dry_run: bool = False,
-        credentials: Optional[dict] = None
+        credentials: Optional[dict] = None,
+        rollback_policy: str = "auto",
     ):
         self.dag = dag
         self.auto_approve = auto_approve
         self.dry_run = dry_run
         self.credentials = credentials or {}
+        self.rollback_policy = rollback_policy
 
         # Shivam's context manager — template resolution + state
         self.context = ContextManager(
             summarize_threshold=int(os.getenv("SUMMARIZE_THRESHOLD", "2000"))
         )
         self.audit = get_audit_logger()
+        self.rollback_engine = get_rollback_engine()
         self.execution = WorkflowExecution(
             workflow_name=dag.workflow_name,
             dag=dag,
@@ -301,6 +305,12 @@ class ExecutionBridge:
                 elif node.tool in ["github", "github_mcp"]:
                     from agentic_mcp_gateway.github_mcp import handle_github_tool
                     output = await handle_github_tool(node.action, resolved_params)
+                elif node.tool in ["jira", "jira_mcp"]:
+                    from services.integrations.jira_integration import execute_jira
+                    jira_res = await execute_jira(node.action, resolved_params)
+                    if jira_res.get("status") == "error":
+                        raise Exception(jira_res.get("error"))
+                    output = jira_res.get("output", jira_res)
                 else:
                     output = _mock_tool_output(node.tool, node.action, resolved_params)
                 
@@ -311,6 +321,17 @@ class ExecutionBridge:
                 self._record_result(node_id, node, NodeStatus.SUCCESS,
                                     output=output, duration_ms=elapsed, retries=attempt - 1)
                 self.audit.log_tool_success(exec_id, node_id, node.tool, node.action, output, elapsed)
+
+                # Record compensating action for auto-rollback
+                self.rollback_engine.record_compensating_action(
+                    execution_id=exec_id,
+                    node_id=node_id,
+                    tool=node.tool,
+                    action=node.action,
+                    params=resolved_params,
+                    output=output
+                )
+
                 await self._emit("node_success", {
                     "node_id": node_id, "output": output,
                     "duration_ms": round(elapsed, 1),
@@ -334,6 +355,39 @@ class ExecutionBridge:
                     self.audit.log_tool_failure(exec_id, node_id, node.tool,
                                                node.action, str(e), attempt)
                     await self._emit("node_failed", {"node_id": node_id, "error": str(e)})
+
+                    # ── AUTOMATIC ROLLBACK on node failure ───────────────
+                    if self.rollback_policy == "auto" and self.rollback_engine.has_entries(exec_id):
+                        logger.warning(
+                            f"[{exec_id}] Node {node_id} failed — triggering automatic rollback"
+                        )
+                        await self._emit("rollback_start", {
+                            "execution_id": exec_id,
+                            "trigger_node": node_id,
+                            "reason": str(e),
+                        })
+
+                        # Import dispatcher for rollback execution
+                        from agentic_mcp_gateway.agentic_executor import dispatch_mcp
+                        rollback_result = await self.rollback_engine.execute_rollback(
+                            exec_id, mcp_dispatcher=dispatch_mcp
+                        )
+
+                        # Store rollback result on the execution
+                        self.execution.rollback_result = rollback_result.to_dict()
+
+                        await self._emit("rollback_complete", {
+                            "execution_id": exec_id,
+                            "rolled_back": rollback_result.succeeded,
+                            "failed_rollbacks": rollback_result.failed,
+                            "skipped": rollback_result.skipped,
+                            "details": rollback_result.to_dict(),
+                        })
+
+                        self.audit.log_event(
+                            exec_id, "rollback_complete",
+                            f"Rolled back {rollback_result.succeeded}/{rollback_result.total_entries} nodes"
+                        )
 
     # ─── SSE Streaming ─────────────────────────────────────────────
 

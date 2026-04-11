@@ -14,6 +14,7 @@ from api_schemas.requests import PlanRequest, PlanResponse
 from api_schemas.dag import WorkflowDAG
 from services.llm import get_llm_service
 from services.audit import get_audit_logger
+from services.session import get_session_manager
 
 logger = logging.getLogger("mcp_gateway.router.plan")
 
@@ -48,16 +49,29 @@ async def create_plan(request: PlanRequest) -> PlanResponse:
     """
     logger.info(f"Plan request: {request.user_input[:100]}...")
     audit = get_audit_logger()
+    session_mgr = get_session_manager()
 
     try:
         llm = get_llm_service()
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Call LLM to generate DAG
+    # ── Session management ──────────────────────────────────────────
+    session = session_mgr.get_or_create(request.session_id)
+
+    # Handle edit/regeneration: discard messages after edit point
+    if request.edit_index is not None:
+        session.edit_from(request.edit_index)
+        logger.info(f"[Session {session.session_id}] Edit from index {request.edit_index}")
+
+    # Add the user's message to the conversation history
+    session.add_message("user", request.user_input)
+
+    # ── Generate DAG with full conversation context ─────────────────
     result = await llm.generate_dag(
         user_input=request.user_input,
-        context=request.context
+        context=request.context,
+        session_id=session.session_id
     )
 
     # Log LLM call to audit
@@ -79,7 +93,8 @@ async def create_plan(request: PlanRequest) -> PlanResponse:
             raw_llm_output=result.get("raw"),
             errors=[],
             attempts=result["attempts"],
-            model_used=result["model"]
+            model_used=result["model"],
+            session_id=session.session_id
         )
     else:
         logger.warning(f"❌ DAG generation failed after {result['attempts']} attempts")
@@ -89,7 +104,8 @@ async def create_plan(request: PlanRequest) -> PlanResponse:
             raw_llm_output=result.get("raw"),
             errors=result["errors"],
             attempts=result["attempts"],
-            model_used=result["model"]
+            model_used=result["model"],
+            session_id=session.session_id
         )
 
 

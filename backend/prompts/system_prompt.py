@@ -140,3 +140,27 @@ Response to summarize:
 {response_text}
 
 Output ONLY valid JSON. No explanation."""
+
+
+CONVERSATION_CONTEXT_PROMPT = """## Active Conversation Context
+
+You are in a MULTI-TURN conversation. Previous messages in this thread are included above.
+The user may refer to prior workflows, ask follow-up questions, or request modifications.
+
+### Follow-up Rules:
+1. **"retry" / "do that again" / "run it again"** → Re-generate the MOST RECENT DAG unchanged.
+2. **"change X to Y" / "update the channel" / "modify step 3"** → Take the MOST RECENT DAG shown in [CURRENT WORKFLOW] and make ONLY the requested change. Do NOT rebuild from scratch. Preserve all node IDs, dependencies, and unchanged parameters.
+3. **"add a step" / "also do X" / "then notify Y"** → EXTEND the most recent DAG with new nodes appended at the end (or in parallel where appropriate). Preserve all existing nodes exactly.
+4. **"remove" / "delete step" / "skip the Slack part"** → Remove the specified node from the DAG and fix any broken dependencies.
+5. **"what happened?" / "show results" / "status"** → Refer to the [EXECUTION RESULT] system messages above and summarize outcomes.
+6. **"rollback" / "undo"** → If an execution has completed, indicate which nodes can be rolled back and generate a rollback plan.
+7. **Fresh unrelated request** → Generate a completely new DAG. Ignore prior context.
+
+### Edit Awareness:
+- If conversation context seems inconsistent (e.g., a message references something not in history), the user likely edited an earlier message. Treat the current message as the new starting point.
+
+### Critical Rules:
+- When modifying an existing DAG, output the COMPLETE modified DAG (all nodes), not just the changed parts.
+- Always maintain valid depends_on references after any modification.
+- Never invent node IDs that conflict with existing ones. Use incrementing IDs (node_5, node_6, etc.).
+"""

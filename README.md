@@ -15,11 +15,12 @@ The **Agentic MCP Gateway** is an AI-powered orchestration layer that converts n
 > *"Critical bug filed in Jira → Create GitHub branch → Notify Slack → Update incident tracker"*
 
 The system automatically:
-1. 🧠 **Decomposes** this into a validated DAG using LLM planning
-2. ⚡ **Executes** each step via the appropriate MCP server
-3. 🔄 **Handles failures** with exponential backoff retry
-4. 🔒 **Asks for human approval** on sensitive actions (HITL)
-5. 📡 **Streams** real-time status to the frontend via SSE
+1. 🧠 **Decomposes** constraints into a validated DAG using LLM planning
+2. 💬 **Maintains Conversational Memory** allowing multi-turn plan modifications and contextual awareness.
+3. ⚡ **Executes** each step via the appropriate MCP server and routes data cross-node dynamically.
+4. 🔄 **Handles failures & Auto-Rollbacks** with exponential backoff and a Saga-Pattern reverse-topological engine to cleanly undo partial workflows on failure.
+5. 🚀 **Jira Epic Decomposition** natively mapping massive parent epics into parallel sub-branches with PRs instantly.
+6. 🔒 **Asks for human approval** on sensitive actions (HITL) and streams status via SSE.
 
 ---
 
@@ -102,14 +103,17 @@ Tic-Tech-Toe/Product/
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/health` | System health + service status |
-| `POST` | `/plan` | Generate DAG from natural language input |
+| `POST` | `/plan` | Generate DAG from natural language input (multi-turn aware) |
 | `POST` | `/plan/validate` | Validate an existing DAG schema |
-| `POST` | `/execute` | Execute DAG (synchronous response) |
+| `POST` | `/execute` | Execute DAG (sync response + auto-rollback support) |
 | `POST` | `/execute/stream` | Execute DAG with SSE real-time streaming |
 | `POST` | `/execute/approve/{exec_id}/{node_id}` | HITL approval gate |
+| `GET` | `/session/active` | Retrieve active /plan conversation multi-turn sessions |
+| `GET` | `/session/{id}/history` | Retrieve full context injection history |
+| `POST` | `/workflow/epic` | Master dispatcher: map Jira Epic to parallel branches |
+| `POST` | `/workflow/epic/{id}/rollback` | Manual Rollback trigger for Epic workflows |
 | `GET` | `/audit/logs` | Retrieve audit trail (filterable) |
 | `GET` | `/audit/stats` | Audit event statistics |
-| `GET` | `/audit/security` | Security-relevant events |
 | `GET` | `/docs` | Swagger API documentation |
 | `GET` | `/redoc` | ReDoc API documentation |
 
