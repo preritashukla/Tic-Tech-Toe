@@ -5,7 +5,7 @@ Tracks every node's lifecycle: status, timing, inputs, outputs, errors.
 
 import json
 from datetime import datetime, timezone
-from models import DAGNode, TaskStatus
+from .models import DAGNode, TaskStatus
 
 RESET   = "\033[0m"
 BOLD    = "\033[1m"

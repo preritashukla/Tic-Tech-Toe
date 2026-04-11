@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ReactFlow, Background, Controls, MarkerType } from '@xyflow/react';
 import NodeCard from './NodeCard';
 import type { WorkflowNode, WorkflowEdge } from '@/lib/types';
-import { Box, Skeleton, Typography } from '@mui/material';
+import { Box, Skeleton, Typography, Drawer, Divider, IconButton } from '@mui/material';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface DAGViewerProps {
   nodes: WorkflowNode[];
@@ -17,6 +18,7 @@ const nodeTypes = { custom: NodeCard };
 function getEdgeColor(sourceStatus: string): string {
   switch (sourceStatus) {
     case 'done':
+    case 'success':
       return 'hsl(142, 71%, 45%)';
     case 'running':
       return 'hsl(217, 91%, 60%)';
@@ -30,6 +32,8 @@ function getEdgeColor(sourceStatus: string): string {
 }
 
 const DAGViewer = ({ nodes, edges, loading }: DAGViewerProps) => {
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
   const nodeStatusMap = useMemo(() => {
     const map: Record<string, string> = {};
     nodes.forEach((n) => (map[n.id] = n.status));
@@ -62,7 +66,7 @@ const DAGViewer = ({ nodes, edges, loading }: DAGViewerProps) => {
           source: e.source,
           target: e.target,
           markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
-          animated: nodeStatusMap[e.source] === 'running' || nodeStatusMap[e.source] === 'done',
+          animated: nodeStatusMap[e.source] === 'running' || nodeStatusMap[e.source] === 'done' || nodeStatusMap[e.source] === 'success',
           style: { stroke: color, strokeWidth: 2 },
         };
       }),
@@ -120,6 +124,7 @@ const DAGViewer = ({ nodes, edges, loading }: DAGViewerProps) => {
         zoomOnScroll
         minZoom={0.3}
         maxZoom={1.5}
+        onNodeClick={(_, node) => setSelectedNodeId(node.id)}
       >
         <Background gap={30} size={1} color="hsl(217, 33%, 12%)" />
         <Controls
@@ -131,6 +136,85 @@ const DAGViewer = ({ nodes, edges, loading }: DAGViewerProps) => {
           }}
         />
       </ReactFlow>
+
+      <Drawer
+        anchor="right"
+        open={!!selectedNodeId}
+        onClose={() => setSelectedNodeId(null)}
+        PaperProps={{
+          sx: {
+            width: { xs: '100%', sm: 400 },
+            bgcolor: 'hsl(222, 47%, 6%)',
+            color: 'hsl(213, 31%, 91%)',
+            borderLeft: '1px solid hsl(217, 33%, 12%)',
+          },
+        }}
+      >
+        <Box className="p-4" sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          overflow: 'hidden' 
+        }}>
+          {(() => {
+            const sn = nodes.find(n => n.id === selectedNodeId);
+            if (!sn) return null;
+            return (
+              <>
+                <Box className="flex items-center justify-between mb-4">
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                    {sn.title || sn.id}
+                  </Typography>
+                  <IconButton onClick={() => setSelectedNodeId(null)} sx={{ color: 'hsl(215, 20%, 65%)' }}>
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+                
+                <Box sx={{ mb: 3 }}>
+                  <Typography sx={{ color: 'hsl(215, 20%, 65%)', fontSize: 13, mb: 0.5 }}>Status</Typography>
+                  <Box className="inline-block px-2 py-1 rounded" sx={{ bgcolor: 'hsl(217, 33%, 15%)', fontSize: 12, fontWeight: 500 }}>
+                    {sn.status}
+                  </Box>
+                </Box>
+
+                <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <Box>
+                    <Typography sx={{ color: 'hsl(215, 20%, 65%)', fontSize: 13, mb: 1 }}>Inputs Parameters</Typography>
+                    <Box component="pre" sx={{ 
+                      p: 2, 
+                      bgcolor: 'hsl(217, 33%, 12%)', 
+                      borderRadius: 1, 
+                      fontSize: 12,
+                      overflowX: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all'
+                    }}>
+                      {JSON.stringify(sn.inputs || {}, null, 2)}
+                    </Box>
+                  </Box>
+                  
+                  <Box>
+                    <Typography sx={{ color: 'hsl(215, 20%, 65%)', fontSize: 13, mb: 1 }}>Output / Error</Typography>
+                    <Box component="pre" sx={{ 
+                      p: 2, 
+                      bgcolor: sn.status === 'failed' ? 'hsl(0, 84%, 60% / 0.1)' : 'hsl(217, 33%, 12%)',
+                      color: sn.status === 'failed' ? 'hsl(0, 84%, 70%)' : 'inherit',
+                      borderRadius: 1, 
+                      fontSize: 12,
+                      overflowX: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                      border: sn.status === 'failed' ? '1px solid hsl(0, 84%, 60% / 0.3)' : 'none'
+                    }}>
+                      {JSON.stringify(sn.outputs || {}, null, 2)}
+                    </Box>
+                  </Box>
+                </Box>
+              </>
+            );
+          })()}
+        </Box>
+      </Drawer>
     </Box>
   );
 };
