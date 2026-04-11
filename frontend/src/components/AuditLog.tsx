@@ -32,7 +32,7 @@ const AuditLog = ({ nodes, loading }: AuditLogProps) => {
   }, [completed.length]);
 
   return (
-    <Box className="flex flex-col h-full">
+    <Box className="flex flex-col h-full min-h-0">
       {/* Header */}
       <Box className="flex items-center justify-between mb-3 px-1">
         <Typography
@@ -85,9 +85,8 @@ const AuditLog = ({ nodes, loading }: AuditLogProps) => {
       {/* Log entries */}
       <Box
         ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-2 pr-1"
+        className="flex-1 overflow-y-auto min-h-0 space-y-2 pr-1"
         sx={{
-          maxHeight: 'calc(100vh - 220px)',
           '&::-webkit-scrollbar': { width: 4 },
           '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
           '&::-webkit-scrollbar-thumb': { bgcolor: 'hsl(217, 33%, 25%)', borderRadius: 2 },
