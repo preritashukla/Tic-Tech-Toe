@@ -11,20 +11,16 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 // MCP-relevant workflow examples matching the problem statement
 const EXAMPLE_WORKFLOWS = [
   {
-    text: 'When a critical bug is filed in Jira, create a GitHub branch, notify Slack on-call, and update the incident tracker',
-    icon: <BugReportIcon sx={{ fontSize: '14px !important', color: 'hsl(0, 84%, 60%) !important' }} />,
+    text: 'Send a Slack message saying Hello from my workflow system',
+    icon: <NotificationsActiveIcon sx={{ fontSize: '14px !important', color: 'hsl(38, 92%, 50%) !important' }} />,
   },
   {
-    text: 'Monitor competitor prices, compare with GPT, alert on Discord, and log to Airtable',
-    icon: <TrendingUpIcon sx={{ fontSize: '14px !important', color: 'hsl(142, 71%, 50%) !important' }} />,
-  },
-  {
-    text: 'Parse PDF invoices, extract line items, update Google Sheets, and create Trello cards for review',
+    text: 'Fetch latest commits from GitHub and send a summary to Slack',
     icon: <DescriptionIcon sx={{ fontSize: '14px !important', color: 'hsl(217, 91%, 60%) !important' }} />,
   },
   {
-    text: 'Monitor AWS CloudWatch alarms, create Jira tickets, notify Slack, and update status page',
-    icon: <NotificationsActiveIcon sx={{ fontSize: '14px !important', color: 'hsl(38, 92%, 50%) !important' }} />,
+    text: 'Fetch GitHub commits and Jira issues in parallel, then send a combined summary to Slack',
+    icon: <BugReportIcon sx={{ fontSize: '14px !important', color: 'hsl(0, 84%, 60%) !important' }} />,
   },
 ];
 

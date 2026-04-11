@@ -96,9 +96,9 @@ const Dashboard = () => {
             {/* Quick Suggestions */}
             <div className="mt-3 flex flex-wrap gap-1.5">
               {[
-                "Critical bug filed in Jira",
-                "Competitor dropped prices",
-                "AWS CloudWatch high CPU",
+                "Send a Slack message saying Hello from my workflow system",
+                "Fetch latest commits from GitHub and send a summary to Slack",
+                "Fetch GitHub commits and Jira issues in parallel, then send a combined summary to Slack",
               ].map((suggestion) => (
                 <button
                   key={suggestion}

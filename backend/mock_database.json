@@ -874,5 +874,428 @@
       "repo": "Tic-Tech-Toe",
       "path": ""
     }
+  },
+  {
+    "timestamp": "2026-04-11T13:09:54.946785",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:09:57.835880",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "per_page": "100"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:10:00.432143",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Repo {{step_1.repo_full_name}} latest commit sha: {{step_2.latest_commit_sha}}\nCommit message: {{step_2.latest_commit_msg}}\nDate: {{step_2.latest_commit_date}}"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:10:03.607754",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Repo {{step_1.repo_full_name}} latest commit sha: {{step_2.latest_commit_sha}}\nCommit message: {{step_2.latest_commit_msg}}\nDate: {{step_2.latest_commit_date}}",
+      "TOOL_SPECIFICATIONS": {
+        "tool_name": "github",
+        "tool_id": "github_commits"
+      }
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:10:07.536011",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Repo {{step_1.repo_full_name}} latest commit sha: {{step_2.latest_commit_sha}}\nCommit message: {{step_2.latest_commit_msg}}\nDate: {{step_2.latest_commit_date}}"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:32:14.681482",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:32:20.049165",
+    "tool": "jira_mcp",
+    "action": "create_issue",
+    "payload_received": {
+      "project_key": "COMP",
+      "summary": "Competitor Price Drop",
+      "description": "{{step_1.repo_default_branch}} has dropped competitor prices"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:32:56.564360",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:32:58.992593",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:33:01.263323",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "{{step_2.latest_commit_msg}} on {{step_2.latest_commit_date}}"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:33:04.480240",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "{{step_2_latest_commit_msg}} on {{step_2_latest_commit_date}}"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:33:08.641824",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "{{step_2_latest_commit_msg}} on {{step_2_latest_commit_date}}",
+      "tool": "system_mcp",
+      "action": "summarize"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:40:50.172444",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:40:57.005150",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "per_page": 1
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:41:00.535843",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Latest commit: {{step_2.latest_commit_sha}} - {{step_2.latest_commit_msg}}"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:47:59.091569",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Hello from the workflow system!"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:48:24.932335",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:48:34.950059",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:48:37.332547",
+    "tool": "github_mcp",
+    "action": "get_file_content",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "path": "commits.txt",
+      "ref": "heads/main"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:48:39.394198",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Latest Git commits: # Demo Repository\nThis is a fallback mock response."
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:48:44.128913",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Git Summary: Latest Git commits: # Demo Repository\nThis is a fallback mock response."
+    }
+  },
+  {
+    "timestamp": "2026-04-11T13:55:29.037868",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Hello from my workflow system"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:01:50.093874",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "path": ""
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:01:55.571503",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Latest Git Commit Summary: fix: resolve github mcp owner/repo parsing, add fallback robust mock actions, and fix frontend API retry to gracefully handle server restarts (2026-04-11T07:26:14Z)"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:02:15.830266",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Hello from my workflow system"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:08:29.078768",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Hello from my workflow system"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:09:02.684448",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:09:10.362852",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:09:13.243822",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "Latest commit: fix: resolve github mcp owner/repo parsing, add fallback robust mock actions, and fix frontend API retry to gracefully handle server restarts by 2026-04-11T07:26:14Z (ffa4171c2c177bcd741cb5013bb5a1912953791d)"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:09:16.837825",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Latest commit summary: Latest commit: fix: resolve github mcp owner/repo parsing, add fallback robust mock actions, and fix frontend API retry to gracefully handle server restarts by 2026-04-11T07:26:14Z (ffa4171c2c177bcd741cb5013bb5a1912953791d)"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:10:27.806616",
+    "tool": "jira_mcp",
+    "action": "list_issues",
+    "payload_received": {
+      "project_key": "myjira",
+      "state": "open",
+      "assignee": ""
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:10:27.811535",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "per_page": 100
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:11:51.647581",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:11:55.500558",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:11:55.514108",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:11:55.533614",
+    "tool": "jira_mcp",
+    "action": "list_issues",
+    "payload_received": {
+      "project_key": "example_project_key"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:11:59.150392",
+    "tool": "github_mcp",
+    "action": "get_file_content",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "path": "README.md",
+      "ref": "latest_commit_sha"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:15:38.626899",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "path": ""
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:15:38.653372",
+    "tool": "jira_mcp",
+    "action": "list_issues",
+    "payload_received": {
+      "project_key": "",
+      "labels": ""
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:15:41.202174",
+    "tool": "jira_mcp",
+    "action": "list_issues",
+    "payload_received": {
+      "project_key": "",
+      "labels": ""
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:15:41.206168",
+    "tool": "github_mcp",
+    "action": "list_commits",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "path": ""
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:15:43.438541",
+    "tool": "system_mcp",
+    "action": "summarize",
+    "payload_received": {
+      "text": "GitHub commits: ffa4171c2c177bcd741cb5013bb5a1912953791d, fix: resolve github mcp owner/repo parsing, add fallback robust mock actions, and fix frontend API retry to gracefully handle server restarts, 2026-04-11T07:26:14Z; Jira issues: [missing issues_json], 4, PROJ-1045"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:15:48.229204",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Combined summary: GitHub commits: ffa4171c2c177bcd741cb5013bb5a1912953791d, fix: resolve github mcp owner/repo parsing, add fallback robust mock actions, and fix frontend API retry to gracefully handle server restarts, 2026-04-11T07:26:14Z; Jira issues: [missing issues_json], 4, PROJ-1045"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:18:30.233465",
+    "tool": "github_mcp",
+    "action": "get_repository",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:18:32.808979",
+    "tool": "github_mcp",
+    "action": "create_branch",
+    "payload_received": {
+      "owner": "preritashukla",
+      "repo": "Tic-Tech-Toe",
+      "branch_name": "feature/agentic-test",
+      "from_branch": "main"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T14:25:27.130767",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "message": "Hello"
+    }
   }
 ]

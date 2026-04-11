@@ -101,6 +101,19 @@ async def plan_workflow(req: PlanRequest):
 
     return PlanResponse(workflow_id=wf_id, message="Execution started")
 
+@app.get("/mock-db")
+async def get_mock_db():
+    """Returns the mock database for frontend simulation views like Slack/GitHub."""
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mock_database.json")
+    if os.path.exists(db_path):
+        import json
+        try:
+            with open(db_path, "r") as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
 @app.get("/active-workflows")
 async def get_active_workflows():
     """Return status of all active workflows for the logs page."""

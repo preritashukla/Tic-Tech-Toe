@@ -274,7 +274,6 @@ const WorkflowDashboard = () => {
             loading={loading}
           />
         </Box>
-        </Box>
       </Box>
 
       {/* Audit Log Sidebar */}

@@ -48,7 +48,7 @@ async def dispatch_mcp_call(tool: str, action: str, inputs: dict) -> dict:
     # Save physical data state
     _save_to_db(tool, action, inputs)
     
-    if tool == "jira_mcp":
+    if tool in ("jira_mcp", "jira"):
         if action in ("create_ticket", "create_issue"):
             return {
                 "ticket_id": f"PROJ-{random.randint(100, 999)}",
@@ -67,8 +67,18 @@ async def dispatch_mcp_call(tool: str, action: str, inputs: dict) -> dict:
                 "status": "updated",
                 "updated_fields": list(inputs.keys())
             }
+        elif action == "list_issues":
+            return {
+                "issue_count": 4,
+                "issues": [
+                    {"id": "PROJ-1045", "title": "Dashboard Rendering Bug"},
+                    {"id": "PROJ-1046", "title": "Optimize LLM Inference"},
+                    {"id": "PROJ-1047", "title": "Upgrade React to 19"}
+                ],
+                "first_issue_number": "PROJ-1045"
+            }
             
-    elif tool == "github_mcp":
+    elif tool in ("github_mcp", "github"):
         from .github_mcp import handle_github_tool
         try:
             return await handle_github_tool(action, inputs)
@@ -157,11 +167,24 @@ async def dispatch_mcp_call(tool: str, action: str, inputs: dict) -> dict:
             }
 
             
-    elif tool == "slack_mcp":
+    elif tool in ("slack_mcp", "slack"):
         if action in ("post_message", "send_message"):
+            channel = inputs.get("channel", "#general")
+            message = inputs.get("message", "Triggered from Workflow Maestro")
+            
+            # Show a real Mac Desktop Notification for the hackathon demo!
+            import subprocess
+            try:
+                # Escape quotes in message to prevent script injection issues
+                safe_msg = str(message).replace('"', '\\"')
+                apple_script = f'display notification "{safe_msg}" with title "Slack" subtitle "{channel}" sound name "Glass"'
+                subprocess.run(["osascript", "-e", apple_script], check=False)
+            except Exception as e:
+                print(f"      [SLACK NOTIFICATION MOCK FAILED] {e}")
+
             return {
                 "delivered": True,
-                "channel": inputs.get("channel", "#general"),
+                "channel": channel,
                 "timestamp": 1612456789.2312
             }
         elif action == "create_channel":
@@ -171,7 +194,7 @@ async def dispatch_mcp_call(tool: str, action: str, inputs: dict) -> dict:
                 "channel_name": inputs.get("name", inputs.get("channel_name", "new-channel"))
             }
 
-    elif tool == "system_mcp":
+    elif tool in ("system_mcp", "system"):
         if action == "summarize":
             from services.llm import get_llm_service
             text_to_summarize = inputs.get("text", "")
@@ -185,7 +208,7 @@ async def dispatch_mcp_call(tool: str, action: str, inputs: dict) -> dict:
             summary = await get_llm_service().summarize_payload(str(text_to_summarize))
             return {"summary": summary}
 
-    elif tool == "sheets_mcp":
+    elif tool in ("sheets_mcp", "sheets", "sheet"):
         if action == "read_row":
             return {
                 "row": inputs.get("row", 1),

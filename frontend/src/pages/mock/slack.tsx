@@ -1,9 +1,53 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Hash, Search, Bell, Bot } from 'lucide-react';
+import { MessageSquare, Hash, Search, Bell, Bot, FileText, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
+
+const formatText = (t: string) => {
+    return t.replace('🚨', '🚨 ').replace(/\*(.*?)\*/g, '<strong>$1</strong>').replace(/`(.*?)`/g, '<code class="bg-[#222529] text-red-400 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
+};
+
+const renderSlackMessage = (text: string) => {
+    const codeBlockRegex = /```(?:csv|json|data|text)?\n([\s\S]*?)```/;
+    const match = text.match(codeBlockRegex);
+
+    if (match) {
+        const preText = text.substring(0, match.index).trim();
+        const postText = text.substring(match.index! + match[0].length).trim();
+        const fileContent = match[1].trim();
+        
+        const lines = fileContent.split('\n').length;
+        const fileSize = Math.max(0.1, (fileContent.length / 1024)).toFixed(1);
+
+        const isCsv = fileContent.includes(',') && !fileContent.trim().startsWith('{');
+        const fileExtension = isCsv ? 'csv' : 'json';
+        const fileName = `workflow_summary_export.${fileExtension}`;
+
+        return (
+            <div className="flex flex-col gap-2">
+                {preText && <div dangerouslySetInnerHTML={{__html: formatText(preText)}} />}
+                
+                <div className="flex items-center gap-4 bg-[#222529] border border-[#3f4145] rounded-xl pl-3 pr-4 py-3 max-w-sm mt-1 hover:bg-[#2a2d32] transition-colors cursor-pointer group shadow-sm">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isCsv ? 'bg-green-500/20 text-green-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
+                        <FileText size={20} />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <div className="text-[#d1d2d3] font-bold text-sm truncate">{fileName}</div>
+                        <div className="text-[#ababad] text-xs mt-1">{fileSize} KB • {lines} rows</div>
+                    </div>
+                    <div className="text-[#ababad] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Download size={18} />
+                    </div>
+                </div>
+
+                {postText && <div dangerouslySetInnerHTML={{__html: formatText(postText)}} />}
+            </div>
+        );
+    }
+    return <div dangerouslySetInnerHTML={{__html: formatText(text)}} />;
+};
 
 export default function MockSlack() {
   const [messages, setMessages] = useState([
@@ -14,23 +58,49 @@ export default function MockSlack() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Simulate webhooks/polling after 4 seconds: Add new message from Gateway bot
-    const timer = setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: 3,
-          user: 'Agentic Gateway',
-          text: '🚨 *Critical Alert*: PROJ-1045 has been surfaced. New branch `fix/PROJ-1045` created automatically. Please review.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isBot: true,
-        }
-      ]);
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 5000);
-    }, 4000);
+    // Poll the backend mock database every 2 seconds to fetch live mock data
+    const knownTimestamps = new Set<string>();
 
-    return () => clearTimeout(timer);
+    const fetchMockMessages = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/mock-db');
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        let hasNew = false;
+        const newMessages: typeof messages = [];
+        
+        data.forEach((entry: any) => {
+          if ((entry.tool === 'slack' || entry.tool === 'slack_mcp') && (entry.action === 'send_message' || entry.action === 'post_message')) {
+            if (!knownTimestamps.has(entry.timestamp)) {
+              knownTimestamps.add(entry.timestamp);
+              const date = new Date(entry.timestamp);
+              newMessages.push({
+                id: entry.timestamp as any,
+                user: 'Agentic Gateway',
+                text: entry.payload_received?.message || "No content",
+                time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                isBot: true,
+              });
+              hasNew = true;
+            }
+          }
+        });
+
+        if (hasNew) {
+          setMessages(prev => [...prev, ...newMessages]);
+          setShowNotification(true);
+          setTimeout(() => setShowNotification(false), 5000);
+        }
+      } catch (err) {
+        console.error("Slack mock polling error:", err);
+      }
+    };
+
+    fetchMockMessages();
+    const interval = setInterval(fetchMockMessages, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Auto scroll to bottom
@@ -115,7 +185,8 @@ export default function MockSlack() {
                     {msg.isBot && <span className="text-[10px] bg-[#222529] px-1 rounded text-[#ababad]">APP</span>}
                     <span className="text-xs text-[#ababad]">{msg.time}</span>
                   </div>
-                  <div className="text-[15px] leading-relaxed text-[#d1d2d3]" dangerouslySetInnerHTML={{__html: msg.text.replace('🚨', '🚨 ').replace(/\*(.*?)\*/g, '<strong>$1</strong>').replace(/`(.*?)`/g, '<code class="bg-[#222529] text-red-400 px-1 py-0.5 rounded text-sm font-mono">$1</code>')}}>
+                  <div className="text-[15px] leading-relaxed text-[#d1d2d3]">
+                    {renderSlackMessage(msg.text)}
                   </div>
                 </div>
               </motion.div>
