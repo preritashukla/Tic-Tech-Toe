@@ -31,3 +31,10 @@ __pycache__/
 backend/credentials/service_account.json
 backend/credentials/
 .env
+node_modules/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+

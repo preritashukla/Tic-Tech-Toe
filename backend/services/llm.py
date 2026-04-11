@@ -17,13 +17,8 @@ from typing import Optional
 from groq import Groq
 from dotenv import load_dotenv
 
-<<<<<<< HEAD
 from api_schemas.dag import WorkflowDAG
 from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX, TOOL_SPECIFICATIONS
-=======
-from models.dag import WorkflowDAG
-from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX
->>>>>>> 1943d77d8153a134f0c9518648bac977fab97062
 
 load_dotenv()
 logger = logging.getLogger("mcp_gateway.llm")

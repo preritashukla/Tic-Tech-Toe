@@ -175,8 +175,6 @@ async def get_execution_status(id: str):
         "skipped": execution.skipped,
         "timestamp": execution.start_time
     }
-
-
 # ─── Audit Endpoints ──────────────────────────────────────────────
 @app.get("/audit/logs", tags=["Audit"])
 async def get_audit_logs(
