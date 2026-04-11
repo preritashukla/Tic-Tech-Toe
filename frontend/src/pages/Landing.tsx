@@ -78,7 +78,7 @@ const Landing = () => {
           transition={{ delay: 0.45 }}
         >
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/login')}
             className="group flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-base text-black transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_hsl(217,91%,60%,0.5)]"
             style={{ background: 'linear-gradient(135deg, hsl(217,91%,60%), hsl(240,91%,65%))' }}
           >
@@ -88,11 +88,11 @@ const Landing = () => {
           </button>
 
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/login')}
             className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-base text-[hsl(213,31%,91%)] border border-[hsl(217,33%,25%)] bg-[hsl(222,47%,8%)] transition-all duration-200 hover:border-[hsl(217,91%,60%)] hover:bg-[hsl(217,91%,60%,0.08)] hover:-translate-y-0.5"
           >
             <LayoutDashboard size={18} />
-            Go to Dashboard
+            Sign In
           </button>
         </motion.div>
 
