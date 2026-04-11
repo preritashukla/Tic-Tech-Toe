@@ -1,0 +1,50 @@
+[
+  {
+    "timestamp": "2026-04-11T10:02:02.760801",
+    "tool": "sheets_mcp",
+    "action": "append_row",
+    "payload_received": {
+      "folder_name": "Marketing",
+      "row_data": {
+        "name": "Marketing Folder",
+        "type": "folder"
+      }
+    }
+  },
+  {
+    "timestamp": "2026-04-11T10:02:02.761303",
+    "tool": "jira_mcp",
+    "action": "create_issue",
+    "payload_received": {
+      "title": "Marketing Launch",
+      "description": "New marketing launch"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T10:02:02.862853",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "#marketing",
+      "message": "New marketing launch ticket created: {{node_2.params.title}}"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T10:03:27.836761",
+    "tool": "jira_mcp",
+    "action": "create_issue",
+    "payload_received": {
+      "title": "New Issue",
+      "description": "This is a new issue"
+    }
+  },
+  {
+    "timestamp": "2026-04-11T10:03:27.939027",
+    "tool": "slack_mcp",
+    "action": "send_message",
+    "payload_received": {
+      "channel": "general",
+      "text": "New Jira issue created: {{node_1.params.title}}"
+    }
+  }
+]
