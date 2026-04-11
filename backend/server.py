@@ -19,7 +19,7 @@ from agentic_mcp_gateway.models import dag_from_dict, TaskStatus
 from agentic_mcp_gateway.observability import ExecutionLogger
 from agentic_mcp_gateway.hitl_async import AsyncHITLGate
 from agentic_mcp_gateway.executor import DAGExecutor
-from agentic_mcp_gateway.mock_mcp_servers import dispatch_mcp_call
+from agentic_mcp_gateway.agentic_executor import dispatch_mcp
 
 app = FastAPI(title="Workflow Maestro API")
 
@@ -82,7 +82,7 @@ async def plan_workflow(req: PlanRequest):
 
     executor = DAGExecutor(
         dag=dag,
-        mcp_dispatcher=dispatch_mcp_call,
+        mcp_dispatcher=dispatch_mcp,
         hitl=hitl,
         logger=logger,
         original_prompt=req.input

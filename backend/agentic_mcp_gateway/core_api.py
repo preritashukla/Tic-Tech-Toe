@@ -15,7 +15,7 @@ from .models import dag_from_dict
 from .observability import ExecutionLogger
 from .hitl import HITLGate
 from .executor import DAGExecutor
-from .mock_mcp_servers import dispatch_mcp_call
+from .agentic_executor import dispatch_mcp
 
 EXAMPLE_DAG_JSON = {
     "workflow_id": "wf-20240409-login-bug",
@@ -77,7 +77,7 @@ async def run_example():
     # 3. Create executor
     executor = DAGExecutor(
         dag=dag,
-        mcp_dispatcher=dispatch_mcp_call,
+        mcp_dispatcher=dispatch_mcp,
         hitl=hitl,
         logger=logger
     )

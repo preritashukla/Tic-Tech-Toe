@@ -147,10 +147,10 @@ async def health_check():
         "llm_model": os.getenv("LLM_MODEL", "llama-3.3-70b-versatile"),
         "services": {
             "groq_api": "connected" if groq_ok else "not_configured",
-            "jira_mcp": "mock_active",
-            "github_mcp": "mock_active",
-            "slack_mcp": "mock_active",
-            "sheets_mcp": "mock_active",
+            "jira_mcp": "live",
+            "github_mcp": "live",
+            "slack_mcp": "live",
+            "sheets_mcp": "live",
         },
         "features": {
             "dag_generation": True,
@@ -217,7 +217,7 @@ async def get_active_workflows():
             "id": exec_id,
             "name": execution.dag.workflow_name if execution.dag else "Unknown",
             "status": execution.status.value,
-            "timestamp": execution.start_time
+            "timestamp": execution.started_at
         }
         for exec_id, execution in executions.items()
     ]

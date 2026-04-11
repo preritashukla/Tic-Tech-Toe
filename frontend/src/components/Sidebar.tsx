@@ -9,12 +9,7 @@ const devNavItems = [
   { name: 'System Logs', href: '/logs',      icon: Activity },
 ];
 
-const mockTools = [
-  { name: 'GitHub Mock', href: '/mock/github', icon: GitBranch },
-  { name: 'Jira Mock',   href: '/mock/jira',   icon: Kanban },
-  { name: 'Slack Mock',  href: '/mock/slack',  icon: MessageSquare },
-  { name: 'Sheets Mock', href: '/mock/sheets', icon: FileSpreadsheet },
-];
+
 
 export default function Sidebar() {
   const pathname = useLocation().pathname;
@@ -87,31 +82,7 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Mock Tools — Developer only */}
-        {isDeveloper && (
-          <div className="px-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-2">Simulated Tools</p>
-            <nav className="flex flex-col gap-1">
-              {mockTools.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200 ${
-                      isActive
-                        ? 'bg-secondary text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                    }`}
-                  >
-                    <item.icon size={18} className={isActive ? 'text-primary' : 'text-muted-foreground'} />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        )}
+
       </div>
 
       {/* Footer */}

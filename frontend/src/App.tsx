@@ -20,10 +20,6 @@ import Dashboard        from "./pages/Dashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import NotFound         from "./pages/NotFound";
 import Logs             from "./pages/Logs";
-import MockGitHub       from "./pages/mock/github";
-import MockJira         from "./pages/mock/jira";
-import MockSlack        from "./pages/mock/slack";
-import MockSheets       from "./pages/mock/sheets";
 import Layout           from "./components/Layout";
 
 const queryClient = new QueryClient();
@@ -79,18 +75,7 @@ const App = () => (
                   <Route path="/logs" element={
                     <ProtectedRoute><Logs /></ProtectedRoute>
                   } />
-                  <Route path="/mock/github" element={
-                    <ProtectedRoute><MockGitHub /></ProtectedRoute>
-                  } />
-                  <Route path="/mock/jira" element={
-                    <ProtectedRoute><MockJira /></ProtectedRoute>
-                  } />
-                  <Route path="/mock/slack" element={
-                    <ProtectedRoute><MockSlack /></ProtectedRoute>
-                  } />
-                  <Route path="/mock/sheets" element={
-                    <ProtectedRoute><MockSheets /></ProtectedRoute>
-                  } />
+
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

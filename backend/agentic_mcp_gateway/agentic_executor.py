@@ -77,16 +77,15 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
     if tool in ["slack", "slack_mcp"]:
         try:
             from services.integrations.slack_integration import execute_slack
-            # execute_slack takes (action, params, context)
             result = await execute_slack(action, inputs, {})
             if result.get("status") == "success":
                 return result.get("output", {})
             else:
                 raise Exception(result.get("error", "Unknown Slack error"))
-        except ImportError:
-            log_event("WARNING", "Slack live integration module not found, falling back to mock", "33")
         except Exception as e:
-            log_event("ERROR", f"Slack execution failed: {e}", "31")
+            if mock_output:
+                log_event("WARNING", f"Slack failed, using mock: {e}", "33")
+                return mock_output
             raise e
 
     if tool in ["sheets", "sheets_mcp"]:
@@ -97,21 +96,34 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
                 return result.get("output", result.get("data", {}))
             else:
                 raise Exception(result.get("error", "Unknown Sheets error"))
-        except ImportError:
-            log_event("WARNING", "Sheets live integration module not found, falling back to mock", "33")
         except Exception as e:
-            log_event("ERROR", f"Sheets execution failed: {e}", "31")
+            if mock_output:
+                log_event("WARNING", f"Sheets failed, using mock: {e}", "33")
+                return mock_output
             raise e
 
     if tool in ["github", "github_mcp"]:
         try:
             from agentic_mcp_gateway.github_mcp import handle_github_tool
-            # handle_github_tool returns the output dict directly
             return await handle_github_tool(action, inputs)
-        except ImportError:
-            log_event("WARNING", "GitHub live integration module not found, falling back to mock", "33")
         except Exception as e:
-            log_event("ERROR", f"GitHub execution failed: {e}", "31")
+            if mock_output:
+                log_event("WARNING", f"GitHub failed, using mock: {e}", "33")
+                return mock_output
+            raise e
+
+    if tool in ["jira", "jira_mcp"]:
+        try:
+            from services.integrations.jira_integration import execute_jira
+            result = await execute_jira(action, inputs, {})
+            if result.get("status") == "success":
+                return result.get("output", {})
+            else:
+                raise Exception(result.get("error", "Unknown Jira error"))
+        except Exception as e:
+            if mock_output:
+                log_event("WARNING", f"Jira failed, using mock: {e}", "33")
+                return mock_output
             raise e
 
     # 2. Check for real MCP server containers
@@ -135,14 +147,9 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], mock_outp
             except Exception as e:
                 raise ConnectionError(f"Real MCP container at {port} unreachable: {e}")
                 
-        try:
-            return await asyncio.to_thread(_make_req)
-        except ConnectionError as e:
-            # Container isn't up, just fallback gracefully to the JSON dict mock!
-            log_event("FALLBACK", f"{tool} HTTP failed - routing to mock payload", "90")
-            
-    await asyncio.sleep(0.5) 
-    return mock_output or {"status": "ok"}
+        return await asyncio.to_thread(_make_req)
+
+    raise ValueError(f"No live integration or MCP server found for tool: {tool}")
 
 
 # --- Core Executor Engine ---

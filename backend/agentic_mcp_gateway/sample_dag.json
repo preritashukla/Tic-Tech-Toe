@@ -7,9 +7,9 @@
       "id": "task_1",
       "name": "Create Jira Ticket",
       "tool": "jira_mcp",
-      "action": "create_ticket",
+      "action": "create_issue",
       "inputs": {
-        "title": "Fix Auth Gateway Bug",
+        "summary": "Fix Auth Gateway Bug",
         "priority": "High"
       },
       "depends_on": [],
