@@ -152,6 +152,7 @@ async def get_status(id: str):
         if "github" in str(node.tool).lower(): tool_name = "github"
         if "slack" in str(node.tool).lower(): tool_name = "slack"
         if "sheet" in str(node.tool).lower(): tool_name = "sheets"
+        if "system" in str(node.tool).lower(): tool_name = "system"
 
         frontend_node = {
             "id": node.id,

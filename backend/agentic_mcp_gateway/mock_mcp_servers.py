@@ -113,6 +113,20 @@ async def dispatch_mcp_call(tool: str, action: str, inputs: dict) -> dict:
                 "channel_name": inputs.get("name", inputs.get("channel_name", "new-channel"))
             }
 
+    elif tool == "system_mcp":
+        if action == "summarize":
+            from services.llm import get_llm_service
+            text_to_summarize = inputs.get("text", "")
+            if not text_to_summarize:
+                return {"summary": "No content provided to summarize."}
+            
+            # Convert dict/list inputs to string if needed
+            if isinstance(text_to_summarize, (dict, list)):
+                text_to_summarize = json.dumps(text_to_summarize, indent=2)
+            
+            summary = await get_llm_service().summarize_payload(str(text_to_summarize))
+            return {"summary": summary}
+
     elif tool == "sheets_mcp":
         if action == "read_row":
             return {

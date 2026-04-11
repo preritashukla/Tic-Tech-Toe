@@ -57,8 +57,9 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
             print(f"[Attempt {attempt}] Calling Groq API...")
             client = Groq()  # reads GROQ_API_KEY from env
 
+            model = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
             response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",  # best Llama on Groq
+                model=model,
                 max_tokens=1024,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
@@ -86,7 +87,10 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
             return dag
 
         except Exception as e:
-            last_error = f"Unexpected error: {e}"
+            if "429" in str(e):
+                last_error = "Groq Rate Limit Exceeded. Please wait a few minutes or switch to a high-capacity model."
+            else:
+                last_error = f"Unexpected error: {e}"
             break
 
     print(f"[generate_dag] All attempts failed. Last error: {last_error}")
