@@ -10,7 +10,7 @@ import Layout from '@/components/Layout';
 import DAGViewer from '@/components/DAGViewer';
 import AuditLog from '@/components/AuditLog';
 import HITLModal from '@/components/HITLModal';
-import { getWorkflowStatus, approveNode } from '@/lib/api';
+import { getWorkflowStatus, approveNode, WS_BASE } from '@/lib/api';
 import type { WorkflowNode, WorkflowStatus } from '@/lib/types';
 
 const WorkflowDashboard = () => {
@@ -34,27 +34,107 @@ const WorkflowDashboard = () => {
     }
   }, [id]);
 
-  // Poll every 2 seconds
+  // Connect to WebSocket for real-time updates, fallback to polling
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 2000);
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
+    if (!id) return;
+    
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    let ws: WebSocket | null = null;
+
+    const checkCompletion = (data: WorkflowStatus) => {
+      // Check if all nodes are in terminal states
+      const isFinished = data.nodes.every(n => 
+        ['done', 'success', 'failed', 'skipped'].includes(n.status)
+      );
+      if (isFinished) {
+        if (ws) ws.close(1000, "Workflow Complete");
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+    };
+
+    const fetchStatusWrapper = async () => {
+      try {
+        const data = await getWorkflowStatus(id);
+        setStatus(data);
+        setError(null);
+        checkCompletion(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch workflow status');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Initial fetch
+    fetchStatusWrapper();
+
+    const startPolling = () => {
+      // Only start polling if we don't have a final state yet
+      if (!pollingInterval) {
+        pollingInterval = setInterval(fetchStatusWrapper, 1500);
+      }
+    };
+
+    try {
+      ws = new WebSocket(`${WS_BASE}/ws/status/${id}`);
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setStatus(data);
+          setError(null);
+          setLoading(false);
+          checkCompletion(data);
+        } catch (err) {
+          console.error('Failed to parse websocket message', err);
+        }
+      };
+      
+      ws.onerror = () => {
+        console.warn('WebSocket error, falling back to polling');
+        ws?.close();
+        ws = null;
+        startPolling();
+      };
+
+      ws.onclose = (e) => {
+        // Code 1000 means intentional normal closure (we closed it)
+        if (e.code !== 1000) {
+          startPolling();
+        }
+      };
+    } catch {
+      startPolling();
+    }
+
+    return () => {
+      if (ws) ws.close(1000, "Component Unmounting");
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [id]);
 
   const approvalNode: WorkflowNode | null =
     status?.nodes.find((n) => n.status === 'waiting_approval') ?? null;
 
   const handleApprove = async (nodeId: string) => {
+    if (!id) return;
     try {
-      await approveNode(nodeId);
+      await approveNode(id, nodeId, true);
       await fetchStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve node');
     }
   };
 
-  const handleReject = (_nodeId: string) => {
-    // Reject could POST to a reject endpoint if available
+  const handleReject = async (nodeId: string) => {
+    if (!id) return;
+    try {
+      await approveNode(id, nodeId, false);
+      await fetchStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject node');
+    }
   };
 
   // Status summary counts

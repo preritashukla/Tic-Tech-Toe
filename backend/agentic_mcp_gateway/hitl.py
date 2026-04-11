@@ -3,8 +3,8 @@ hitl.py — Human-in-the-Loop Approval Gate
 Pauses execution on sensitive tasks and waits for explicit human approval.
 """
 
-from models import DAGNode, TaskStatus
-from observability import ExecutionLogger, YELLOW, BOLD, GREEN, RED, RESET
+from .models import DAGNode, TaskStatus
+from .observability import ExecutionLogger, YELLOW, BOLD, GREEN, RED, RESET
 
 
 class HITLGate:

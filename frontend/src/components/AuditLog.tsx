@@ -22,7 +22,7 @@ function formatTimestamp(iso?: string): string {
 
 const AuditLog = ({ nodes, loading }: AuditLogProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const completed = nodes.filter((n) => n.status === 'done' || n.status === 'failed');
+  const completed = nodes.filter((n) => n.status === 'done' || n.status === 'success' || n.status === 'skipped' || n.status === 'failed');
 
   // Auto-scroll to bottom when new entries appear
   useEffect(() => {
@@ -118,7 +118,7 @@ const AuditLog = ({ nodes, loading }: AuditLogProps) => {
                 bgcolor: 'hsl(222, 47%, 8%)',
                 animationDelay: `${i * 0.1}s`,
                 '&:hover': {
-                  borderColor: n.status === 'done' ? 'hsl(142, 71%, 30%)' : 'hsl(0, 84%, 35%)',
+                  borderColor: (n.status === 'done' || n.status === 'success') ? 'hsl(142, 71%, 30%)' : 'hsl(0, 84%, 35%)',
                   bgcolor: 'hsl(222, 47%, 10%)',
                 },
               }}
@@ -132,12 +132,12 @@ const AuditLog = ({ nodes, loading }: AuditLogProps) => {
                   width: 28,
                   height: 28,
                   borderRadius: '8px',
-                  bgcolor: n.status === 'done' ? 'hsl(142, 71%, 45% / 0.12)' : 'hsl(0, 84%, 60% / 0.12)',
+                  bgcolor: (n.status === 'done' || n.status === 'success') ? 'hsl(142, 71%, 45% / 0.12)' : 'hsl(0, 84%, 60% / 0.12)',
                   flexShrink: 0,
                   mt: 0.25,
                 }}
               >
-                {n.status === 'done' ? (
+                {(n.status === 'done' || n.status === 'success') ? (
                   <CheckCircleIcon sx={{ color: 'hsl(142, 71%, 45%)', fontSize: 16 }} />
                 ) : (
                   <ErrorIcon sx={{ color: 'hsl(0, 84%, 60%)', fontSize: 16 }} />

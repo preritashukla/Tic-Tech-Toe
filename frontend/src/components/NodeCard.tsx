@@ -53,6 +53,20 @@ const statusConfig: Record<NodeStatus, { color: string; bg: string; border: stri
     icon: <PanToolIcon sx={{ fontSize: 14 }} />,
     label: 'Needs Approval',
   },
+  success: {
+    color: 'hsl(142, 71%, 45%)',
+    bg: 'hsl(142, 71%, 45% / 0.1)',
+    border: 'hsl(142, 71%, 30%)',
+    icon: <CheckCircleIcon sx={{ fontSize: 14 }} />,
+    label: 'Success',
+  },
+  skipped: {
+    color: 'hsl(215, 20%, 45%)',
+    bg: 'hsl(215, 20%, 45% / 0.1)',
+    border: 'hsl(215, 20%, 25%)',
+    icon: <PanToolIcon sx={{ fontSize: 14 }} />,
+    label: 'Skipped',
+  },
 };
 
 const toolIcons: Record<MCPTool, React.ReactNode> = {

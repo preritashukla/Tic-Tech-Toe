@@ -92,7 +92,25 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-            {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+            
+            {/* Quick Suggestions */}
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {[
+                "Critical bug filed in Jira",
+                "Competitor dropped prices",
+                "AWS CloudWatch high CPU",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setText(suggestion)}
+                  className="text-[10px] text-[hsl(215,20%,65%)] bg-[hsl(217,33%,12%)] hover:bg-[hsl(217,33%,18%)] hover:text-white px-2 py-1 rounded border border-[hsl(217,33%,18%)] transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+
+            {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
           </div>
 
           {/* History */}

@@ -21,7 +21,7 @@ class TaskStatus(str, Enum):
 class RetryConfig:
     max_attempts: int = 3
     backoff_factor: float = 2.0
-    initial_delay: float = 1.0  # seconds
+    initial_delay: float = 0.2  # seconds
 
 
 @dataclass
@@ -64,12 +64,16 @@ def dag_from_dict(data: dict) -> DAG:
             backoff_factor=retry_data.get("backoff_factor", 2.0),
             initial_delay=retry_data.get("initial_delay", 1.0),
         )
+        
+        # Flexibly handle both 'inputs' (internal model) and 'params' (LLM terminology)
+        inputs = n.get("inputs") or n.get("params") or {}
+        
         node = DAGNode(
             id=n["id"],
-            name=n["name"],
+            name=n.get("name", f"{n.get('tool', 'unknown')} → {n.get('action', 'unknown')}"),
             tool=n["tool"],
             action=n["action"],
-            inputs=n["inputs"],
+            inputs=inputs,
             depends_on=n.get("depends_on", []),
             requires_approval=n.get("requires_approval", False),
             retry=retry,
@@ -77,7 +81,7 @@ def dag_from_dict(data: dict) -> DAG:
         nodes.append(node)
 
     return DAG(
-        workflow_id=data["workflow_id"],
-        description=data["description"],
+        workflow_id=data.get("workflow_id", data.get("workflow_name", "unknown-wf")),
+        description=data.get("description", "Generated AI Workflow"),
         nodes=nodes,
     )
