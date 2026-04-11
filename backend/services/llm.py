@@ -17,8 +17,13 @@ from typing import Optional
 from groq import Groq
 from dotenv import load_dotenv
 
+<<<<<<< HEAD
 from api_schemas.dag import WorkflowDAG
 from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX, TOOL_SPECIFICATIONS
+=======
+from models.dag import WorkflowDAG
+from prompts.system_prompt import SYSTEM_PROMPT, RETRY_SUFFIX
+>>>>>>> 1943d77d8153a134f0c9518648bac977fab97062
 
 load_dotenv()
 logger = logging.getLogger("mcp_gateway.llm")
@@ -222,18 +227,38 @@ class LLMService:
     def _normalize_dag(dag_dict: dict) -> dict:
         """
         Normalize LLM output to match WorkflowDAG schema.
-        Handles variations in field naming from different LLM runs.
+        Handles the new prompt schema:
+        - workflow_id, name, description, steps[]
+        - service, tool (hierarchical), params, depends_on, outputs, requires_approval
         """
-        # Ensure workflow_name exists
+        # Ensure workflow_name exists (map from 'name' if necessary)
         if "workflow_name" not in dag_dict:
             dag_dict["workflow_name"] = dag_dict.get("name", dag_dict.get("workflow_id", "unnamed_workflow"))
 
-        # Ensure nodes have correct field names
+        # Map 'steps' to 'nodes' if present
+        if "steps" in dag_dict and "nodes" not in dag_dict:
+            dag_dict["nodes"] = dag_dict.pop("steps")
+
+        # Ensure nodes have correct field names and types
         if "nodes" in dag_dict:
             for node in dag_dict["nodes"]:
-                # Normalize 'inputs' → 'params' (Grishma's executor uses 'inputs')
+                # Normalize 'service' + hierarchical 'tool' -> 'tool' + 'action'
+                # New: service="github", tool="github.get_repository"
+                # Old: tool="github", action="get_repository"
+                service = node.get("service")
+                tool_raw = node.get("tool")
+                
+                if service and "." in str(tool_raw):
+                    # It's using the new schema
+                    node["tool"] = service
+                    node["action"] = tool_raw.split(".")[-1]
+                
+                # Normalize 'inputs' <-> 'params'
                 if "inputs" in node and "params" not in node:
                     node["params"] = node.pop("inputs")
+                elif "params" in node and "inputs" not in node:
+                    node["inputs"] = node["params"]
+
                 # Ensure depends_on is a list
                 if "depends_on" not in node:
                     node["depends_on"] = []

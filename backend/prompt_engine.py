@@ -7,58 +7,37 @@ import os
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are a workflow planning assistant. Your job is to convert a user's natural language request into a structured workflow DAG (Directed Acyclic Graph) as JSON.
-
-Available tools and their actions:
-- jira_mcp: get_issue, create_issue, update_issue
-- github_mcp: create_branch, create_pr, merge_pr
-- slack_mcp: send_message, create_channel
-- sheets_mcp: read_row, update_row, append_row
-
-Rules:
-1. Output ONLY valid JSON. No explanation, no markdown, no code fences.
-2. Each node must have: id (string), name (human-readable label), tool (must end with _mcp), action, params (object), depends_on (array of ids).
-3. If two steps can run in parallel, give them the same depends_on value.
-4. Infer reasonable param values from context.
-5. Always include a workflow_name and a description field at the top level.
-6. Use template refs like {{node_1.field_name}} to pass runtime values between nodes.
-
-Example output format:
-{"workflow_name": "bug_fix_pipeline", "description": "Handle a bug report", "nodes": [{"id": "node_1", "name": "Create Jira Ticket", "tool": "jira_mcp", "action": "create_issue", "params": {"title": "Bug report"}, "depends_on": []}]}
-"""
-
-REQUIRED_NODE_FIELDS = {"id", "name", "tool", "action", "params", "depends_on"}
-VALID_TOOLS = {"jira_mcp", "github_mcp", "slack_mcp", "sheets_mcp"}
-VALID_ACTIONS = {
-    "jira_mcp":   {"get_issue", "create_issue", "update_issue"},
-    "github_mcp": {"create_branch", "create_pr", "merge_pr"},
-    "slack_mcp":  {"send_message", "create_channel"},
-    "sheets_mcp": {"read_row", "update_row", "append_row"},
-}
+from prompts.system_prompt import SYSTEM_PROMPT
 
 def validate_dag(dag: dict) -> list[str]:
     errors = []
-    if "workflow_name" not in dag:
-        errors.append("Missing 'workflow_name'")
-    if "nodes" not in dag or not isinstance(dag["nodes"], list):
-        errors.append("Missing or invalid 'nodes' array")
+    if "workflow_name" not in dag and "name" not in dag:
+        errors.append("Missing 'workflow_name' or 'name'")
+    
+    steps = dag.get("steps") or dag.get("nodes")
+    if not isinstance(steps, list):
+        errors.append("Missing or invalid 'steps' or 'nodes' array")
         return errors
-    if len(dag["nodes"]) == 0:
-        errors.append("DAG has no nodes")
+    if len(steps) == 0:
+        errors.append("DAG has no steps")
         return errors
 
-    node_ids = {n.get("id") for n in dag["nodes"]}
-    for i, node in enumerate(dag["nodes"]):
-        prefix = f"Node {i+1} ({node.get('id', '?')})"
-        # Only check for essential fields: id, tool, action, params/depends_on
+    node_ids = {n.get("id") for n in steps}
+    for i, node in enumerate(steps):
+        prefix = f"Step {i+1} ({node.get('id', '?')})"
         if "id" not in node:
             errors.append(f"{prefix}: missing 'id'")
-        if "tool" not in node:
-            errors.append(f"{prefix}: missing 'tool'")
-        if "action" not in node:
-            errors.append(f"{prefix}: missing 'action'")
-        if "params" not in node or not isinstance(node.get("params"), dict):
-            errors.append(f"{prefix}: 'params' must be an object")
+        
+        # Flexibly check for either new or old schema
+        has_tool_action = "tool" in node and ("action" in node or "." in str(node.get("tool")))
+        has_service_tool = "service" in node and "tool" in node
+        
+        if not (has_tool_action or has_service_tool):
+            errors.append(f"{prefix}: missing service/tool/action definition")
+            
+        if "params" not in node and "inputs" not in node:
+            errors.append(f"{prefix}: missing 'params' or 'inputs'")
+            
         for dep in node.get("depends_on", []):
             if dep not in node_ids:
                 errors.append(f"{prefix}: depends_on references unknown id '{dep}'")
@@ -78,8 +57,9 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
             print(f"[Attempt {attempt}] Calling Groq API...")
             client = Groq()  # reads GROQ_API_KEY from env
 
+            model = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
             response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",  # best Llama on Groq
+                model=model,
                 max_tokens=1024,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
@@ -107,7 +87,10 @@ def generate_dag(user_input: str, retries: int = 2) -> dict:
             return dag
 
         except Exception as e:
-            last_error = f"Unexpected error: {e}"
+            if "429" in str(e):
+                last_error = "Groq Rate Limit Exceeded. Please wait a few minutes or switch to a high-capacity model."
+            else:
+                last_error = f"Unexpected error: {e}"
             break
 
     print(f"[generate_dag] All attempts failed. Last error: {last_error}")
@@ -147,9 +130,10 @@ Rules:
 
 TEST_CASES = [
     "Critical bug filed in Jira -> Create GitHub branch -> Notify Slack -> Update incident tracker",
+    "Get repository info",
+    "Fetch stats for octocat/Spoon-Knife",
     "Create a new Jira ticket for a login bug",
     "Fix is merged on GitHub, now close the Jira ticket and notify the team on Slack",
-    "New feature request came in — create a Jira story, make a GitHub branch, tell the team on Slack, and log it in the tracker",
 ]
 
 if __name__ == "__main__":
