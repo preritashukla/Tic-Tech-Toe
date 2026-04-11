@@ -57,7 +57,11 @@ class DAG:
 def dag_from_dict(data: dict) -> DAG:
     """Parse a raw DAG JSON dict into a DAG dataclass."""
     nodes = []
-    for n in data["nodes"]:
+    
+    # Support both 'steps' (new schema) and 'nodes' (old schema)
+    raw_nodes = data.get("steps") or data.get("nodes") or []
+    
+    for n in raw_nodes:
         retry_data = n.get("retry", {})
         retry = RetryConfig(
             max_attempts=retry_data.get("max_attempts", 3),
@@ -65,14 +69,30 @@ def dag_from_dict(data: dict) -> DAG:
             initial_delay=retry_data.get("initial_delay", 1.0),
         )
         
+        # Mapping from new schema to internal model
+        # New schema: service="github", tool="github.get_repository"
+        # Old schema: tool="github_mcp", action="get_repository"
+        
+        service = n.get("service")
+        tool_raw = n.get("tool")
+        
+        if service and "." in str(tool_raw):
+            # New schema format
+            tool = f"{service}_mcp"
+            action = tool_raw.split(".")[-1]
+        else:
+            # Fallback to old schema format
+            tool = n.get("tool", "unknown_mcp")
+            action = n.get("action", "unknown_action")
+
         # Flexibly handle both 'inputs' (internal model) and 'params' (LLM terminology)
         inputs = n.get("inputs") or n.get("params") or {}
         
         node = DAGNode(
             id=n["id"],
-            name=n.get("name", f"{n.get('tool', 'unknown')} → {n.get('action', 'unknown')}"),
-            tool=n["tool"],
-            action=n["action"],
+            name=n.get("name") or n.get("title") or f"{tool} → {action}",
+            tool=tool,
+            action=action,
             inputs=inputs,
             depends_on=n.get("depends_on", []),
             requires_approval=n.get("requires_approval", False),
