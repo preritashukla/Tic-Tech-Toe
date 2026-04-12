@@ -37,7 +37,7 @@ class ContextManager:
         # Regex patterns for template resolution
         # Supports: {{node_1.output.field}}, {{task_1.output.field}}, {{node_1.field}}
         self._template_pattern = re.compile(
-            r"\{\{(\w+)(?:\.output)?\.(\w+)\}\}"
+            r"\{\{(\w+)(?:\.output)?\.([^}]+)\}\}"
         )
 
     # ─── Node Output Management ────────────────────────────────────
@@ -105,7 +105,12 @@ class ContextManager:
         """
         def replacer(match: re.Match) -> str:
             node_id = match.group(1)
-            field = match.group(2)
+            raw_field = match.group(2)
+            
+            # Sub-parse the field to gracefully strip out LLM-generated templates/filters i.e. `| join(' ')`
+            parts = raw_field.split('|')
+            field = parts[0].strip()
+            filter_type = parts[1].strip() if len(parts) > 1 else None
 
             if node_id not in self._node_outputs:
                 raise ValueError(
@@ -114,13 +119,32 @@ class ContextManager:
                 )
 
             output = self._node_outputs[node_id]
-            if field not in output:
-                raise ValueError(
-                    f"Template resolution failed: field '{field}' not found in {node_id}.output. "
-                    f"Available fields: {list(output.keys())}"
-                )
-
-            return str(output[field])
+            val = output
+            
+            for part in field.split('.'):
+                if isinstance(val, dict) and part in val:
+                    val = val[part]
+                elif hasattr(val, part):
+                    val = getattr(val, part)
+                else:
+                    raise ValueError(
+                        f"Template resolution failed: field '{part}' not found in '{field}'. "
+                        f"Available: {list(val.keys()) if isinstance(val, dict) else 'Not a dict'}"
+                    )
+            
+            # Simple implementations of filter types
+            if filter_type:
+                if filter_type.startswith("join"):
+                    if isinstance(val, list):
+                        return " ".join([str(v) for v in val])
+                if filter_type.startswith("length"):
+                    if isinstance(val, list):
+                        return str(len(val))
+            
+            if isinstance(val, (dict, list)):
+                return json.dumps(val, indent=2)
+                
+            return str(val)
 
         return self._template_pattern.sub(replacer, text)
 

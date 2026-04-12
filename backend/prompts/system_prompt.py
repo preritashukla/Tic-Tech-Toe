@@ -91,7 +91,7 @@ Return a valid DAG JSON in this exact schema:
 |------|---------|------------------|
 | `jira` | `get_issue`, `create_issue`, `update_issue`, `delete_issue` | delete_issue only |
 | `github` | `create_branch`, `create_pr`, `merge_pr`, `list_commits`, `get_repo` | merge_pr |
-| `slack` | `send_message`, `create_channel` | create_channel |
+| `slack` | `send_message`, `send_file`, `create_channel` | create_channel |
 | `sheets` | `read_row`, `update_row`, `append_row` | update_row |
 
 ---

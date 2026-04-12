@@ -31,7 +31,7 @@ VALID_TOOLS: dict[str, set[str]] = {
         "get_pull_request", "merge_pull_request", "add_labels",
         "get_file_content", "create_or_update_file", "list_commits", "create_release"
     },
-    "slack":   {"send_message", "create_channel"},
+    "slack":   {"send_message", "send_file", "create_channel"},
     "sheets":  {"read_row", "update_row", "append_row"},
     # MCP-suffixed versions
     "jira_mcp":    {"create_ticket", "get_issue", "update_issue", "create_issue"},
@@ -43,7 +43,7 @@ VALID_TOOLS: dict[str, set[str]] = {
         "get_file_content", "create_or_update_file", "list_commits", "create_release",
         "link_issue"
     },
-    "slack_mcp":   {"send_message", "create_channel", "post_message"},
+    "slack_mcp":   {"send_message", "send_file", "create_channel", "post_message"},
     "sheets_mcp":  {"read_row", "update_row", "append_row"},
 }
 

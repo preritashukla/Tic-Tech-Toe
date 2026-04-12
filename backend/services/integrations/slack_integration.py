@@ -41,6 +41,30 @@ def _send_message_sync(client: WebClient, channel: str, message: str) -> dict:
         else:
             raise Exception(f"Slack API error: {e.response.get('error', str(e))}")
 
+def _send_file_sync(client: WebClient, channel: str, file_path: str, initial_comment: str = "") -> dict:
+    """Synchronous file upload — runs inside asyncio.to_thread."""
+    try:
+        response = client.files_upload_v2(
+            channel=channel,
+            file=file_path,
+            initial_comment=initial_comment
+        )
+        return response.data
+    except SlackApiError as e:
+        if e.response.get("error") == "not_in_channel":
+            try:
+                client.conversations_join(channel=channel)
+                response = client.files_upload_v2(channel=channel, file=file_path, initial_comment=initial_comment)
+                return response.data
+            except SlackApiError as join_err:
+                raise Exception(f"Could not join channel {channel}: {join_err.response.get('error', str(join_err))}")
+        elif e.response.get("error") == "channel_not_found":
+            stripped = channel.lstrip("#")
+            response = client.files_upload_v2(channel=stripped, file=file_path, initial_comment=initial_comment)
+            return response.data
+        else:
+            raise Exception(f"Slack API error: {e.response.get('error', str(e))}")
+
 
 def _create_channel_sync(client: WebClient, name: str) -> dict:
     """Synchronous create_channel — runs inside asyncio.to_thread."""
@@ -94,6 +118,22 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
             if not message:
                 raise ValueError("'message' is required for send_message.")
 
+            # Auto-inject links from recent context to fulfill user intent implicitly
+            links = []
+            if context:
+                for out in context.values():
+                    if isinstance(out, dict):
+                        if "branch_html_url" in out: links.append(f"Branch: {out['branch_html_url']}")
+                        elif "branch_url" in out: links.append(f"Branch API: {out['branch_url']}")
+                        if "url" in out and "browse" in out["url"]: links.append(f"Jira Ticket: {out['url']}")
+                        if "pr_url" in out: links.append(f"Pull Request: {out['pr_url']}")
+                        if "issue_url" in out: links.append(f"Issue: {out['issue_url']}")
+            
+            if links:
+                added = "\n\nRelated Resources:\n" + "\n".join(set(links))
+                if added.strip() not in message:
+                    message += added
+
             logger.info(f"Sending Slack message to {channel}: {message[:80]}...")
             
             # CRITICAL: Log to local history for dashboard IMMEDIATELY
@@ -110,6 +150,58 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
                     "channel": output.get("channel"),
                     "ts": output.get("ts"),
                     "message_text": message[:100],
+                },
+            }
+
+        elif action in ("send_file", "upload_file"):
+            channel = (
+                params.get("channel")
+                or params.get("channel_id")
+                or os.getenv("SLACK_DEFAULT_CHANNEL", "#general")
+            )
+            file_path = params.get("file_path") or params.get("file")
+            initial_comment = params.get("message") or params.get("initial_comment") or params.get("text") or ""
+            
+            if not file_path:
+                raise ValueError("'file_path' is required for send_file.")
+            
+            # Simple check if path exists relative to current working directory or absolute
+            if not os.path.exists(file_path):
+                # Perhaps it's in the backend root
+                backend_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                test_path = os.path.join(backend_root, os.path.basename(file_path))
+                if os.path.exists(test_path):
+                    file_path = test_path
+                else:
+                    raise ValueError(f"File not found: {file_path}")
+
+            # Auto-inject links into the comment just like send_message
+            links = []
+            if context:
+                for out in context.values():
+                    if isinstance(out, dict):
+                        if "branch_html_url" in out: links.append(f"Branch: {out['branch_html_url']}")
+                        elif "branch_url" in out: links.append(f"Branch API: {out['branch_url']}")
+                        if "url" in out and "browse" in out["url"]: links.append(f"Jira Ticket: {out['url']}")
+                        if "pr_url" in out: links.append(f"Pull Request: {out['pr_url']}")
+                        if "issue_url" in out: links.append(f"Issue: {out['issue_url']}")
+            
+            if links:
+                added = "\n\nRelated Resources:\n" + "\n".join(set(links))
+                if added.strip() not in initial_comment:
+                    initial_comment += added
+
+            logger.info(f"Uploading file {file_path} to Slack channel {channel}...")
+            output = await asyncio.to_thread(_send_file_sync, client, channel, file_path, initial_comment)
+
+            return {
+                "status": "success",
+                "tool": "slack",
+                "action": action,
+                "output": {
+                    "ok": output.get("ok"),
+                    "file_id": output.get("file", {}).get("id") if output.get("file") else None,
+                    "channel_id": channel,
                 },
             }
 
@@ -143,7 +235,7 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
             }
 
         else:
-            raise ValueError(f"Unsupported Slack action: '{action}'. Supported: send_message, create_channel, list_channels")
+            raise ValueError(f"Unsupported Slack action: '{action}'. Supported: send_message, send_file, create_channel, list_channels")
 
     except Exception as e:
         error_msg = str(e)

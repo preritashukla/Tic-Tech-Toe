@@ -97,7 +97,8 @@ async def create_branch(owner: str, repo: str, branch_name: str, from_branch: Op
         "branch_name": branch_name,
         "branch_ref": data["ref"],
         "branch_sha": data["object"]["sha"],
-        "branch_url": data["url"]
+        "branch_url": data["url"],
+        "branch_html_url": f"https://github.com/{owner}/{repo}/tree/{branch_name}"
     }
 
 async def list_issues(owner: str, repo: str, state: str = "open", labels: Optional[str] = None, assignee: Optional[str] = None) -> dict:

@@ -73,7 +73,7 @@ def log_event(status: str, message: str, color_code: str = "0"):
 
 # --- MCP Router ---
 
-async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentials: Dict[str, Any] = None) -> Dict[str, Any]:
+async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentials: Dict[str, Any] = None, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Acts as the router hitting the various MCP Servers or local service integrations.
     Uses provided credentials first, falling back to environment variables.
@@ -172,7 +172,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
 
             from services.integrations.slack_integration import execute_slack
             log_event("DISPATCH", f"Slack.{action} (API: slack.com)", "36")
-            result = await execute_slack(action, inputs, {})
+            result = await execute_slack(action, inputs, context)
             print(f"DEBUG: Slack API RESPONSE for {action}:", result)
 
             if result.get("status") == "success":
@@ -197,7 +197,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
 
             from services.integrations.sheets_integration import execute_sheets
             log_event("DISPATCH", f"Sheets.{action} (API: googleapis.com)", "36")
-            result = await execute_sheets(action, inputs, {})
+            result = await execute_sheets(action, inputs, context)
             print(f"DEBUG: Sheets API RESPONSE for {action}:", result)
 
             if result.get("status") == "success":
@@ -274,8 +274,9 @@ class DAGExecutor:
             node.attempts += 1
             try:
                 # Prepare generic mock output if provided in DAG
+                context_data = {n_id: n.output for n_id, n in self.nodes.items() if n.state == TaskState.SUCCESS}
                 return await asyncio.wait_for(
-                    dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials),
+                    dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials, context=context_data),
                     timeout=node.timeout
                 )
             except Exception as e:

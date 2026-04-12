@@ -146,7 +146,7 @@ const Dashboard = () => {
               {[
                 "Send a Slack message saying Hello from my workflow system",
                 "Fetch latest commits from GitHub and send a summary to Slack",
-                "Fetch GitHub commits and Jira issues in parallel, then send a combined summary to Slack",
+                "Create a new GitHub branch and notify the team on Slack with its link",
               ].map((suggestion) => (
                 <button
                   key={suggestion}
