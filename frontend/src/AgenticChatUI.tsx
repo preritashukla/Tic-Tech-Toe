@@ -80,145 +80,63 @@ function DAGNode({ label, sublabel, server, left, top, status, tool }: any) {
   );
 }
 
-function DAGVisualization({ dag }: { dag: any }) {
-  if (!dag || !dag.nodes) return null;
-  return (
-    <div style={{ position: "relative", height: 160, margin: "12px 0", overflowX: "auto", overflowY: "hidden", whiteSpace: "nowrap" }}>
-      {dag.nodes.map((n: any, i: number) => (
-        <DAGNode
-          key={n.id}
-          label={`${n.action}`}
-          sublabel={`${n.tool} · ${n.action}`}
-          server={`${n.tool} Server`}
-          left={i * 205}
-          top={20}
-          status={n.status || "done"}
-          tool={n.tool || "generic"}
-        />
-      ))}
-      <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", minWidth: dag.nodes.length * 205, height: "100%", pointerEvents: "none" }}>
-        <defs>
-          <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#2ea043" />
-          </marker>
-        </defs>
-        {dag.nodes.map((_: any, i: number) => {
-          if (i === dag.nodes.length - 1) return null;
-          return (
-            <line key={i} x1={i * 205 + 177} y1={62} x2={(i + 1) * 205 - 2} y2={62}
-              stroke="#2ea043" strokeWidth={1.5} markerEnd="url(#arrow)" strokeDasharray="4 2" />
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-/** Rich card showing per-node real platform output */
-function NodeResultCard({ r }: { r: any }) {
-  const tool  = r.tool || "generic";
-  const isOk  = r.status === "success" || r.status === "done";
-  const out   = r.output || {};
-  const tc    = TOOL_COLORS[tool] || TOOL_COLORS.generic;
-
-  // build the highlight
-  let url: string | null = null;
-  let primaryLine = "";
-  let secondaryLine = "";
-
-  if (tool === "slack" && isOk) {
-    primaryLine   = `Message sent to ${out.channel || "#channel"}`;
-    secondaryLine = out.ts ? `ts: ${out.ts}` : "";
-  } else if (tool === "jira" && isOk) {
-    const key = out.key || out.issue_id;
-    url         = out.url || (key ? `https://agenticmcpgateway.atlassian.net/browse/${key}` : null);
-    primaryLine   = key ? `Ticket created: ${key}` : "Jira action completed";
-    secondaryLine = url ? "Click to open in Jira" : "";
-  } else if (tool === "github" && isOk) {
-    url = out.branch_url || out.pr_url || out.issue_url || out.commit_url || out.file_html_url || out.release_url || null;
-    if (out.branch_name)   primaryLine = `Branch created: ${out.branch_name}`;
-    else if (out.pr_number) primaryLine = `PR #${out.pr_number}: ${out.pr_title || ""}`;
-    else if (out.issue_number) primaryLine = `Issue #${out.issue_number} created`;
-    else if (out.merge_sha) primaryLine = `Merged — sha: ${out.merge_sha?.slice(0, 8)}`;
-    else if (out.release_tag) primaryLine = `Release: ${out.release_tag}`;
-    else if (out.commit_count != null) primaryLine = `${out.commit_count} commits fetched`;
-    else primaryLine = "GitHub action completed";
-    secondaryLine = out.branch_ref || out.pr_url || "";
-  } else if (tool === "sheets" && isOk) {
-    primaryLine   = out.row_updated != null ? `Row ${out.row_updated} updated` : out.row_id ? `Row ${out.row_id} appended` : "Sheet updated";
-    secondaryLine = "";
-  } else if (!isOk) {
-    primaryLine   = r.error || "Action failed";
-    secondaryLine = "";
-  } else {
-    primaryLine   = `${r.action} completed`;
-    secondaryLine = "";
-  }
+function SimpleWorkflowProgress({ dagData, nodeDetails }: { dagData: any, nodeDetails: any[] }) {
+  if (!dagData || !dagData.nodes) return null;
+  
+  const cleanAction = (str: string) => {
+    if (!str) return "Task";
+    return str.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  };
 
   return (
-    <div style={{
-      display: "flex", alignItems: "flex-start", gap: 10,
-      background: isOk ? tc.bg : "#3d1117",
-      border: `1px solid ${isOk ? tc.border : "#f85149"}`,
-      borderRadius: 8, padding: "8px 12px", marginBottom: 6,
-    }}>
-      <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{TOOL_ICONS[tool] || "⚙️"}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: tc.text, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            {tool}
-          </span>
-          <span style={{ fontSize: 11, color: "#7d8590" }}>·</span>
-          <span style={{ fontSize: 11, color: "#7d8590", fontFamily: "monospace" }}>{r.action}</span>
-          <span style={{ marginLeft: "auto" }}><StatusBadge status={r.status} /></span>
-        </div>
-        <div style={{ fontSize: 12, color: isOk ? "#e6edf3" : "#f85149", fontWeight: 500 }}>{primaryLine}</div>
-        {secondaryLine && (
-          <div style={{ fontSize: 11, color: "#7d8590", fontFamily: "monospace", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {secondaryLine}
-          </div>
-        )}
-        {url && (
-          <a href={url} target="_blank" rel="noopener noreferrer" style={{
-            display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4,
-            fontSize: 11, color: tc.text, textDecoration: "none",
-            background: `${tc.border}22`, border: `1px solid ${tc.border}55`,
-            borderRadius: 6, padding: "2px 8px", fontFamily: "monospace",
-          }}>
-            🔗 Open live link ↗
-          </a>
-        )}
-        {r.duration_ms > 0 && (
-          <span style={{ fontSize: 10, color: "#484f58", marginTop: 2, display: "block" }}>
-            ⏱ {Math.round(r.duration_ms)}ms{r.retries > 0 ? ` · ${r.retries} retries` : ""}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AuditLog({ steps }: { steps: string[] }) {
-  return (
-    <div style={{
-      background: "#0d1117", border: "1px solid #30363d", borderRadius: 10,
-      padding: "12px 16px", marginTop: 8, fontSize: 12,
-    }}>
-      <div style={{ color: "#7d8590", fontSize: 11, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        Audit Log — {steps.length} events
-      </div>
-      {steps.map((s, i) => {
-        const isObject = typeof s === 'object';
-        const label = isObject ? s.label : s;
-        const status = isObject ? s.status : (s.includes('[failed') ? 'failed' : s.includes('[skipped') ? 'skipped' : 'success');
+    <div style={{ marginTop: 12, marginBottom: 16 }}>
+      {dagData.nodes.map((n: any) => {
+        const detail = nodeDetails?.find(d => d.node_id === n.id);
+        const isFailed = n.status === "failed";
+        const isDone = n.status === "done" || n.status === "success";
+        const isSkipped = n.status === "skipped";
         
-        const icon = status === 'failed' ? '✕' : status === 'skipped' ? '⊘' : '✓';
-        const color = status === 'failed' ? '#f85149' : status === 'skipped' ? '#7d8590' : '#2ea043';
+        let icon = "⏳";
+        if (isDone) icon = "✔";
+        if (isFailed) icon = "❌";
+        if (isSkipped) icon = "⊘";
+        
+        // simplify error message
+        let errorMsg = detail?.error || "";
+        if (errorMsg) {
+          if (errorMsg.includes("401") || errorMsg.toLowerCase().includes("unauthorized")) {
+             errorMsg = `Connection to ${n.tool} failed. Please check access.`;
+          } else if (errorMsg.includes("404") || errorMsg.includes("not_found")) {
+             errorMsg = `Item or channel not found in ${n.tool}.`;
+          } else {
+             errorMsg = `Action failed in ${n.tool}.`;
+          }
+        }
 
         return (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: i < steps.length - 1 ? "1px solid #21262d" : "none" }}>
-            <span style={{ color, fontSize: 14, fontWeight: 700 }}>{icon}</span>
-            <span style={{ fontFamily: "monospace", color: status === 'failed' ? '#f85149' : '#79c0ff' }}>{label}</span>
+          <div key={n.id} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 16 }}>{icon}</span>
+              <span style={{ color: isFailed ? "#f85149" : isDone ? "#4ade80" : "#e6edf3", fontSize: 14, fontWeight: 500 }}>
+                {cleanAction(n.action)} → {isDone ? "Completed" : isFailed ? "Failed" : isSkipped ? "Skipped" : "In Progress"}
+              </span>
+            </div>
+            {isFailed && errorMsg && (
+              <div style={{ marginLeft: 28, fontSize: 13, color: "#f85149", opacity: 0.9 }}>
+                {errorMsg}
+              </div>
+            )}
+            {isDone && detail?.output && (
+              Object.values(detail.output).find((val: any) => typeof val === "string" && val.startsWith("http")) && (
+                <div style={{ marginLeft: 28, marginTop: 2 }}>
+                  <a href={Object.values(detail.output).find((val: any) => typeof val === "string" && val.startsWith("http")) as string} 
+                     target="_blank" rel="noopener noreferrer" 
+                     style={{ color: "#58a6ff", fontSize: 13, textDecoration: "none" }}>
+                    🔗 Open in {n.tool}
+                  </a>
+                </div>
+              )
+            )}
           </div>
         );
       })}
@@ -308,21 +226,21 @@ function ChatMessage({ msg, onEdit }: { msg: any; onEdit: (msg: any) => void }) 
               </div>
             )}
 
-            {/* DAG visualization */}
-            {msg.dagData && <DAGVisualization dag={msg.dagData} />}
+            {/* Simple Workflow Visualization */}
+            {msg.dagData && <SimpleWorkflowProgress dagData={msg.dagData} nodeDetails={msg.nodeDetails} />}
 
-            {/* Per-node live platform result cards */}
-            {msg.nodeDetails && msg.nodeDetails.length > 0 && (
-              <div style={{ marginTop: 10, marginBottom: 4 }}>
-                <div style={{ fontSize: 11, color: "#7d8590", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
-                  Live Platform Results
+            {/* Approval Block for HITL */}
+            {msg.pendingApproval && (
+              <div style={{ marginTop: 12, padding: 16, background: "#161b22", border: "1px solid #30363d", borderRadius: 8 }}>
+                <div style={{ color: "#e6edf3", fontSize: 14, marginBottom: 12, fontWeight: 600 }}>
+                  ⚠️ Do you want to proceed with this action?
                 </div>
-                {msg.nodeDetails.map((r: any) => <NodeResultCard key={r.node_id} r={r} />)}
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => msg.onApprove?.()} style={{ background: "#2ea043", color: "white", padding: "6px 16px", border: "none", borderRadius: 6, fontWeight: 600, cursor: "pointer" }}>Approve</button>
+                  <button onClick={() => msg.onCancel?.()} style={{ background: "transparent", color: "#f85149", padding: "6px 16px", border: "1px solid #f85149", borderRadius: 6, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                </div>
               </div>
             )}
-
-            {/* Audit log */}
-            {msg.audit && msg.audit.length > 0 && <AuditLog steps={msg.audit} />}
           </>
         )}
       </div>
@@ -370,6 +288,32 @@ export default function App() {
     }
 
   const [history, setHistory] = useState<any[]>([]);
+  const [chats, setChats] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('agentic_chats') || '[]'); } catch { return []; }
+  });
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentChatId && messages.length > 0) {
+      setCurrentChatId(Date.now().toString());
+    }
+  }, [messages, currentChatId]);
+
+  useEffect(() => {
+    if (!currentChatId || messages.length === 0) return;
+    setChats(prev => {
+      const idx = prev.findIndex(c => c.id === currentChatId);
+      const title = messages.find(m => m.role === 'user')?.content || "New Chat";
+      const newChats = [...prev];
+      if (idx >= 0) {
+        newChats[idx] = { ...newChats[idx], title, messages };
+      } else {
+        newChats.unshift({ id: currentChatId, title, messages });
+      }
+      localStorage.setItem('agentic_chats', JSON.stringify(newChats));
+      return newChats;
+    });
+  }, [messages, currentChatId]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -441,9 +385,15 @@ export default function App() {
     try {
       // Extract sliding window of history (last 10 messages)
       const chatHistory = messages
-        .filter(m => !m.isThinking && m.content)
+        .filter(m => !m.isThinking && (m.content || m.audit))
         .slice(-10)
-        .map(m => ({ role: m.role, content: m.content }));
+        .map(m => {
+          let text = m.content || "";
+          if (m.role === "assistant" && m.audit && m.audit.length > 0) {
+            text += "\n\nActions Taken:\n- " + m.audit.join("\n- ");
+          }
+          return { role: m.role, content: text.trim() };
+        });
 
       const planRes = await fetch("/api/plan", {
         method: "POST",
@@ -468,121 +418,115 @@ export default function App() {
 
       setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
         ...m,
-        thinking: `✅ Plan ready — ${dag.nodes?.length || 0} steps planned. Dispatching to live platforms…`,
+        thinking: `✅ Plan ready.`,
       } : m));
 
-      const jiraToken = localStorage.getItem("jira_access_token");
-      const jiraCloudId = localStorage.getItem("jira_cloud_id");
-      const slackToken = localStorage.getItem("slack_access_token");
-      const googleToken = localStorage.getItem("google_access_token");
-      const googleSheetId = localStorage.getItem("google_sheets_id");
+      // HITL Preemptive check
+      const requiresApproval = dag.nodes.some((n: any) => n.requires_approval);
       
-      const userCredentials: Record<string, any> = {};
-      
-      // Preferred: OAuth credentials from localStorage
-      if (jiraToken && jiraCloudId) {
-        userCredentials.jira = {
-          access_token: jiraToken,
-          cloud_id: jiraCloudId
-        };
-      }
-      if (slackToken) {
-        userCredentials.slack = { access_token: slackToken };
-      }
-      if (googleToken) {
-        userCredentials.sheets = { 
-          access_token: googleToken,
-          spreadsheet_id: googleSheetId
-        };
-        userCredentials.google = { access_token: googleToken };
-      }
+      const executeDag = async (finalDag: any) => {
+        setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+          ...m,
+          thinking: "Running workflow...",
+          pendingApproval: false 
+        } : m));
 
-      // Fallback: Manually entered credentials from ToolsContext
-      Object.entries(tools).forEach(([name, state]: [string, any]) => {
-        if (state.status === 'connected' && state.token) {
-          // Only add if not already set by OAuth
-          if (!userCredentials[name]) {
-            try {
-              userCredentials[name] = JSON.parse(state.token);
-            } catch {
-              userCredentials[name] = { token: state.token };
-            }
-          }
+        const jiraToken = localStorage.getItem("jira_access_token");
+        const jiraCloudId = localStorage.getItem("jira_cloud_id");
+        const slackToken = localStorage.getItem("slack_access_token");
+        const googleToken = localStorage.getItem("google_access_token");
+        const googleSheetId = localStorage.getItem("google_sheets_id");
+        
+        const userCredentials: Record<string, any> = {};
+        
+        if (jiraToken && jiraCloudId) userCredentials.jira = { access_token: jiraToken, cloud_id: jiraCloudId };
+        if (slackToken) userCredentials.slack = { access_token: slackToken };
+        if (googleToken) {
+          userCredentials.sheets = { access_token: googleToken, spreadsheet_id: googleSheetId };
+          userCredentials.google = { access_token: googleToken };
         }
-      });
 
-      // ── Step 2: Execute the Plan ──
-      const execRes = await fetch("/api/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dag,
-          auto_approve: true,
-          dry_run: false,
-          credentials: userCredentials,
-        }),
-      });
+        Object.entries(tools).forEach(([name, state]: [string, any]) => {
+          if (state.status === 'connected' && state.token && !userCredentials[name]) {
+            try { userCredentials[name] = JSON.parse(state.token); } 
+            catch { userCredentials[name] = { token: state.token }; }
+          }
+        });
 
-      if (!execRes.ok) {
-        const errData = await execRes.json().catch(() => ({}));
-        throw new Error(errData.detail || "Execution failed: " + execRes.status);
-      }
+        const execRes = await fetch("/api/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dag: finalDag,
+            auto_approve: true, 
+            dry_run: false,
+            credentials: userCredentials,
+          }),
+        });
 
-      const execData = await execRes.json();
+        if (!execRes.ok) {
+          const errData = await execRes.json().catch(() => ({}));
+          throw new Error(errData.detail || "Execution failed: " + execRes.status);
+        }
 
-      // Build DAG visualization data (include output for rich display)
-      const dagData = {
-        nodes: (execData.results || []).map((r: any) => ({
-          id: r.node_id,
-          tool: r.tool || "generic",
-          action: r.action || r.name,
-          status: r.status,
-          output: r.output,
-        })),
+        const execData = await execRes.json();
+
+        const dagData = {
+          nodes: (execData.results || []).map((r: any) => ({
+            id: r.node_id,
+            tool: r.tool || "generic",
+            action: r.action || r.name,
+            status: r.status,
+            output: r.output,
+          })),
+        };
+
+        const nodeDetails = (execData.results || []).map((r: any) => ({
+          ...r, output: r.output || {},
+        }));
+
+        const auditLogStrings = (execData.audit_log || []).map((log: any) => {
+          if (log.event_type === "tool_success") return `${log.tool || log.details?.tool} → ${log.action || log.details?.action} [success]`;
+          if (log.event_type === "tool_failure") return `${log.tool || log.details?.tool} → ${log.action || log.details?.action} [failed: ${log.details?.error || log.error}]`;
+          return log.message || JSON.stringify(log);
+        });
+        const fallbackAudit = (execData.results || []).map((r: any) => `${r.tool} → ${r.action} [${r.status}]`);
+
+        const allOk = execData.failed === 0 && execData.succeeded > 0;
+        let summary = allOk ? "Workflow Completed Successfully" : "Workflow Failed";
+
+        setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+          id: thinkingId,
+          role: "assistant",
+          thinking: "", 
+          content: summary,
+          dagData,
+          nodeDetails,
+          audit: auditLogStrings.length > 0 ? auditLogStrings : fallbackAudit,
+          isThinking: false,
+        } : m));
+        setIsLoading(false);
       };
 
-      // Build per-node rich detail cards
-      const nodeDetails = (execData.results || []).map((r: any) => ({
-        ...r,
-        output: r.output || {},
-      }));
-
-      // Build audit strings
-      const auditLogStrings: string[] = (execData.audit_log || []).map((log: any) => {
-        if (log.event_type === "tool_success")
-          return `${log.tool || log.details?.tool} → ${log.action || log.details?.action} [success]`;
-        if (log.event_type === "tool_failure")
-          return `${log.tool || log.details?.tool} → ${log.action || log.details?.action} [failed: ${log.details?.error || log.error}]`;
-        return log.message || JSON.stringify(log);
-      });
-
-      const fallbackAudit = (execData.results || []).map((r: any) =>
-        `${r.tool} → ${r.action} [${r.status}]`
-      );
-
-      const allOk = execData.failed === 0 && execData.succeeded > 0;
-      let summary = "";
-      if (allOk) {
-        summary = `✅ All ${execData.total_nodes} step${execData.total_nodes !== 1 ? "s" : ""} executed on live platforms. (SUCCESS)`;
+      if (requiresApproval) {
+        setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+          ...m,
+          isThinking: false,
+          dagData: {
+            nodes: dag.nodes.map((n: any) => ({ ...n, status: "pending" }))
+          },
+          pendingApproval: true,
+          onApprove: () => executeDag(dag),
+          onCancel: () => {
+             setMessages(p => p.map((msg: any) => msg.id === thinkingId ? {
+                ...msg, pendingApproval: false, content: "Workflow cancelled by user.", dagData: null
+             } : msg));
+             setIsLoading(false);
+          }
+        } : m));
       } else {
-        const failedNode = (execData.results || []).find((r: any) => r.status === "failed");
-        if (failedNode) {
-          summary = `❌ Workflow failed at: ${failedNode.action || failedNode.name || failedNode.tool || failedNode.node_id}`;
-        } else {
-          summary = `❌ Workflow FAILED.`;
-        }
+        await executeDag(dag);
       }
-
-      setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
-        id: thinkingId,
-        role: "assistant",
-        thinking: `Execution ${execData.execution_id} — ${execData.total_nodes} nodes`,
-        content: summary,
-        dagData,
-        nodeDetails,
-        audit: auditLogStrings.length > 0 ? auditLogStrings : fallbackAudit,
-        isThinking: false,
-      } : m));
 
     } catch (e: any) {
       console.error("Workflow Engine Error:", e);
@@ -745,7 +689,7 @@ export default function App() {
         {/* New Chat */}
         <div style={{ padding: "12px 12px 8px" }}>
           <button
-            onClick={() => { setMessages([]); setChatStarted(false); setInput(""); setEditingMsg(null); navigate("/dashboard"); }}
+            onClick={() => { setMessages([]); setChatStarted(false); setInput(""); setEditingMsg(null); setCurrentChatId(null); navigate("/dashboard"); }}
             style={{
               width: "100%", padding: "8px 12px", background: "#161b22",
               border: "1px solid #30363d", borderRadius: 8, color: "#e6edf3",
@@ -798,59 +742,69 @@ export default function App() {
         {/* Connected Tools */}
         <div style={{ padding: "8px 12px 6px", borderTop: "1px solid #21262d" }}>
           <div style={{ fontSize: 10, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
-            Connected MCP Settings
+            Connected Services
           </div>
-          {CONNECTED_TOOLS.map(t => (
-            <div
-              key={t.name}
-              onClick={() => navigate(t.path)}
-              style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#7d8590",
-                marginBottom: 2,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#161b22")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", flexShrink: 0, boxShadow: "0 0 8px rgba(74,222,128,0.4)" }} />
-              {t.name}
-            </div>
-          ))}
+          {CONNECTED_TOOLS.map(t => {
+            const toolKey = t.name.split(" ")[0].toLowerCase();
+            let isConnected = false;
+            if (toolKey === "github") isConnected = !!tools.github?.token;
+            else if (toolKey === "jira") isConnected = !!localStorage.getItem("jira_access_token") || !!tools.jira?.token;
+            else if (toolKey === "slack") isConnected = !!localStorage.getItem("slack_access_token") || !!tools.slack?.token;
+            else if (toolKey === "google") isConnected = !!localStorage.getItem("google_access_token") || !!tools.sheets?.token;
+
+            return (
+              <div
+                key={t.name}
+                onClick={() => navigate(t.path)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                  borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#7d8590",
+                  marginBottom: 2,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#161b22")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 14 }}>{isConnected ? "✅" : "⚠️"}</span>
+                {isConnected ? `${t.name.split(" ")[0]} Connected` : `${t.name.split(" ")[0]} not connected.`}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Workflow History */}
+        {/* Workflow History -> Now Conversations */}
         <div style={{ flex: 1, overflow: "auto", padding: "8px 12px", borderTop: "1px solid #21262d" }}>
           <div style={{ fontSize: 10, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
-            Workflow History
+            Conversations
           </div>
-          {history.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#484f58", fontStyle: "italic", padding: "0 8px" }}>No active workflows</div>
+          {chats.length === 0 ? (
+            <div style={{ fontSize: 11, color: "#484f58", fontStyle: "italic", padding: "0 8px" }}>No conversations yet</div>
           ) : (
-            history.map((item: any) => {
-              const date = new Date(item.created_at);
-              const timeStr = isNaN(date.getTime()) ? "Pending" : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            chats.map((chat: any) => {
               return (
                 <div
-                  key={item.workflow_id}
-                  onClick={() => startWithHistory(item)}
+                  key={chat.id}
+                  onClick={() => {
+                    setCurrentChatId(chat.id);
+                    setMessages(chat.messages);
+                    setChatStarted(true);
+                  }}
                   style={{
                     padding: "7px 8px", borderRadius: 6, cursor: "pointer",
                     fontSize: 12, marginBottom: 2,
                     lineHeight: 1.4, transition: "background 0.15s",
-                    background: id === item.workflow_id ? "#161b22" : "transparent",
-                    color: id === item.workflow_id ? "#58a6ff" : "#7d8590",
-                    borderLeft: id === item.workflow_id ? "2px solid #58a6ff" : "none",
-                    paddingLeft: id === item.workflow_id ? "6px" : "8px",
+                    background: currentChatId === chat.id ? "#161b22" : "transparent",
+                    color: currentChatId === chat.id ? "#58a6ff" : "#7d8590",
+                    borderLeft: currentChatId === chat.id ? "2px solid #58a6ff" : "none",
+                    paddingLeft: currentChatId === chat.id ? "6px" : "8px",
                   }}
-                  onMouseEnter={e => { if (id !== item.workflow_id) e.currentTarget.style.background = "#0d1117"; }}
-                  onMouseLeave={e => { if (id !== item.workflow_id) e.currentTarget.style.background = "transparent"; }}
+                  onMouseEnter={e => { if (currentChatId !== chat.id) e.currentTarget.style.background = "#0d1117"; }}
+                  onMouseLeave={e => { if (currentChatId !== chat.id) e.currentTarget.style.background = "transparent"; }}
                 >
                   <div style={{ color: "#c9d1d9", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.title}
+                    {chat.title}
                   </div>
                   <div style={{ fontSize: 10, display: "flex", justifyContent: "space-between" }}>
-                    <span>{item.workflow_id?.slice(0, 16)}…</span>
-                    <span>{timeStr}</span>
+                    <span>{chat.messages.length} messages</span>
                   </div>
                 </div>
               );
