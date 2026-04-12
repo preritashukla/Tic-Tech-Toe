@@ -561,9 +561,17 @@ export default function App() {
       );
 
       const allOk = execData.failed === 0 && execData.succeeded > 0;
-      const summary = allOk
-        ? `✅ All ${execData.total_nodes} step${execData.total_nodes !== 1 ? "s" : ""} executed on live platforms.`
-        : `⚠️ Workflow done — ${execData.succeeded}/${execData.total_nodes} succeeded${execData.failed > 0 ? `, ${execData.failed} failed` : ""}.`;
+      let summary = "";
+      if (allOk) {
+        summary = `✅ All ${execData.total_nodes} step${execData.total_nodes !== 1 ? "s" : ""} executed on live platforms. (SUCCESS)`;
+      } else {
+        const failedNode = (execData.results || []).find((r: any) => r.status === "failed");
+        if (failedNode) {
+          summary = `❌ Workflow failed at: ${failedNode.action || failedNode.name || failedNode.tool || failedNode.node_id}`;
+        } else {
+          summary = `❌ Workflow FAILED.`;
+        }
+      }
 
       setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
         id: thinkingId,
