@@ -1,6 +1,8 @@
 import os
+import csv
 import asyncio
 import logging
+import tempfile
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from dotenv import load_dotenv
@@ -12,7 +14,10 @@ logger = logging.getLogger("mcp_gateway.slack_integration")
 def get_slack_client(context: dict = None) -> WebClient:
     # Priority: Context (frontend OAuth) > Env (server default)
     ctx_creds = (context or {}).get("credentials", {}).get("slack", {})
-    token = ctx_creds.get("access_token") or ctx_creds.get("token") or os.getenv("SLACK_BOT_TOKEN")
+    raw_token = ctx_creds.get("access_token") or ctx_creds.get("token")
+    # Skip placeholder value used when tool is connected via .env
+    token = None if raw_token in (None, "", "env-configured") else raw_token
+    token = token or os.getenv("SLACK_BOT_TOKEN")
     
     if not token:
         raise ValueError("Slack Credentials Missing: Please connect your Slack account.")
@@ -92,6 +97,95 @@ def _resolve_channel_id_sync(client: WebClient, channel_name: str) -> str:
     return channel_name  # Fallback to original if not found (might already be an ID)
 
 
+def _extract_commits_from_context(context: dict, message: str) -> list:
+    """
+    Detect GitHub commit data from:
+    1. Upstream node outputs in the execution context (results dict)
+    2. Raw commit JSON embedded in the message string
+    Returns a list of commit dicts if found, else empty list.
+    """
+    import json as _json
+
+    # Check context results for upstream commit data
+    results = (context or {}).get("results", {})
+    for node_id, node_output in results.items():
+        if isinstance(node_output, dict):
+            # Check all possible names for commit data
+            commits = (
+                node_output.get("commits") or 
+                node_output.get("commits_json") or 
+                node_output.get("raw_data")
+            )
+            # If not found at top level, check one level deeper in case of 'output' nesting
+            if not commits and "output" in node_output:
+                nested = node_output["output"]
+                if isinstance(nested, dict):
+                    commits = nested.get("commits") or nested.get("commits_json")
+
+            if isinstance(commits, list) and len(commits) > 0:
+                # Verify it looks like GitHub commits
+                first = commits[0]
+                if isinstance(first, dict) and ("sha" in first or "commit" in first):
+                    logger.info(f"Extracted {len(commits)} commits from context node: {node_id}")
+                    return commits
+
+    # Check if the raw message contains commit JSON (template-resolved)
+    if '"sha"' in message and '"commit"' in message:
+        try:
+            # Try to extract a JSON array from the message
+            import re
+            bracket_match = re.search(r'\[.*\]', message, re.DOTALL)
+            if bracket_match:
+                parsed = _json.loads(bracket_match.group())
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    first = parsed[0]
+                    if isinstance(first, dict) and ("sha" in first or "commit" in first):
+                        return parsed
+        except (_json.JSONDecodeError, Exception):
+            pass
+
+    return []
+
+
+def _format_commits_and_csv(commits: list) -> tuple:
+    """
+    Converts raw GitHub commit data into:
+    1. A clean Slack message (human-readable summary)
+    2. A CSV file path for upload
+
+    Returns (message_str, csv_file_path)
+    """
+    rows = []
+    for c in commits:
+        commit_info = c.get("commit", {})
+        author_info = commit_info.get("author", {})
+        rows.append({
+            "sha": c.get("sha", "")[:7],
+            "author": author_info.get("name", "Unknown"),
+            "date": author_info.get("date", "")[:10],
+            "message": commit_info.get("message", "").split("\n")[0][:120],
+            "url": c.get("html_url", ""),
+        })
+
+    # Build Slack message
+    lines = [f"📋 *Commit Summary* — {len(rows)} commits\n"]
+    for i, r in enumerate(rows, 1):
+        msg_preview = r["message"][:80] + ("…" if len(r["message"]) > 80 else "")
+        lines.append(f"`{r['sha']}` {r['author']} — {msg_preview}")
+    message = "\n".join(lines)
+
+    # Generate CSV
+    csv_dir = os.path.join(tempfile.gettempdir(), "mcp_gateway_csv")
+    os.makedirs(csv_dir, exist_ok=True)
+    csv_path = os.path.join(csv_dir, "commit_summary.csv")
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["sha", "author", "date", "message", "url"])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return message, csv_path
+
+
 async def execute_slack(action: str, params: dict, context: dict = None) -> dict:
     """
     Executes a Slack action using the official slack_sdk.
@@ -103,7 +197,7 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
     try:
         client = get_slack_client(context)
 
-        if action in ("send_message", "post_message", "notify"):
+        if action in ("send_message", "post_message", "notify", "notify_channel"):
             channel = (
                 params.get("channel")
                 or params.get("channel_id")
@@ -122,19 +216,51 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
                 summary_match = re.search(r"summary':\s*'([^']*)'", message)
                 if summary_match:
                     message = summary_match.group(1)
+
+            # ── Smart Commit Detection & CSV Generation ──
+            # If the message or the 'file' param contains raw GitHub commit JSON, auto-format it
+            # into a human-readable summary + generate a CSV file.
             
-            message = message.replace("{", "").replace("}", "").replace("'", "")
+            # 1. Try to find commit data in params['file']['content'] (LLM hallucinated but logical format)
+            file_obj = params.get("file")
+            potential_json_source = message
+            if isinstance(file_obj, dict) and file_obj.get("content"):
+                potential_json_source = str(file_obj.get("content"))
+                logger.info("Checking 'file.content' for commit data")
+            elif isinstance(file_obj, str) and ("sha" in file_obj or "commit" in file_obj):
+                # Rare case: LLM put raw JSON into params['file'] as a string
+                potential_json_source = file_obj
+                logger.info("Checking 'file' string for commit data")
+
+            commit_data = _extract_commits_from_context(context, potential_json_source)
+            csv_path = None
+            if commit_data:
+                message, csv_path = _format_commits_and_csv(commit_data)
+                logger.info(f"Auto-formatted {len(commit_data)} commits into summary + CSV")
+            else:
+                # Cleanup message if no commits found (remove accidental template artifacts)
+                message = message.replace("{", "").replace("}", "").replace("'", "")
 
             if not message:
-                raise ValueError("'message' is required for send_message.")
+                message = "🔔 Automated workflow notification triggered."
 
             # --- CHANNEL RESOLUTION ---
             if str(channel).startswith("#"):
                 logger.info(f"Resolving Slack channel name: {channel}")
                 resolved_id = await asyncio.to_thread(_resolve_channel_id_sync, client, channel)
-                if resolved_id != channel:
-                    logger.info(f"Resolved {channel} to {resolved_id}")
+                
+                # ── Fallback for Hallucinated or Missing Channels ──
+                if resolved_id == channel: # Channel not found in workspace
+                    default_chan = os.getenv("SLACK_DEFAULT_CHANNEL")
+                    if default_chan:
+                        logger.warning(f"Channel {channel} not found in workspace! Falling back to safely configured SLACK_DEFAULT_CHANNEL: {default_chan}")
+                        channel = default_chan
+                    else:
+                        channel = resolved_id
+                else:
                     channel = resolved_id
+                
+                logger.info(f"Targeting channel: {channel}")
 
             # Auto-inject links from recent context to fulfill user intent implicitly
             links = []
@@ -160,6 +286,22 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
             slack_storage.add_message(channel, message)
             
             output = await asyncio.to_thread(_send_message_sync, client, channel, message)
+
+            # If we generated a CSV, upload it to the same channel
+            file_output = None
+            if csv_path and os.path.exists(csv_path):
+                try:
+                    file_output = await asyncio.to_thread(
+                        _send_file_sync, client, channel, csv_path, "📊 Commit Summary (CSV)"
+                    )
+                    logger.info(f"CSV file uploaded to {channel}")
+                except Exception as fe:
+                    error_str = str(fe)
+                    logger.warning(f"CSV upload failed (non-fatal): {error_str}")
+                    # If file upload failed due to scope, inject a hint
+                    if "missing_scope" in error_str or "not_authed" in error_str:
+                        message += "\n\n⚠️ *Note*: CSV file could not be attached due to Slack bot permission limits (files:write)."
+
             return {
                 "status": "success",
                 "tool": "slack",
@@ -168,7 +310,8 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
                     "ok": output.get("ok"),
                     "channel": output.get("channel"),
                     "ts": output.get("ts"),
-                    "message_text": message[:100],
+                    "message_text": message[:200],
+                    "csv_uploaded": csv_path is not None and file_output is not None,
                 },
             }
 
@@ -259,10 +402,20 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
 
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"Slack execution failed [{action}]: {error_msg}")
+        # Detailed hint for common Slack errors
+        hint = ""
+        if "not_in_channel" in error_msg:
+            hint = " (Hint: Please invite the bot to the channel manually or check 'channels:join' scope)"
+        elif "invalid_auth" in error_msg or "not_authed" in error_msg:
+            hint = " (Hint: The SLACK_BOT_TOKEN appears to be invalid or expired)"
+        elif "channel_not_found" in error_msg:
+            hint = " (Hint: The channel name or ID is incorrect)"
+            
+        final_error = f"{error_msg}{hint}"
+        logger.error(f"Slack execution failed [{action}]: {final_error}")
         return {
             "status": "error",
             "tool": "slack",
             "action": action,
-            "error": error_msg,
+            "error": final_error,
         }

@@ -215,52 +215,163 @@ class LLMService:
 
         return text
 
-    @staticmethod
-    def _normalize_dag(dag_dict: dict) -> dict:
+    # Known tool keywords for parsing composite names like "create_github_branch"
+    _TOOL_KEYWORDS = {
+        "jira": "jira",
+        "github": "github",
+        "slack": "slack",
+        "sheets": "sheets",
+        "sheet": "sheets",
+        "google": "sheets",
+    }
+
+    _ACTION_ALIASES = {
+        "notify": "send_message",
+        "send": "send_message",
+        "post": "send_message",
+        "message": "send_message",
+        "get_ticket": "get_issue",
+        "fetch": "get_issue",
+        "create_ticket": "create_issue",
+        "create_pr": "create_pull_request",
+        "merge_pr": "merge_pull_request",
+        "get_commits": "list_commits",
+        "get_repo": "get_repository",
+    }
+
+    @classmethod
+    def _infer_tool_action_from_name(cls, name: str) -> tuple[str, str]:
+        """
+        Parse a composite node name like 'create_github_branch' or 'get_jira_issue'
+        into (tool, action).
+        
+        Strategy:
+        1. Check if the name contains a known tool keyword.
+        2. Remove the tool keyword to derive the action.
+        3. Verify the action exists in VALID_TOOLS; if not, fuzzy-match.
+        """
+        from api_schemas.dag import VALID_TOOLS
+        
+        name_lower = name.lower().replace("-", "_").replace(" ", "_")
+        
+        # Try to find a tool keyword embedded in the name
+        found_tool = None
+        for keyword, tool_name in cls._TOOL_KEYWORDS.items():
+            if keyword in name_lower:
+                found_tool = tool_name
+                # Remove the keyword from the name to get the action
+                action_raw = name_lower.replace(keyword, "").strip("_")
+                break
+        
+        if not found_tool:
+            # Fallback: guess from the action name
+            if any(w in name_lower for w in ["branch", "commit", "pr", "pull", "merge", "repo"]):
+                found_tool = "github"
+                action_raw = name_lower
+            elif any(w in name_lower for w in ["issue", "ticket", "bug"]):
+                found_tool = "jira"
+                action_raw = name_lower
+            elif any(w in name_lower for w in ["message", "notify", "alert", "slack"]):
+                found_tool = "slack"
+                action_raw = name_lower
+            elif any(w in name_lower for w in ["row", "sheet", "log", "append"]):
+                found_tool = "sheets"
+                action_raw = name_lower
+            else:
+                return ("jira", "get_issue")  # Safe default
+        
+        # Clean up the action: "create__branch" -> "create_branch"
+        action_clean = re.sub(r"_+", "_", action_raw).strip("_")
+        
+        # Check if action_clean is in our alias map
+        if action_clean in cls._ACTION_ALIASES:
+            action_clean = cls._ACTION_ALIASES[action_clean]
+        
+        # Check if the exact action is valid for this tool
+        valid_actions = VALID_TOOLS.get(found_tool, set())
+        if action_clean in valid_actions:
+            return (found_tool, action_clean)
+        
+        # Fuzzy match: find the best matching valid action
+        for valid_action in valid_actions:
+            if valid_action in action_clean or action_clean in valid_action:
+                return (found_tool, valid_action)
+        
+        # Last resort: pick a sensible default for the tool
+        defaults = {
+            "jira": "get_issue",
+            "github": "create_branch",
+            "slack": "send_message",
+            "sheets": "append_row",
+        }
+        return (found_tool, defaults.get(found_tool, "get_issue"))
+
+    @classmethod
+    def _normalize_dag(cls, dag_dict: dict) -> dict:
         """
         Normalize LLM output to match WorkflowDAG schema.
-        Handles the new prompt schema:
-        - workflow_id, name, description, steps[]
-        - service, tool (hierarchical), params, depends_on, outputs, requires_approval
+        
+        Handles multiple LLM output styles:
+        - Standard: {id, tool, action, params}
+        - Name-only: {name: "create_github_branch", params: {...}}
+        - Hierarchical: {service: "github", tool: "github.create_branch"}
         """
-        # Ensure workflow_name exists (map from 'name' if necessary)
+        # Ensure workflow_name exists
         if "workflow_name" not in dag_dict:
-            dag_dict["workflow_name"] = dag_dict.get("title", dag_dict.get("name", dag_dict.get("workflow_id", "unnamed_workflow")))
+            dag_dict["workflow_name"] = dag_dict.get(
+                "title", dag_dict.get("name", dag_dict.get("workflow_id", "unnamed_workflow"))
+            )
 
-        # Map 'steps' to 'nodes' if present
-        if "steps" in dag_dict and "nodes" not in dag_dict:
-            dag_dict["nodes"] = dag_dict.pop("steps")
+        # Map 'steps'/'tasks' to 'nodes'
+        for alt_key in ("steps", "tasks"):
+            if alt_key in dag_dict and "nodes" not in dag_dict:
+                dag_dict["nodes"] = dag_dict.pop(alt_key)
 
-        # Ensure nodes have correct field names and types
-        if "nodes" in dag_dict:
-            for node in dag_dict["nodes"]:
-                # Normalize 'service' + hierarchical 'tool' -> 'tool' + 'action'
-                # New: service="github", tool="github.get_repository"
-                # Old: tool="github", action="get_repository"
-                service = node.get("service")
-                tool_raw = node.get("tool")
-                
-                if service and "." in str(tool_raw):
-                    # It's using the new schema
-                    node["tool"] = service
-                    node["action"] = tool_raw.split(".")[-1]
-                
-                # Normalize 'inputs' <-> 'params'
-                if "inputs" in node and "params" not in node:
-                    node["params"] = node.pop("inputs")
-                elif "params" in node and "inputs" not in node:
-                    node["inputs"] = node["params"]
+        # Normalize each node
+        nodes = dag_dict.get("nodes", [])
+        for i, node in enumerate(nodes):
+            # ── 1. Ensure 'id' exists ─────────────────────────────────────
+            if "id" not in node:
+                node["id"] = node.get("name", node.get("node_id", f"node_{i+1}"))
+            
+            # ── 2. Ensure 'tool' and 'action' exist ──────────────────────
+            has_tool = "tool" in node and node["tool"]
+            has_action = "action" in node and node["action"]
+            
+            # Case A: Hierarchical schema (service + dotted tool)
+            service = node.get("service")
+            tool_raw = node.get("tool", "")
+            if service and "." in str(tool_raw):
+                node["tool"] = service
+                node["action"] = str(tool_raw).split(".")[-1]
+                has_tool = True
+                has_action = True
+            
+            # Case B: Missing tool/action — infer from 'name'
+            if not has_tool or not has_action:
+                node_name = node.get("name", "") or node.get("id", "")
+                if node_name:
+                    inferred_tool, inferred_action = cls._infer_tool_action_from_name(node_name)
+                    if not has_tool:
+                        node["tool"] = inferred_tool
+                    if not has_action:
+                        node["action"] = inferred_action
+            
+            # ── 3. Normalize params ───────────────────────────────────────
+            for alt in ("inputs", "args"):
+                if alt in node and "params" not in node:
+                    node["params"] = node.pop(alt)
+            if "params" not in node:
+                node["params"] = {}
 
-                # Force HITL for sensitive operations (create branch, create PR, etc.)
-                sensitive_actions = ["create_branch", "create_pull_request", "create_release"]
-                if node.get("action") in sensitive_actions:
-                    node["requires_approval"] = True
-                
-                # Ensure depends_on is a list
-                if "depends_on" not in node:
-                    node["depends_on"] = []
-                elif node["depends_on"] is None:
-                    node["depends_on"] = []
+            # ── 4. Force HITL for sensitive operations ────────────────────
+            sensitive = {"create_branch", "create_pull_request", "create_release", "merge_pull_request", "delete_branch"}
+            if node.get("action") in sensitive:
+                node["requires_approval"] = True
+            
+            # ── 5. Ensure depends_on is a list ────────────────────────────
+            if "depends_on" not in node or node["depends_on"] is None:
+                node["depends_on"] = []
 
         return dag_dict
 

@@ -60,6 +60,7 @@ class Node:
         # State
         self.state: str = TaskState.PENDING
         self.output: Dict[str, Any] = {}
+        self.raw_output: Dict[str, Any] = {}
         self.error: Optional[str] = None
         self.attempts: int = 0
         self.logs: List[Dict[str, Any]] = []
@@ -104,6 +105,7 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
         "write_row": "append_row",
         "add_row": "append_row",
         "log_row": "append_row",
+        "get_current_branch": "get_branch",
     }
     action = action_aliases.get(action, action)
 
@@ -278,7 +280,7 @@ class DAGExecutor:
             node.attempts += 1
             try:
                 # Prepare generic mock output if provided in DAG
-                context_data = {n_id: n.output for n_id, n in self.nodes.items() if n.state == TaskState.SUCCESS}
+                context_data = {n_id: n.raw_output for n_id, n in self.nodes.items() if n.state == TaskState.SUCCESS}
                 return await asyncio.wait_for(
                     dispatch_mcp(node.tool, node.action, inputs, credentials=self.credentials, context=context_data),
                     timeout=node.timeout
@@ -313,6 +315,7 @@ class DAGExecutor:
             output = await self._execute_with_retry(node, inputs)
             
             node.output = output
+            node.raw_output = output
             node.state = TaskState.SUCCESS
             self.completed.add(node.id)
 

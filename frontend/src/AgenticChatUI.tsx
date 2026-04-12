@@ -82,65 +82,138 @@ function DAGNode({ label, sublabel, server, left, top, status, tool }: any) {
   );
 }
 
-function SimpleWorkflowProgress({ dagData, nodeDetails }: { dagData: any, nodeDetails: any[] }) {
-  if (!dagData || !dagData.nodes) return null;
-  
+function WorkflowVisualization({ dagData, nodeDetails }: { dagData: any, nodeDetails: any[] }) {
+  if (!dagData || !dagData.nodes || dagData.nodes.length === 0) return null;
+
+  const NODE_W = 175;
+  const NODE_H = 100;
+  const GAP    = 50;
+  const nodes  = dagData.nodes as any[];
+
+  // Layout: simple left-to-right chain
+  const canvasW = nodes.length * (NODE_W + GAP) - GAP;
+  const canvasH = NODE_H + 24;
+
   const cleanAction = (str: string) => {
     if (!str) return "Task";
     return str.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   };
 
-    <div style={{ marginTop: 12, marginBottom: 16 }}>
-      {dagData.nodes.map((n: any) => {
-        const detail = nodeDetails?.find(d => d.node_id === n.id);
-        const isFailed = n.status === "failed";
-        const isDone = n.status === "done" || n.status === "success";
-        const isSkipped = n.status === "skipped";
-        
-        let icon = "⏳";
-        if (isDone) icon = "✔";
-        if (isFailed) icon = "❌";
-        if (isSkipped) icon = "⊘";
-        
-        // simplify error message
-        let errorMsg = detail?.error || "";
-        if (errorMsg) {
-          if (errorMsg.includes("401") || errorMsg.toLowerCase().includes("unauthorized")) {
-             errorMsg = `Connection to ${n.tool} failed. Please check access.`;
-          } else if (errorMsg.includes("404") || errorMsg.includes("not_found")) {
-             errorMsg = `Item or channel not found in ${n.tool}.`;
-          } else {
-             errorMsg = `Action failed in ${n.tool}.`;
-          }
-        }
+  const getOutputSummary = (nodeId: string) => {
+    const d = nodeDetails?.find(d => d.node_id === nodeId);
+    if (!d?.output) return null;
+    const o = d.output;
+    if (o.key || o.issue_id) return `Ticket created: ${o.key || o.issue_id}`;
+    if (o.branch_name) return `Branch: ${o.branch_name}`;
+    if (o.ts || o.channel) return `Message sent`;
+    if (o.message_text) return o.message_text.slice(0, 60);
+    if (o.summary) return o.summary.replace("Action", "").replace("completed successfully.", "done").trim();
+    return null;
+  };
 
-        return (
-          <div key={n.id} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 16 }}>{icon}</span>
-              <span style={{ color: isFailed ? "#f85149" : isDone ? "#4ade80" : "#e6edf3", fontSize: 14, fontWeight: 500 }}>
-                {cleanAction(n.action)} → {isDone ? "Completed" : isFailed ? "Failed" : isSkipped ? "Skipped" : "In Progress"}
-              </span>
-            </div>
-            {isFailed && errorMsg && (
-              <div style={{ marginLeft: 28, fontSize: 13, color: "#f85149", opacity: 0.9 }}>
-                {errorMsg}
-              </div>
-            )}
-            {isDone && detail?.output && (
-              Object.values(detail.output).find((val: any) => typeof val === "string" && val.startsWith("http")) && (
-                <div style={{ marginLeft: 28, marginTop: 2 }}>
-                  <a href={Object.values(detail.output).find((val: any) => typeof val === "string" && val.startsWith("http")) as string} 
-                     target="_blank" rel="noopener noreferrer" 
-                     style={{ color: "#58a6ff", fontSize: 13, textDecoration: "none" }}>
-                    🔗 Open in {n.tool}
-                  </a>
-                </div>
-              )
-            )}
+  return (
+    <div style={{ marginTop: 16, marginBottom: 4 }}>
+      {/* ── Flowchart ── */}
+      <div style={{ overflowX: "auto", paddingBottom: 8 }}>
+        <div style={{ position: "relative", width: canvasW, height: canvasH, minWidth: canvasW }}>
+          {/* Arrow connectors */}
+          <svg style={{ position: "absolute", top: 0, left: 0, width: canvasW, height: canvasH, pointerEvents: "none" }}>
+            {nodes.slice(0, -1).map((_: any, i: number) => {
+              const x1 = i * (NODE_W + GAP) + NODE_W;
+              const x2 = (i + 1) * (NODE_W + GAP);
+              const y  = NODE_H / 2 + 12;
+              return (
+                <g key={i}>
+                  <line x1={x1} y1={y} x2={x2 - 8} y2={y} stroke="#2ea04366" strokeWidth={2} strokeDasharray="4 3" />
+                  <polygon points={`${x2},${y} ${x2-8},${y-5} ${x2-8},${y+5}`} fill="#2ea04366" />
+                </g>
+              );
+            })}
+          </svg>
+          {/* Nodes */}
+          {nodes.map((n: any, i: number) => (
+            <DAGNode
+              key={n.id}
+              left={i * (NODE_W + GAP)}
+              top={12}
+              label={cleanAction(n.action)}
+              sublabel={`${n.tool} · ${n.action}`}
+              server={`${n.tool?.toUpperCase()} SERVER`}
+              status={n.status || "pending"}
+              tool={n.tool}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Live Platform Results ── */}
+      {nodeDetails && nodeDetails.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: "#484f58",
+            textTransform: "uppercase", marginBottom: 10,
+          }}>
+            Live Platform Results
           </div>
-        );
-      })}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {nodeDetails.map((node: any, i: number) => {
+              const isOk      = node.status === "success" || node.status === "done";
+              const isFailed  = node.status === "failed";
+              const tc        = TOOL_COLORS[node.tool] || TOOL_COLORS.generic;
+              const summary   = getOutputSummary(node.node_id);
+              const links     = Object.values(node.output || {}).filter((v: any) => typeof v === "string" && v.startsWith("http")) as string[];
+
+              return (
+                <div key={i} style={{
+                  background: tc.bg,
+                  border: `1px solid ${isOk ? tc.border : isFailed ? "#f85149" : "#30363d"}`,
+                  borderRadius: 10, padding: "12px 16px",
+                  boxShadow: isOk ? `0 0 10px ${tc.border}22` : "none",
+                  transition: "box-shadow 0.3s",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 18 }}>{TOOL_ICONS[node.tool] || "⚙️"}</span>
+                      <div>
+                        <span style={{ fontSize: 12, color: tc.text, fontWeight: 600 }}>
+                          {node.tool?.toUpperCase()}
+                        </span>
+                        <span style={{ fontSize: 12, color: "#7d8590", marginLeft: 6 }}>
+                          · {node.action}
+                        </span>
+                      </div>
+                    </div>
+                    <StatusBadge status={node.status || "pending"} />
+                  </div>
+                  {summary && (
+                    <div style={{ fontSize: 13, color: "#e6edf3", marginBottom: links.length > 0 ? 8 : 0 }}>
+                      {summary}
+                    </div>
+                  )}
+                  {links.map((url, li) => (
+                    <a key={li} href={url} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        fontSize: 12, color: "#58a6ff", textDecoration: "none",
+                        border: "1px solid #58a6ff44", borderRadius: 6,
+                        padding: "3px 10px", marginTop: 4,
+                        background: "#0d1f38",
+                      }}
+                    >
+                      🔗 Open live link ↗
+                    </a>
+                  ))}
+                  {isFailed && node.error && (
+                    <div style={{ fontSize: 12, color: "#f85149", marginTop: 4 }}>
+                      {node.error.length > 120 ? node.error.slice(0, 120) + "…" : node.error}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -303,7 +376,7 @@ function ChatMessage({ msg, onEdit, onApprove, onReject }: { msg: any; onEdit: (
             )}
 
             {/* Simple Workflow Visualization */}
-            {msg.dagData && <SimpleWorkflowProgress dagData={msg.dagData} nodeDetails={msg.nodeDetails} />}
+            {msg.dagData && <WorkflowVisualization dagData={msg.dagData} nodeDetails={msg.nodeDetails || []} />}
 
             {/* Approval Block for HITL */}
             {msg.pendingApproval && (
@@ -317,6 +390,41 @@ function ChatMessage({ msg, onEdit, onApprove, onReject }: { msg: any; onEdit: (
                 </div>
               </div>
             )}
+
+            {/* ── Audit Log ── */}
+            {msg.audit && msg.audit.length > 0 && (
+              <details style={{ marginTop: 14 }} open>
+                <summary style={{
+                  cursor: "pointer", fontSize: 12, color: "#7d8590", userSelect: "none",
+                  display: "flex", alignItems: "center", gap: 6, listStyle: "none",
+                  outline: "none", marginBottom: 8,
+                }}>
+                  <span style={{ fontSize: 10 }}>▼</span>
+                  Audit Log ({msg.audit.length} events)
+                </summary>
+                <div style={{
+                  background: "#010409", border: "1px solid #21262d", borderRadius: 8,
+                  padding: "10px 14px", fontFamily: "monospace", fontSize: 12,
+                  maxHeight: 220, overflowY: "auto",
+                }}>
+                  {msg.audit.map((entry: string, i: number) => {
+                    const isSuccess = entry.includes("[success]") || entry.includes("success");
+                    const isError   = entry.includes("[failed") || entry.includes("error");
+                    return (
+                      <div key={i} style={{
+                        color: isSuccess ? "#4ade80" : isError ? "#f85149" : "#7d8590",
+                        padding: "3px 0", borderBottom: i < msg.audit.length - 1 ? "1px solid #21262d" : "none",
+                        lineHeight: 1.5,
+                      }}>
+                        <span style={{ color: "#484f58", marginRight: 8 }}>{String(i + 1).padStart(2, "0")}</span>
+                        {entry}
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+            )}
+
           </>
         )}
       </div>
@@ -360,8 +468,14 @@ export default function App() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { id } = useParams();
-  
-  // Capture Jira OAuth credentials from URL on mount
+  const [history, setHistory] = useState<any[]>([]);
+  const [chats, setChats] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('agentic_chats') || '[]'); } catch { return []; }
+  });
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+
+  // Capture OAuth credentials from URL on mount
+  useEffect(() => {
     const jiraToken = searchParams.get("jira_token");
     const jiraCloudId = searchParams.get("jira_cloud_id");
     const slackToken = searchParams.get("slack_token");
@@ -379,15 +493,10 @@ export default function App() {
     }
 
     if (jiraToken || slackToken || googleToken) {
-      // Clean URL
       setSearchParams({});
     }
-
-  const [history, setHistory] = useState<any[]>([]);
-  const [chats, setChats] = useState<any[]>(() => {
-    try { return JSON.parse(localStorage.getItem('agentic_chats') || '[]'); } catch { return []; }
-  });
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!currentChatId && messages.length > 0) {
@@ -717,7 +826,15 @@ export default function App() {
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
-  const handleSuggestion = (text: string) => handleSend(text);
+  const handleSuggestion = (text: string) => {
+    setInput(text);
+    setChatStarted(true);
+    // Focus the input so user can immediately edit
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea');
+      if (textarea) { textarea.focus(); textarea.selectionStart = textarea.selectionEnd = text.length; }
+    }, 50);
+  };
 
   // ─── HITL Approval / Rejection Handlers ─────────────────────────
   const handleHITLApprove = async () => {

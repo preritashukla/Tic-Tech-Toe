@@ -383,6 +383,9 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
     # ── Master Repo Enforcement ───────────────────────────────────────────────
     MASTER_REPO = "preritashukla/Tic-Tech-Toe"
     
+    # Check if user has explicitly confirmed the master repo in this workflow
+    user_confirmed = inputs.get("user_confirmed") is True
+    
     # Check if a different repo was explicitly requested
     req_owner = inputs.get("owner") or inputs.get("repo_owner") or inputs.get("github_owner")
     req_repo = inputs.get("repo") or inputs.get("repo_name") or inputs.get("repository") or inputs.get("repo_full_name")
@@ -395,22 +398,31 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
         if len(parts) >= 2:
             req_owner, req_repo = parts[0], parts[1]
 
-    # If the LLM passed ANY identifying data for the repo, validate it.
+    # CASE A: User requested a DIFFERENT repo
     if req_owner or req_repo:
         slug = f"{req_owner or 'unknown'}/{req_repo or 'unknown'}".lower()
         if slug != MASTER_REPO.lower():
-             raise ValueError("you enter wrong github repo")
-             
-    # If NO repo was provided by the user, explicitly ASK them instead of silently defaulting.
-    if not req_owner and not req_repo:
+             raise ValueError(
+                 f"Repository '{slug if req_owner else req_repo}' is not authorized. "
+                 f"Do you want to use the master repo ({MASTER_REPO}) instead?"
+             )
+    
+    # CASE B: User did NOT mention a repo, and the LLM didn't pass the 'user_confirmed' lock
+    # Exception: rollback/cleanup/delete and READ-ONLY actions are allowed without confirmation
+    read_or_system_actions = {
+        "rollback", "cleanup", "delete_branch", "delete_branches_by_pattern",
+        "list_commits", "list_branches", "get_repository", "get_branch",
+        "list_issues", "get_issue", "list_pull_requests", "get_pull_request",
+        "get_file_content",
+    }
+    if not user_confirmed and action not in read_or_system_actions:
         raise ValueError(
-            f"You didn't specify a repository. Do you want to perform this in the master repo ({MASTER_REPO})? "
-            f"If so, simply reply 'yes'."
+            f"SAFETY ALERT: You attempt to modify the master repository. "
+            f"Do you want to perform this in the master repo ({MASTER_REPO})? "
+            f"Please reply 'yes' to confirm."
         )
 
-    # We only get here if the user's explicit input matched MASTER_REPO.
     owner, repo = MASTER_REPO.split("/")
-
     print(f"DEBUG: Using Master Repository -> {owner}/{repo}")
 
     if action == "get_repository":
@@ -440,17 +452,32 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
             raise ValueError("Missing 'pattern' for batch branch deletion.")
         return await delete_branches_by_pattern(owner, repo, pattern)
     elif action == "get_branch":
-        return await get_branch(owner, repo, inputs.get("branch"))
+        return await get_branch(owner, repo, inputs.get("branch") or inputs.get("branch_name") or "main")
     elif action == "list_issues":
         return await list_issues(owner, repo, inputs.get("state", "open"), inputs.get("labels"), inputs.get("assignee"))
     elif action == "get_issue":
-        return await get_issue(owner, repo, int(inputs.get("issue_number")))
+        issue_val = inputs.get("issue_number") or inputs.get("issue_id") or inputs.get("issue")
+        try:
+            issue_num = int(issue_val)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid GitHub issue number: '{issue_val}'. Issue numbers must be integers (not strings like '{issue_val}'). If you are trying to fetch a Jira issue, use the 'jira' tool instead.")
+        return await get_issue(owner, repo, issue_num)
     elif action == "create_issue":
         return await create_issue(owner, repo, inputs.get("title"), inputs.get("body"), inputs.get("labels"), inputs.get("assignees"))
     elif action == "add_issue_comment":
-        return await add_issue_comment(owner, repo, int(inputs.get("issue_number")), inputs.get("body"))
+        issue_val = inputs.get("issue_number") or inputs.get("issue_id") or inputs.get("issue")
+        try:
+            issue_num = int(issue_val)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid GitHub issue number: '{issue_val}'. Issue numbers must be integers.")
+        return await add_issue_comment(owner, repo, issue_num, inputs.get("body"))
     elif action == "update_issue":
-        return await update_issue(owner, repo, int(inputs.get("issue_number")), 
+        issue_val = inputs.get("issue_number") or inputs.get("issue_id") or inputs.get("issue")
+        try:
+            issue_num = int(issue_val)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid GitHub issue number: '{issue_val}'. Issue numbers must be integers.")
+        return await update_issue(owner, repo, issue_num, 
                                    state=inputs.get("state"), title=inputs.get("title"), 
                                    body=inputs.get("body"), labels=inputs.get("labels"), 
                                    assignees=inputs.get("assignees"))

@@ -31,6 +31,7 @@ class ContextManager:
 
     def __init__(self, summarize_threshold: int = 2000):
         self._node_outputs: dict[str, dict[str, Any]] = {}
+        self._raw_node_outputs: dict[str, dict[str, Any]] = {}
         self._conversation_history: list[dict] = []
         self._execution_metadata: dict[str, Any] = {}
         self._summarize_threshold = summarize_threshold
@@ -51,14 +52,17 @@ class ContextManager:
             output = {"result": output}
 
         self._node_outputs[node_id] = output
+        self._raw_node_outputs[node_id] = output
         output_size = len(json.dumps(output))
         logger.info(
             f"Stored output for {node_id} ({output_size} chars, "
             f"{'needs summarization' if output_size > self._summarize_threshold else 'ok'})"
         )
 
-    def get_output(self, node_id: str) -> Optional[dict[str, Any]]:
+    def get_output(self, node_id: str, raw: bool = False) -> Optional[dict[str, Any]]:
         """Retrieve stored output for a specific node."""
+        if raw:
+            return self._raw_node_outputs.get(node_id)
         return self._node_outputs.get(node_id)
 
     def has_output(self, node_id: str) -> bool:
@@ -67,38 +71,31 @@ class ContextManager:
 
     # ─── Template Resolution ───────────────────────────────────────
 
-    def resolve_params(self, params: dict[str, Any]) -> dict[str, Any]:
+    def resolve_params(self, params: dict[str, Any], use_raw: bool = True) -> dict[str, Any]:
         """
         Replace {{node_X.output.field}} or {{node_X.field}} templates 
         with actual values from stored node outputs.
         
-        Handles:
-        - String values with embedded templates
-        - Nested dict values (recursive resolution)
-        - Templates within list items
-        
         Args:
             params: Raw params dict potentially containing template references
+            use_raw: If True, use the unsummarized raw data (best for logic/integrations)
             
         Returns:
             Fully resolved params dict with actual values
-            
-        Raises:
-            ValueError: If a referenced node or field doesn't exist
         """
-        return self._resolve_value(params)
+        return self._resolve_value(params, use_raw=use_raw)
 
-    def _resolve_value(self, value: Any) -> Any:
+    def _resolve_value(self, value: Any, use_raw: bool = True) -> Any:
         """Recursively resolve templates in any value type."""
         if isinstance(value, str):
-            return self._resolve_string(value)
+            return self._resolve_string(value, use_raw=use_raw)
         elif isinstance(value, dict):
-            return {k: self._resolve_value(v) for k, v in value.items()}
+            return {k: self._resolve_value(v, use_raw=use_raw) for k, v in value.items()}
         elif isinstance(value, list):
-            return [self._resolve_value(item) for item in value]
+            return [self._resolve_value(item, use_raw=use_raw) for item in value]
         return value
 
-    def _resolve_string(self, text: str) -> str:
+    def _resolve_string(self, text: str, use_raw: bool = True) -> str:
         """
         Resolve all template references in a string.
         Supports templates embedded within longer strings.
@@ -112,13 +109,16 @@ class ContextManager:
             field = parts[0].strip()
             filter_type = parts[1].strip() if len(parts) > 1 else None
 
-            if node_id not in self._node_outputs:
+            # Decide which output source to use
+            outputs_source = self._raw_node_outputs if use_raw else self._node_outputs
+
+            if node_id not in outputs_source:
                 raise ValueError(
-                    f"Template resolution failed: node '{node_id}' not found in completed outputs. "
-                    f"Available: {list(self._node_outputs.keys())}"
+                    f"Template resolution failed: node '{node_id}' not found in {'raw ' if use_raw else ''}outputs. "
+                    f"Available: {list(outputs_source.keys())}"
                 )
 
-            output = self._node_outputs[node_id]
+            output = outputs_source[node_id]
             val = output
             
             for part in field.split('.'):
@@ -189,30 +189,32 @@ class ContextManager:
 
     # ─── Snapshot & Debug ──────────────────────────────────────────
 
-    def get_execution_context(self) -> dict[str, Any]:
+    def get_execution_context(self, raw: bool = False) -> dict[str, Any]:
         """Return full context snapshot for debugging/observability."""
+        source = self._raw_node_outputs if raw else self._node_outputs
         return {
             "node_outputs": {
                 nid: {
                     "data": output,
                     "size_chars": len(json.dumps(output))
                 }
-                for nid, output in self._node_outputs.items()
+                for nid, output in source.items()
             },
             "conversation_turns": len(self._conversation_history),
             "metadata": self._execution_metadata,
-            "total_stored_nodes": len(self._node_outputs)
+            "total_stored_nodes": len(source)
         }
 
     def clear(self) -> None:
         """Reset all state for a fresh execution."""
         self._node_outputs.clear()
+        self._raw_node_outputs.clear()
         self._conversation_history.clear()
         self._execution_metadata.clear()
         logger.info("Context manager cleared")
 
-    def get_all(self) -> dict:
+    def get_all(self, raw: bool = True) -> dict:
         """Return all stored node outputs as a flat dict (node_id -> output dict).
-        Used by integration handlers that need cross-node context."""
-        return dict(self._node_outputs)
+        Defaults to raw data for integrations."""
+        return dict(self._raw_node_outputs if raw else self._node_outputs)
 

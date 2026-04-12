@@ -88,8 +88,11 @@ def dag_from_dict(data: dict) -> DAG:
         # Flexibly handle both 'inputs' (internal model) and 'params' (LLM terminology)
         inputs = n.get("inputs") or n.get("params") or {}
         
+        # Robust ID extraction: if 'id' is missing, fallback to 'name' or index
+        node_id = n.get("id") or n.get("name") or f"node_{raw_nodes.index(n)}"
+        
         node = DAGNode(
-            id=n["id"],
+            id=str(node_id),
             name=n.get("name") or n.get("title") or f"{tool} → {action}",
             tool=tool,
             action=action,

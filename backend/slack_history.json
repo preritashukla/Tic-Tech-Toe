@@ -124,5 +124,411 @@
     "text": "Verification: Channel Resolution is WORKING! \ud83d\ude80",
     "sender": "Agentic MCP",
     "timestamp": "2026-04-12T10:14:38.849066"
+  },
+  {
+    "id": "18945fa8",
+    "channel": "C0AT2NMEC2C",
+    "text": "Test from debug script",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:01:12.170453"
+  },
+  {
+    "id": "d31ff6ed",
+    "channel": "C0AT2NMEC2C",
+    "text": "Slack fix verified!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:03:52.064973"
+  },
+  {
+    "id": "25bab9f9",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:04:05.376818"
+  },
+  {
+    "id": "9693c599",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:05:59.862109"
+  },
+  {
+    "id": "aab63aa8",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:09:36.746607"
+  },
+  {
+    "id": "56e70743",
+    "channel": "C0AT2NMEC2C",
+    "text": "Latest GitHub Commits:\n[Technical data truncated \u2014 See summary]",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:11:30.260827"
+  },
+  {
+    "id": "04c40094",
+    "channel": "C0AT2NMEC2C",
+    "text": "Latest GitHub Commits:\n[Technical data truncated \u2014 See summary]",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:16:35.010156"
+  },
+  {
+    "id": "76ec8c42",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 5 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:18:48.408589"
+  },
+  {
+    "id": "ca447829",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 2 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:19:04.235045"
+  },
+  {
+    "id": "e84c08bc",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:20:10.869258"
+  },
+  {
+    "id": "596e5c25",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:20:22.542500"
+  },
+  {
+    "id": "3929820b",
+    "channel": "#general",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:24:49.757475"
+  },
+  {
+    "id": "b55cd9c1",
+    "channel": "#general",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:24:52.007380"
+  },
+  {
+    "id": "d79a4569",
+    "channel": "#general",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:24:54.931017"
+  },
+  {
+    "id": "d2c6e7b9",
+    "channel": "#general",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:28:35.244316"
+  },
+  {
+    "id": "e8fb883c",
+    "channel": "#general",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:28:37.159219"
+  },
+  {
+    "id": "c43fa7b4",
+    "channel": "#general",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets\n`911d7ec` Tejas Singh \u2014 fix: execution engine deadlock and improved audit reporting UI",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:28:40.331063"
+  },
+  {
+    "id": "49fcec10",
+    "channel": "C0AT2NMEC2C",
+    "text": "New ticket created: DEMO-101\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/DEMO-101",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:32:00.565205"
+  },
+  {
+    "id": "8949c24f",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:32:34.560573"
+  },
+  {
+    "id": "966782c9",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:32:51.558379"
+  },
+  {
+    "id": "e5d00e7b",
+    "channel": "C0AT2NMEC2C",
+    "text": "New Jira ticket created: DEMO-101\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/DEMO-101",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:34:41.022564"
+  },
+  {
+    "id": "73c07a63",
+    "channel": "C0AT2NMEC2C",
+    "text": "Automated workflow completed. Jira ticket created and row appended to Google Sheets.\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/DEMO-101",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:36:17.434585"
+  },
+  {
+    "id": "915b5abb",
+    "channel": "C0AS582T3B7",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend\n`ce9ef38` Tejas Singh \u2014 feat: Implement full OAuth 2.0 flow for Jira, Slack, and Google Sheets",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:37:20.000858"
+  },
+  {
+    "id": "aaaff11f",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T11:51:56.085384"
+  },
+  {
+    "id": "d1bc61b7",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:11:05.234011"
+  },
+  {
+    "id": "b24ca45c",
+    "channel": "C0AT2NMEC2C",
+    "text": "New branch created: feature/new-feature",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:11:39.057687"
+  },
+  {
+    "id": "5265f998",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:22:14.761349"
+  },
+  {
+    "id": "10df902f",
+    "channel": "C0AS582T3B7",
+    "text": "done",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:29:22.764774"
+  },
+  {
+    "id": "93c8ed91",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:34:33.038280"
+  },
+  {
+    "id": "ff2491e0",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:38:04.626759"
+  },
+  {
+    "id": "69d494b0",
+    "channel": "all-daiict",
+    "text": "New Jira ticket created\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/DEMO-101",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:46:55.322524"
+  },
+  {
+    "id": "e4b67bf9",
+    "channel": "all-daiict",
+    "text": "New issue created\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-65",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:49:38.015485"
+  },
+  {
+    "id": "9dd75be9",
+    "channel": "all-daiict",
+    "text": "New issue created\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-66",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T12:50:03.604134"
+  },
+  {
+    "id": "9dce7076",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:11:53.711001"
+  },
+  {
+    "id": "ffb3784e",
+    "channel": "C0AT2NMEC2C",
+    "text": "New Bug Found\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-70",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:12:23.650873"
+  },
+  {
+    "id": "816f0ff3",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:13:07.374447"
+  },
+  {
+    "id": "d2006442",
+    "channel": "C0AT2NMEC2C",
+    "text": "GitHub branch created from Jira issue TIC-1\n\nRelated Resources:\nBranch: https://github.com/preritashukla/Tic-Tech-Toe/tree/fix/TIC-1-9853",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:14:15.201787"
+  },
+  {
+    "id": "fb17bf53",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:15:31.237997"
+  },
+  {
+    "id": "9793b815",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:25:17.548091"
+  },
+  {
+    "id": "8b97b254",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:29:51.367058"
+  },
+  {
+    "id": "804467bd",
+    "channel": "CHANNEL_NAME",
+    "text": "Issue raised: #all-daiict\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-80",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:36:52.064270"
+  },
+  {
+    "id": "3b7a4a91",
+    "channel": "CHANNEL_NAME",
+    "text": "Issue raised: #all-daiict\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-80",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:36:54.222818"
+  },
+  {
+    "id": "2e496eaf",
+    "channel": "CHANNEL_NAME",
+    "text": "Issue raised: #all-daiict\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-80",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:36:57.180569"
+  },
+  {
+    "id": "8d3994a8",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:37:45.472588"
+  },
+  {
+    "id": "e122a158",
+    "channel": "C0AT2NMEC2C",
+    "text": "New ticket created: TIC-1\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-83",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:45:23.698455"
+  },
+  {
+    "id": "cacab78e",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:47:06.777725"
+  },
+  {
+    "id": "c71f4768",
+    "channel": "C0AT2NMEC2C",
+    "text": "GitHub branch created: fix/TIC-1\n\nRelated Resources:\nBranch: https://github.com/preritashukla/Tic-Tech-Toe/tree/fix/TIC-1-1878",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T13:47:59.791143"
+  },
+  {
+    "id": "a69b7864",
+    "channel": "all-daiict",
+    "text": "New Jira ticket created\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-85",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T14:00:35.892636"
+  },
+  {
+    "id": "be6e61ba",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T14:05:38.904342"
+  },
+  {
+    "id": "a2b7de3d",
+    "channel": "all-daiict",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T14:27:34.262387"
+  },
+  {
+    "id": "ec292e61",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udd14 Automated workflow notification triggered.\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-87",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T14:29:39.655585"
+  },
+  {
+    "id": "c6fb5bb0",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T15:41:19.148492"
+  },
+  {
+    "id": "7c84e190",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T15:47:49.729583"
+  },
+  {
+    "id": "d5c7ddd5",
+    "channel": "C0AT2NMEC2C",
+    "text": "System is live!",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T15:51:01.355159"
+  },
+  {
+    "id": "aa4bbd22",
+    "channel": "C0AT2NMEC2C",
+    "text": "Jira ticket created\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-91",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T16:04:02.456993"
+  },
+  {
+    "id": "644f53d2",
+    "channel": "C0AT2NMEC2C",
+    "text": "Created branch fix/TIC-1 in google/repo\n\nRelated Resources:\nBranch: https://github.com/preritashukla/Tic-Tech-Toe/tree/fix/TIC-1-0743",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T16:15:44.715979"
+  },
+  {
+    "id": "03b81406",
+    "channel": "C0AT2NMEC2C",
+    "text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`eaf6db7` Hemaksh \u2014 Developer UI updated, global theme toggle\n`de3e891` Hemaksh \u2014 Manager side ui updated\n`cd02cf6` Tejas Singh \u2014 feat: stabilize slack orchestration and github master repo enforcement, enhance \u2026\n`5d359a1` Grishma Makwana \u2014 feat: redesign UI for non-developers, implement HITL, simplified visualization, \u2026\n`e8bf8c8` Grishma Makwana \u2014 UI: Implement all-or-none execution summary text with exact failure step\n`5e141f3` Grishma Makwana \u2014 Revert \"UI: Standardize layouts, show DAG execution graph for developer role, re\u2026\n`b55105b` Grishma Makwana \u2014 UI: Standardize layouts, show DAG execution graph for developer role, remove Jir\u2026\n`ab5a070` Grishma Makwana \u2014 Enhance Slack integration and DAG templates\n`9343386` Tejas Singh \u2014 chore: Stable v1 Release for presentation - Resolve conflicts and emergency resi\u2026\n`5e475e0` Grishma Makwana \u2014 feat: stabilize Agentic MCP gateway integrations across backend and frontend",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T16:17:38.729202"
+  },
+  {
+    "id": "38d1ae02",
+    "channel": "C0AS582T3B7",
+    "text": "New Jira ticket created\n\nRelated Resources:\nJira Ticket: https://agenticmcpgateway.atlassian.net/browse/SCRUM-93",
+    "sender": "Agentic MCP",
+    "timestamp": "2026-04-12T16:22:12.716623"
   }
 ]
