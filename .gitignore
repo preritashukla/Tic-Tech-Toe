@@ -40,6 +40,8 @@ backend/workflows_db.json
 backend/scratch/
 backend/jira_issues.json
 backend/slack_messages.json
+backend/slack_history.json
+backend/mock_database.json
 
 # Environment
 .env
