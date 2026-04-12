@@ -89,10 +89,17 @@ Return a valid DAG JSON in this exact schema:
 
 | Tool | Actions | Requires Approval |
 |------|---------|------------------|
-| `jira` | `get_issue`, `create_issue`, `update_issue`, `delete_issue` | delete_issue only |
-| `github` | `create_branch`, `create_pr`, `merge_pr`, `list_commits`, `get_repo` | merge_pr |
-| `slack` | `send_message`, `send_file`, `create_channel` | create_channel |
+| Tool | Actions | Requires Approval | Note |
+|------|---------|------------------|------|
+| `jira` | `get_issue`, `create_issue`, `update_issue`, `delete_issue`, `rollback` | delete_issue only | |
+| `github` | `create_branch`, `delete_branch`, `cleanup`, `delete_branches_by_pattern`, `create_pr`, `merge_pr`, `list_commits`, `get_repo` | merge_pr | **Note**: All operations are restricted to the master repo. If the user does not explicitly specify a repository, YOU MUST NOT generate a DAG JSON. Output only text asking: "Do you want to perform this in the master repo (preritashukla/Tic-Tech-Toe)?" |
+| `slack` | `send_message`, `send_file`, `create_channel` | create_channel | **Note**: For `send_message`, always extract the `channel` param (e.g., `#general`) if mentioned or inferred from the user's prompt. |
 | `sheets` | `read_row`, `update_row`, `append_row` | update_row |
+
+### Advanced Syntax Rules
+- **No Logical Filters**: Never use jinja-style filters or code logic inside `params` (e.g. `{{ node_1.output | filter(...) }}`).
+- **Batch Operations**: Use dedicated batch tools (like `delete_branches_by_pattern` with a `pattern` param) instead of attempting to iterate using templates.
+- **Reference Output directly**: Use `{{node_X.output.field}}` only for direct string substitution.
 
 ---
 

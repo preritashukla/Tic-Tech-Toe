@@ -1,0 +1,2505 @@
+{
+  "exec-f23891d203e1": {
+    "execution_id": "exec-f23891d203e1",
+    "workflow_name": "Create and Rollback Jira Ticket",
+    "dag": {
+      "workflow_name": "Create and Rollback Jira Ticket",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "jira",
+          "action": "create_issue",
+          "params": {
+            "issue_title": "Demo Bug"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "jira",
+          "action": "rollback",
+          "params": {
+            "issue_id": "{{node_1.output.issue_id}}"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a Jira ticket and then rollback",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "jira.create_issue",
+        "tool": "jira",
+        "action": "create_issue",
+        "status": "success",
+        "output": {
+          "key": "DEMO-101",
+          "id": "mock-12345",
+          "issue_id": "DEMO-101",
+          "url": "https://agenticmcpgateway.atlassian.net/browse/DEMO-101",
+          "summary": "New Issue"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "jira.rollback",
+        "tool": "jira",
+        "action": "rollback",
+        "status": "failed",
+        "output": {},
+        "error": "Jira API Error (404): {'errorMessages': ['Issue does not exist or you do not have permission to see it.'], 'errors': {}}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Execution failed: 500"
+      },
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      }
+    ],
+    "started_at": "2026-04-12T03:08:14.748048+00:00",
+    "completed_at": "2026-04-12T03:08:19.571545+00:00",
+    "total_nodes": 2,
+    "succeeded": 1,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-b885736ae1e6": {
+    "execution_id": "exec-b885736ae1e6",
+    "workflow_name": "Create and Rollback Jira Ticket",
+    "dag": {
+      "workflow_name": "Create and Rollback Jira Ticket",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "jira",
+          "action": "create_issue",
+          "params": {
+            "issue_id": "DEMO-1",
+            "summary": "Demo Bug",
+            "description": "This is a demo bug"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "jira",
+          "action": "rollback",
+          "params": {
+            "issue_id": "DEMO-1"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a Jira ticket and then rollback",
+      "workflow_id": "wf-123e4567-e89b-12d3-a456-426614174000",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "jira.create_issue",
+        "tool": "jira",
+        "action": "create_issue",
+        "status": "success",
+        "output": {
+          "key": "DEMO-101",
+          "id": "mock-12345",
+          "issue_id": "DEMO-101",
+          "url": "https://agenticmcpgateway.atlassian.net/browse/DEMO-101",
+          "summary": "Demo Bug"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "jira.rollback",
+        "tool": "jira",
+        "action": "rollback",
+        "status": "success",
+        "output": {
+          "summary": "Action jira.rollback completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/2 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      }
+    ],
+    "started_at": "2026-04-12T03:10:31.143344+00:00",
+    "completed_at": "2026-04-12T03:10:31.934325+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-4923a154d3de": {
+    "execution_id": "exec-4923a154d3de",
+    "workflow_name": "Create Branch and Cleanup",
+    "dag": {
+      "workflow_name": "Create Branch and Cleanup",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "test-rollback"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "cleanup",
+          "params": {},
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create test-rollback branch and cleanup",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (422): {'message': 'Reference already exists', 'documentation_url': 'https://docs.github.com/rest/git/refs#create-a-reference', 'status': '422'}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.cleanup",
+        "tool": "github",
+        "action": "cleanup",
+        "status": "skipped",
+        "output": {},
+        "error": "Upstream dependency failed",
+        "duration_ms": 0.0,
+        "retries": -1,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/2 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Create a branch called test-rollback and then cleanup"
+      }
+    ],
+    "started_at": "2026-04-12T03:13:56.347502+00:00",
+    "completed_at": "2026-04-12T03:14:05.489664+00:00",
+    "total_nodes": 2,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 1
+  },
+  "exec-b006e0230724": {
+    "execution_id": "exec-b006e0230724",
+    "workflow_name": "Delete Branch",
+    "dag": {
+      "workflow_name": "Delete Branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "test-rollback"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Delete branch test-rollback from repository",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (422): {'message': 'Reference does not exist', 'documentation_url': 'https://docs.github.com/rest/git/refs#delete-a-reference', 'status': '422'}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/2 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a Jira ticket called 'Demo Bug' and then rollback"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Create a branch called test-rollback and then cleanup"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 0/2 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "delete the branch name test-rollback from the repo"
+      }
+    ],
+    "started_at": "2026-04-12T03:14:59.527685+00:00",
+    "completed_at": "2026-04-12T03:15:05.339474+00:00",
+    "total_nodes": 1,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-3aa05cf584a3": {
+    "execution_id": "exec-3aa05cf584a3",
+    "workflow_name": "Slack Quick Message",
+    "dag": {
+      "workflow_name": "Slack Quick Message",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "Delete all GitHub branches starting with 'test-rollback'"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 2,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 15
+          },
+          "name": "Send Slack Message",
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": "Direct Slack message from dashboard",
+      "workflow_id": "slack-quick-1775964014576",
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "Send Slack Message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775964015.099599",
+          "message_text": "Delete all GitHub branches starting with test-rollback",
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [],
+    "started_at": "2026-04-12T03:20:14.602082+00:00",
+    "completed_at": "2026-04-12T03:20:15.224220+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-1c0e68b16f85": {
+    "execution_id": "exec-1c0e68b16f85",
+    "workflow_name": "Delete GitHub branches",
+    "dag": {
+      "workflow_name": "Delete GitHub branches",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "list_branches",
+          "params": {},
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "{{node_1.output.branches | filter(startsWith('test-rollback'))}}"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Delete branches starting with 'test-rollback'",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.list_branches",
+        "tool": "github",
+        "action": "list_branches",
+        "status": "success",
+        "output": {
+          "branch_names": [
+            "12bajgaye",
+            "add-frontend",
+            "check",
+            "feature/agentic-test",
+            "feature/login-fix",
+            "fix/login-bug",
+            "hello",
+            "helloabc",
+            "integrating-changes",
+            "main",
+            "master",
+            "test/mcp-gateway-scrum-7",
+            "test/mcp-gateway-scrum-23",
+            "test-1",
+            "test-rollback-3637",
+            "test-rollback-3640",
+            "test-rollback-3644",
+            "video"
+          ],
+          "branch_count": 18,
+          "summary": "Action github.list_branches completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "Branch '{{node_1.output.branches | filter(startsWith('test-rollback'))}}' was already removed or didn't exist in preritashukla/Tic-Tech-Toe.",
+          "warning": "Simulation: Idempotent success",
+          "summary": "Action github.delete_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      }
+    ],
+    "started_at": "2026-04-12T03:20:44.940782+00:00",
+    "completed_at": "2026-04-12T03:20:46.690611+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-8fa0b53c83b1": {
+    "execution_id": "exec-8fa0b53c83b1",
+    "workflow_name": "Delete GitHub branches",
+    "dag": {
+      "workflow_name": "Delete GitHub branches",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "list_branches",
+          "params": {},
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "{{node_1.output.branches | filter(contains('test-rollback'))}}"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Delete branches starting with 'test-rollback'",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.list_branches",
+        "tool": "github",
+        "action": "list_branches",
+        "status": "success",
+        "output": {
+          "branch_names": [
+            "12bajgaye",
+            "add-frontend",
+            "check",
+            "feature/agentic-test",
+            "feature/login-fix",
+            "fix/login-bug",
+            "hello",
+            "helloabc",
+            "integrating-changes",
+            "main",
+            "master",
+            "test/mcp-gateway-scrum-7",
+            "test/mcp-gateway-scrum-23",
+            "test-1",
+            "test-rollback-3637",
+            "test-rollback-3640",
+            "test-rollback-3644",
+            "video"
+          ],
+          "branch_count": 18,
+          "summary": "Action github.list_branches completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "Branch '{{node_1.output.branches | filter(contains('test-rollback'))}}' was already removed or didn't exist in preritashukla/Tic-Tech-Toe.",
+          "warning": "Simulation: Idempotent success",
+          "summary": "Action github.delete_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      }
+    ],
+    "started_at": "2026-04-12T03:22:58.639009+00:00",
+    "completed_at": "2026-04-12T03:23:00.292328+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-046193acf5e5": {
+    "execution_id": "exec-046193acf5e5",
+    "workflow_name": "Delete GitHub branches",
+    "dag": {
+      "workflow_name": "Delete GitHub branches",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "delete_branches_by_pattern",
+          "params": {
+            "pattern": "test-rollback*"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Delete branches starting with 'test-rollback'",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.delete_branches_by_pattern",
+        "tool": "github",
+        "action": "delete_branches_by_pattern",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "No branches found matching prefix 'test-rollback*'",
+          "count": 0,
+          "summary": "Action github.delete_branches_by_pattern completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback"
+      }
+    ],
+    "started_at": "2026-04-12T03:28:26.580747+00:00",
+    "completed_at": "2026-04-12T03:28:27.528149+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-8735b26d3422": {
+    "execution_id": "exec-8735b26d3422",
+    "workflow_name": "Delete GitHub branches",
+    "dag": {
+      "workflow_name": "Delete GitHub branches",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "delete_branches_by_pattern",
+          "params": {
+            "pattern": "test-rollback*"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 2,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 10000
+        }
+      ],
+      "description": "Delete branches starting with 'test-rollback'",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.delete_branches_by_pattern",
+        "tool": "github",
+        "action": "delete_branches_by_pattern",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "Cleaned up 3 branches matching 'test-rollback*'",
+          "deleted_branches": [
+            "test-rollback-3637",
+            "test-rollback-3640",
+            "test-rollback-3644"
+          ],
+          "count": 3,
+          "summary": "Action github.delete_branches_by_pattern completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback"
+      }
+    ],
+    "started_at": "2026-04-12T03:34:50.783625+00:00",
+    "completed_at": "2026-04-12T03:34:53.484548+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-0f12838ab2fc": {
+    "execution_id": "exec-0f12838ab2fc",
+    "workflow_name": "Experiment Cleanup Branch and PR Merge",
+    "dag": {
+      "workflow_name": "Experiment Cleanup Branch and PR Merge",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "experiment-cleanup"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "merge_pull_request",
+          "params": {
+            "pr_number": 9999
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 1,
+            "backoff_factor": 1.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 10000
+        },
+        {
+          "id": "node_3",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "experiment-cleanup"
+          },
+          "depends_on": [
+            "node_2"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create branch, merge PR, and rollback",
+      "workflow_id": "wf-123e4567-e89b-12d3-a456-426614174000",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ],
+        [
+          "node_3"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "experiment-cleanup",
+          "branch_ref": "refs/heads/experiment-cleanup",
+          "branch_sha": "e8bf8c8c3f6b204fc216c6c18afa152312f03261",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/experiment-cleanup",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.merge_pull_request",
+        "tool": "github",
+        "action": "merge_pull_request",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (404): {'message': 'Not Found', 'documentation_url': 'https://docs.github.com/rest/pulls/pulls#merge-a-pull-request', 'status': '404'}",
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_3": {
+        "node_id": "node_3",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "skipped",
+        "output": {},
+        "error": "Upstream dependency failed",
+        "duration_ms": 0.0,
+        "retries": -1,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-cleanup', then merge a PR #9999 that doesn't exist, then rollback by deleting the branch"
+      }
+    ],
+    "started_at": "2026-04-12T03:36:45.136837+00:00",
+    "completed_at": "2026-04-12T03:36:47.401214+00:00",
+    "total_nodes": 3,
+    "succeeded": 1,
+    "failed": 1,
+    "skipped": 1
+  },
+  "exec-958433143bc3": {
+    "execution_id": "exec-958433143bc3",
+    "workflow_name": "Experiment Cleanup Branch and PR Merge",
+    "dag": {
+      "workflow_name": "Experiment Cleanup Branch and PR Merge",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "experiment-cleanup"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "merge_pull_request",
+          "params": {
+            "pr_number": 9999
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 1,
+            "backoff_factor": 1.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 10000
+        },
+        {
+          "id": "node_3",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "experiment-cleanup"
+          },
+          "depends_on": [
+            "node_2"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create branch, merge PR, and rollback",
+      "workflow_id": "wf-123e4567-e89b-12d3-a456-426614174000",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ],
+        [
+          "node_3"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "failed",
+        "output": null,
+        "error": "GitHub API Error (422): {'message': 'Reference already exists', 'documentation_url': 'https://docs.github.com/rest/git/refs#create-a-reference', 'status': '422'}",
+        "duration_ms": 10434.236764907837,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": true,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.merge_pull_request",
+        "tool": "github",
+        "action": "merge_pull_request",
+        "status": "skipped",
+        "output": null,
+        "error": "upstream dependency failed",
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": true,
+        "approved": null
+      },
+      "node_3": {
+        "node_id": "node_3",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "skipped",
+        "output": null,
+        "error": "upstream dependency failed",
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": true,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/3 succeeded, 1 failed."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/3 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-cleanup', then merge a PR #9999 that doesn't exist, then rollback by deleting the branch"
+      }
+    ],
+    "started_at": "2026-04-12T03:39:17.494329+00:00",
+    "completed_at": "2026-04-12T03:39:37.644275+00:00",
+    "total_nodes": 3,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 2
+  },
+  "exec-6c47dbea2a05": {
+    "execution_id": "exec-6c47dbea2a05",
+    "workflow_name": "Experiment Rollback Workflow",
+    "dag": {
+      "workflow_name": "Experiment Rollback Workflow",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "experiment-rollback"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "merge_pull_request",
+          "params": {
+            "pr_number": 9999
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 1,
+            "backoff_factor": 1.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 10000
+        },
+        {
+          "id": "node_3",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "experiment-rollback"
+          },
+          "depends_on": [
+            "node_2"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create branch, attempt PR merge, rollback",
+      "workflow_id": "wf-123e4567-e89b-12d3-a456-426614174000",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ],
+        [
+          "node_3"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "experiment-rollback",
+          "branch_ref": "refs/heads/experiment-rollback",
+          "branch_sha": "e8bf8c8c3f6b204fc216c6c18afa152312f03261",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/experiment-rollback",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.merge_pull_request",
+        "tool": "github",
+        "action": "merge_pull_request",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (404): {'message': 'Not Found', 'documentation_url': 'https://docs.github.com/rest/pulls/pulls#merge-a-pull-request', 'status': '404'}",
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_3": {
+        "node_id": "node_3",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "Branch 'experiment-rollback' deleted successfully from preritashukla/Tic-Tech-Toe",
+          "branch_name": "experiment-rollback",
+          "summary": "Action github.delete_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete all GitHub branches starting with 'test-rollback'"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 2 steps executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Integration Error: Attempt 1: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 2: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error, Attempt 3: Pydantic validation error \u2014 1 validation error for WorkflowDAG\nnodes.0\n  Value error, Invalid action 'delete_branches_by_pattern' for tool 'github'. Valid actions: {'list_branches', 'list_commits', 'create_branch', 'create_issue', 'get_pull_request', 'get_branch', 'list_issues', 'get_issue', 'list_pull_requests', 'add_issue_comment', 'update_issue', 'get_repository', 'merge_pull_request', 'create_release', 'get_file_content', 'cleanup', 'rollback', 'delete_branch', 'create_pull_request', 'create_or_update_file', 'add_labels'} [type=value_error, input_value={'id': 'node_1', 'tool': ...ern': 'test-rollback*'}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error"
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/3 succeeded, 1 failed."
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/3 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-cleanup', then merge a PR #9999 that doesn't exist, then rollback by deleting the branch"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 0/3 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-rollback', then merge a PR #9999 that doesn't exist, then rollback by deleting the branch"
+      }
+    ],
+    "started_at": "2026-04-12T03:39:57.560184+00:00",
+    "completed_at": "2026-04-12T03:40:01.191256+00:00",
+    "total_nodes": 3,
+    "succeeded": 2,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-a5700a8bd167": {
+    "execution_id": "exec-a5700a8bd167",
+    "workflow_name": "Create Branch and Merge PR",
+    "dag": {
+      "workflow_name": "Create Branch and Merge PR",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "experiment-clean"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "merge_pull_request",
+          "params": {
+            "pr_number": 9999
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 1,
+            "backoff_factor": 1.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 10000
+        }
+      ],
+      "description": "Create 'experiment-clean' branch and merge PR #9999",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "experiment-clean",
+          "branch_ref": "refs/heads/experiment-clean",
+          "branch_sha": "5d359a1e9b40de41509eb0e084528482ace09fd7",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/experiment-clean",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.merge_pull_request",
+        "tool": "github",
+        "action": "merge_pull_request",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (404): {'message': 'Not Found', 'documentation_url': 'https://docs.github.com/rest/pulls/pulls#merge-a-pull-request', 'status': '404'}",
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-clean', then merge PR #9999 that doesn't exist"
+      }
+    ],
+    "started_at": "2026-04-12T03:47:36.314934+00:00",
+    "completed_at": "2026-04-12T03:47:39.533288+00:00",
+    "total_nodes": 2,
+    "succeeded": 1,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-28b215d00ad3": {
+    "execution_id": "exec-28b215d00ad3",
+    "workflow_name": "Create Branch and Merge PR",
+    "dag": {
+      "workflow_name": "Create Branch and Merge PR",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "experiment-cleeeanup"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "merge_pull_request",
+          "params": {
+            "pr_number": 9999
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a new branch and merge a PR",
+      "workflow_id": "wf-123e4567-e89b-12d3-a456-426614174000",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "experiment-cleeeanup",
+          "branch_ref": "refs/heads/experiment-cleeeanup",
+          "branch_sha": "5d359a1e9b40de41509eb0e084528482ace09fd7",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/experiment-cleeeanup",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.merge_pull_request",
+        "tool": "github",
+        "action": "merge_pull_request",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (404): {'message': 'Not Found', 'documentation_url': 'https://docs.github.com/rest/pulls/pulls#merge-a-pull-request', 'status': '404'}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "rollback_node_1": {
+        "node_id": "rollback_node_1",
+        "node_name": "\ud83d\udd04 Rollback: node_1",
+        "tool": "github",
+        "action": "rollback",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "Branch 'experiment-cleeeanup' deleted successfully from preritashukla/Tic-Tech-Toe",
+          "branch_name": "experiment-cleeeanup"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-clean', then merge PR #9999 that doesn't exist"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 1/2 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a GitHub branch called 'experiment-cleeeanup', then merge PR #9999 that doesn't exist"
+      }
+    ],
+    "started_at": "2026-04-12T03:50:47.829089+00:00",
+    "completed_at": "2026-04-12T03:50:55.820775+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-e0238d0621ff": {
+    "execution_id": "exec-e0238d0621ff",
+    "workflow_name": "Send Slack Message",
+    "dag": {
+      "workflow_name": "Send Slack Message",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "System is live!"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Notify #all-daiict channel",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775968323.422809",
+          "message_text": "System is live!",
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Send a message to #all-daiict on Slack: 'System is live!'"
+      }
+    ],
+    "started_at": "2026-04-12T04:32:03.118258+00:00",
+    "completed_at": "2026-04-12T04:32:03.542598+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-07c405b9886b": {
+    "execution_id": "exec-07c405b9886b",
+    "workflow_name": "Delete GitHub Branch and Post Confirmation",
+    "dag": {
+      "workflow_name": "Delete GitHub Branch and Post Confirmation",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "delete_branch",
+          "params": {
+            "branch_name": "test-rollback"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "general",
+            "message": "GitHub branch 'test-rollback' deleted successfully"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Delete branch 'test-rollback' and confirm on Slack",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.delete_branch",
+        "tool": "github",
+        "action": "delete_branch",
+        "status": "success",
+        "output": {
+          "status": "success",
+          "message": "Branch 'test-rollback' was already removed or didn't exist in preritashukla/Tic-Tech-Toe.",
+          "warning": "Simulation: Idempotent success",
+          "summary": "Action github.delete_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "failed",
+        "output": {},
+        "error": "The request to the Slack API failed. (url: https://slack.com/api/chat.postMessage)\nThe server responded with: {'ok': False, 'error': 'channel_not_found'}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "assistant",
+        "content": "\u2705 All 1 step executed on live platforms."
+      },
+      {
+        "role": "user",
+        "content": "Delete the GitHub branch 'test-rollback' and then post a confirmation to Slack"
+      }
+    ],
+    "started_at": "2026-04-12T04:35:49.390318+00:00",
+    "completed_at": "2026-04-12T04:35:55.754026+00:00",
+    "total_nodes": 2,
+    "succeeded": 1,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-a4c4869b7297": {
+    "execution_id": "exec-a4c4869b7297",
+    "workflow_name": "Create GitHub Branch and Post to Slack",
+    "dag": {
+      "workflow_name": "Create GitHub Branch and Post to Slack",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "test-rollback"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "node_2",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "message": "GitHub branch 'test-rollback' created successfully"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create branch 'test-rollback' and confirm on Slack",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ],
+        [
+          "node_2"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "test-rollback",
+          "branch_ref": "refs/heads/test-rollback",
+          "branch_sha": "5d359a1e9b40de41509eb0e084528482ace09fd7",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/test-rollback",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AS582T3B7",
+          "ts": "1775968759.518999",
+          "message_text": "GitHub branch test-rollback created successfully",
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "create the GitHub branch 'test-rollback' and then post a confirmation to Slack"
+      }
+    ],
+    "started_at": "2026-04-12T04:39:17.729817+00:00",
+    "completed_at": "2026-04-12T04:39:19.639144+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-6e02ca6003b5": {
+    "execution_id": "exec-6e02ca6003b5",
+    "workflow_name": "Send System Live Message",
+    "dag": {
+      "workflow_name": "Send System Live Message",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "System is live!"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Notify #all-daiict on Slack",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "failed",
+        "output": {},
+        "error": "The request to the Slack API failed. (url: https://slack.com/api/conversations.list)\nThe server responded with: {'ok': False, 'error': 'invalid_auth'}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Send a message to #all-daiict on Slack: 'System is live!'"
+      }
+    ],
+    "started_at": "2026-04-12T04:45:28.870416+00:00",
+    "completed_at": "2026-04-12T04:45:32.851723+00:00",
+    "total_nodes": 1,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-a37b7cb99126": {
+    "execution_id": "exec-a37b7cb99126",
+    "workflow_name": "Create demo branch",
+    "dag": {
+      "workflow_name": "Create demo branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "repo": "google/repo",
+            "branch_name": "demo"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a new branch in google/repo",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "demo",
+          "branch_ref": "refs/heads/demo",
+          "branch_sha": "5d359a1e9b40de41509eb0e084528482ace09fd7",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/demo",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a branch 'demo' in google/repo"
+      }
+    ],
+    "started_at": "2026-04-12T04:47:55.542881+00:00",
+    "completed_at": "2026-04-12T04:47:56.708830+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-b01643236f6c": {
+    "execution_id": "exec-b01643236f6c",
+    "workflow_name": "Create Branch",
+    "dag": {
+      "workflow_name": "Create Branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "repo": "{{user_input.repo_name}}",
+            "branch_name": "{{user_input.branch_name}}"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a new branch in a GitHub repository",
+      "workflow_id": "wf-123e4567-e89b-12d3-a456-426614174000",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "failed",
+        "output": {},
+        "error": "Template resolution failed: node 'user_input' not found in completed outputs. Available: []",
+        "duration_ms": 0.0,
+        "retries": -1,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a branch in google/repo"
+      }
+    ],
+    "started_at": "2026-04-12T04:52:34.235377+00:00",
+    "completed_at": "2026-04-12T04:52:34.260689+00:00",
+    "total_nodes": 1,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-dce8f96a9561": {
+    "execution_id": "exec-dce8f96a9561",
+    "workflow_name": "Create Demo Branch",
+    "dag": {
+      "workflow_name": "Create Demo Branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "repo": "preritashukla/Tic-Tech-Toe",
+            "branch_name": "demo"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a new branch named demo",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "failed",
+        "output": {},
+        "error": "GitHub API Error (422): {'message': 'Reference already exists', 'documentation_url': 'https://docs.github.com/rest/git/refs#create-a-reference', 'status': '422'}",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a branch in google/repo"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 0/1 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a branch demo"
+      }
+    ],
+    "started_at": "2026-04-12T04:53:22.937503+00:00",
+    "completed_at": "2026-04-12T04:53:31.056296+00:00",
+    "total_nodes": 1,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-77b9e93452a7": {
+    "execution_id": "exec-77b9e93452a7",
+    "workflow_name": "Create Demo Branch",
+    "dag": {
+      "workflow_name": "Create Demo Branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "demo"
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": 5000
+        }
+      ],
+      "description": "Create a new branch named demo",
+      "workflow_id": "wf-123e4567",
+      "execution_layers": [
+        [
+          "node_1"
+        ]
+      ],
+      "context_refs": {}
+    },
+    "status": "failed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "failed",
+        "output": {},
+        "error": "You didn't specify a repository. Do you want to perform this in the master repo (preritashukla/Tic-Tech-Toe)? If so, simply reply 'yes'.",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a branch in google/repo"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 0/1 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a branch demo"
+      },
+      {
+        "role": "assistant",
+        "content": "\u26a0\ufe0f Workflow done \u2014 0/1 succeeded, 1 failed."
+      },
+      {
+        "role": "user",
+        "content": "Create a branch demo"
+      }
+    ],
+    "started_at": "2026-04-12T05:00:49.264309+00:00",
+    "completed_at": "2026-04-12T05:00:52.299963+00:00",
+    "total_nodes": 1,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 0
+  }
+}

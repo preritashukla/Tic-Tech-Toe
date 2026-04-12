@@ -59,6 +59,7 @@ async def execute_workflow(request: ExecuteRequest) -> ExecuteResponse:
         auto_approve=request.auto_approve,
         dry_run=request.dry_run,
         credentials=request.credentials,
+        chat_history=request.chat_history
     )
 
     # BACKEND_RECEIVED_PAYLOAD Trace
@@ -121,6 +122,7 @@ async def execute_workflow_stream(request: ExecuteRequest) -> StreamingResponse:
         auto_approve=request.auto_approve,
         dry_run=request.dry_run,
         credentials=request.credentials,
+        chat_history=request.chat_history
     )
 
     async def event_generator():
@@ -222,7 +224,8 @@ async def get_execution_status(id: str = Query(..., description="Execution ID"))
             }
             for r in execution.node_results.values()
         ],
-        "audit_log": get_audit_logger().get_logs_by_execution(execution.execution_id)
+        "audit_log": get_audit_logger().get_logs_by_execution(execution.execution_id),
+        "chat_history": execution.chat_history
     }
 
 

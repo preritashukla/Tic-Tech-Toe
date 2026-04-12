@@ -172,7 +172,9 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
 
             from services.integrations.slack_integration import execute_slack
             log_event("DISPATCH", f"Slack.{action} (API: slack.com)", "36")
-            result = await execute_slack(action, inputs, context)
+            # Merge credentials and results context
+            merged_context = {"credentials": credentials, "results": context}
+            result = await execute_slack(action, inputs, merged_context)
             print(f"DEBUG: Slack API RESPONSE for {action}:", result)
 
             if result.get("status") == "success":
@@ -197,7 +199,9 @@ async def dispatch_mcp(tool: str, action: str, inputs: Dict[str, Any], credentia
 
             from services.integrations.sheets_integration import execute_sheets
             log_event("DISPATCH", f"Sheets.{action} (API: googleapis.com)", "36")
-            result = await execute_sheets(action, inputs, context)
+            # Merge credentials and results context
+            merged_context = {"credentials": credentials, "results": context}
+            result = await execute_sheets(action, inputs, merged_context)
             print(f"DEBUG: Sheets API RESPONSE for {action}:", result)
 
             if result.get("status") == "success":
@@ -349,10 +353,75 @@ class DAGExecutor:
             self.failed.add(node.id)
             log_event("FAILED", f"{node.id} (Terminal: {str(e)})", "31")
 
+    # ─── Automatic Rollback Engine ──────────────────────────────────────
+    ROLLBACK_MAP = {
+        # tool: { action: (reverse_action, param_extractor) }
+        "github": {
+            "create_branch": ("delete_branch", lambda out: {"branch_name": out.get("branch_name", "")}),
+            "create_issue": ("update_issue", lambda out: {"issue_number": out.get("issue_number"), "state": "closed"}),
+            "create_pull_request": ("update_issue", lambda out: {"issue_number": out.get("pr_number"), "state": "closed"}),
+        },
+        "github_mcp": {
+            "create_branch": ("delete_branch", lambda out: {"branch_name": out.get("branch_name", "")}),
+        },
+        "jira": {
+            "create_issue": ("rollback", lambda out: {"issue_id": out.get("key") or out.get("issue_id", "")}),
+        },
+        "jira_mcp": {
+            "create_issue": ("rollback", lambda out: {"issue_id": out.get("key") or out.get("issue_id", "")}),
+        },
+        "slack": {
+            # Can't unsend a message, but we log it
+        },
+        "sheets": {
+            # Can't easily undo an append, skip
+        },
+    }
+
+    async def _auto_rollback(self):
+        """Automatically undo all successfully completed nodes in reverse order."""
+        # Collect nodes that completed successfully and have a known rollback action
+        rollback_targets = []
+        for node_id in self.completed:
+            node = self.nodes[node_id]
+            tool_map = self.ROLLBACK_MAP.get(node.tool, {})
+            if node.action in tool_map:
+                rollback_targets.append(node)
+        
+        if not rollback_targets:
+            log_event("ROLLBACK", "No rollback-able actions found among completed steps.", "33")
+            return
+        
+        # Reverse order: undo the last successful step first
+        rollback_targets.reverse()
+        
+        print(f"\n{'='*60}")
+        log_event("ROLLBACK", f"🔄 AUTO-ROLLBACK INITIATED — Undoing {len(rollback_targets)} completed step(s)", "33")
+        print(f"{'='*60}\n")
+        
+        rollback_results = []
+        for node in rollback_targets:
+            tool_map = self.ROLLBACK_MAP[node.tool]
+            reverse_action, param_fn = tool_map[node.action]
+            reverse_params = param_fn(node.output)
+            
+            log_event("ROLLBACK", f"Undoing {node.id}: {node.tool}.{node.action} → {node.tool}.{reverse_action}", "33")
+            
+            try:
+                result = await dispatch_mcp(node.tool, reverse_action, reverse_params, credentials=self.credentials)
+                log_event("ROLLED_BACK", f"✅ {node.id} successfully reversed", "32")
+                rollback_results.append({"node": node.id, "status": "rolled_back", "result": result})
+            except Exception as e:
+                log_event("ROLLBACK_FAIL", f"⚠️ Could not rollback {node.id}: {e}", "31")
+                rollback_results.append({"node": node.id, "status": "rollback_failed", "error": str(e)})
+        
+        self._rollback_results = rollback_results
+
     async def run(self):
         """Topological event loop capable of resolving concurrent async events."""
         log_event("PLANNER", f"DAG loaded: {len(self.nodes)} tasks\n", "34")
         
+        self._rollback_results = []
         pending_ids = set(self.nodes.keys())
         running_tasks = set()
         
@@ -363,16 +432,29 @@ class DAGExecutor:
                 node = self.nodes[n_id]
                 
                 # Fast fail downstream nodes if dependency crashed or was skipped
-                if any(dep in self.failed or dep in self.skipped for dep in node.depends_on):
-                    node.state = TaskState.SKIPPED
-                    node.error = "Upstream dependency failed"
-                    self.skipped.add(n_id)
-                    pending_ids.remove(n_id)
-                    log_event("SKIPPED", f"{node.id} (Dependency failure)", "90")
-                    continue
+                # BUT: Rollback/cleanup actions should STILL execute even on failure
+                ROLLBACK_ACTIONS = {"rollback", "cleanup", "delete_branch", "delete_issue", "delete_branches_by_pattern"}
+                is_rollback_node = node.action in ROLLBACK_ACTIONS
                 
-                # Check if all dependencies are successfully completed
-                if all(dep in self.completed for dep in node.depends_on):
+                if any(dep in self.failed or dep in self.skipped for dep in node.depends_on):
+                    if is_rollback_node:
+                        # Rollback nodes execute regardless — they clean up after failures
+                        log_event("ROLLBACK", f"{node.id} executing despite upstream failure (cleanup mode)", "33")
+                    else:
+                        node.state = TaskState.SKIPPED
+                        node.error = "Upstream dependency failed"
+                        self.skipped.add(n_id)
+                        pending_ids.remove(n_id)
+                        log_event("SKIPPED", f"{node.id} (Dependency failure)", "90")
+                        continue
+                
+                # Check if all dependencies are resolved (completed for normal, completed OR failed/skipped for rollback)
+                if is_rollback_node:
+                    deps_resolved = all(dep in self.completed or dep in self.failed or dep in self.skipped for dep in node.depends_on)
+                else:
+                    deps_resolved = all(dep in self.completed for dep in node.depends_on)
+                
+                if deps_resolved:
                     ready_to_run.append(n_id)
                     pending_ids.remove(n_id)
             
@@ -390,6 +472,10 @@ class DAGExecutor:
                 # If no tasks are running and we couldn't unblock any more, it's a real deadlock
                 raise RuntimeError(f"Deadlock detected! Blocked nodes: {pending_ids}")
 
+        # ─── AUTO-ROLLBACK on failure ───────────────────────────────────
+        if self.failed:
+            await self._auto_rollback()
+        
         print("\n\033[1m[WORKFLOW COMPLETE]\033[0m")
 
 # --- Runner ---

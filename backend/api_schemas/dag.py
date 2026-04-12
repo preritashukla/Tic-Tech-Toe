@@ -23,25 +23,26 @@ class RetryConfig(BaseModel):
 
 # ─── Valid Tools & Actions ───────────────────────────────────────────
 VALID_TOOLS: dict[str, set[str]] = {
-    "jira":    {"get_issue", "create_issue", "update_issue"},
+    "jira":    {"get_issue", "create_issue", "update_issue", "delete_issue", "rollback"},
     "github":  {
         "get_repository", "list_branches", "create_branch", "get_branch",
         "list_issues", "get_issue", "create_issue", "add_issue_comment",
         "update_issue", "create_pull_request", "list_pull_requests", 
         "get_pull_request", "merge_pull_request", "add_labels",
-        "get_file_content", "create_or_update_file", "list_commits", "create_release"
+        "get_file_content", "create_or_update_file", "list_commits", "create_release",
+        "delete_branch", "rollback", "cleanup", "delete_branches_by_pattern"
     },
     "slack":   {"send_message", "send_file", "create_channel"},
     "sheets":  {"read_row", "update_row", "append_row"},
     # MCP-suffixed versions
-    "jira_mcp":    {"create_ticket", "get_issue", "update_issue", "create_issue"},
+    "jira_mcp":    {"create_ticket", "get_issue", "update_issue", "create_issue", "delete_issue", "rollback"},
     "github_mcp":  {
         "get_repository", "list_branches", "create_branch", "get_branch",
         "list_issues", "get_issue", "create_issue", "add_issue_comment",
         "update_issue", "create_pull_request", "list_pull_requests", 
         "get_pull_request", "merge_pull_request", "add_labels",
         "get_file_content", "create_or_update_file", "list_commits", "create_release",
-        "link_issue"
+        "link_issue", "delete_branch", "rollback", "cleanup", "delete_branches_by_pattern"
     },
     "slack_mcp":   {"send_message", "send_file", "create_channel", "post_message"},
     "sheets_mcp":  {"read_row", "update_row", "append_row"},
@@ -91,6 +92,8 @@ class DAGNode(BaseModel):
             "write_row": "append_row",
             "add_row": "append_row",
             "log_row": "append_row",
+            "batch_delete": "delete_branches_by_pattern",
+            "cleanup_pattern": "delete_branches_by_pattern",
         }
         return aliases.get(v, v)
 

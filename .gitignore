@@ -35,5 +35,15 @@ node_modules/
 *.egg-info/
 dist/
 build/
+# Data
+backend/workflows_db.json
+backend/scratch/
+backend/jira_issues.json
+backend/slack_messages.json
+
+# Environment
+.env
+.env.local
 .venv/
 venv/
+__pycache__/

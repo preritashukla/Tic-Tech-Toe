@@ -22,9 +22,9 @@ const TOOLS = [
     description: 'Issue tracking & project management',
     icon: '📋',
     fields: [
-      { key: 'domain', label: 'Jira Workspace URL', placeholder: 'team.atlassian.net (optional — uses .env)', type: 'text' },
-      { key: 'email', label: 'Atlassian Email', placeholder: 'you@yourteam.com (optional — uses .env)', type: 'email' },
-      { key: 'password', label: 'API Token', placeholder: 'ATATT3x... (optional — uses .env)', type: 'password' },
+      { key: 'domain', label: 'Jira Workspace URL', placeholder: 'team.atlassian.net', type: 'text', value: '' },
+      { key: 'email', label: 'Atlassian Email', placeholder: 'you@yourteam.com', type: 'email', value: '' },
+      { key: 'password', label: 'API Token', placeholder: 'ATATT3x...', type: 'password', value: '' },
     ],
   },
   {
@@ -32,10 +32,8 @@ const TOOLS = [
     label: 'Slack',
     description: 'Team communication & notifications',
     icon: '💬',
-    isOAuth: true,
-    authUrl: 'http://localhost:8000/auth/slack/login',
     fields: [
-      { key: 'token', label: 'Bot Token', placeholder: 'xoxb-... (manual override)', type: 'password' },
+      { key: 'token', label: 'Bot Token', placeholder: 'xoxb-...', type: 'password', value: '' },
     ],
   },
   {
@@ -43,10 +41,8 @@ const TOOLS = [
     label: 'Google Sheets',
     description: 'Automated reporting & logging',
     icon: '📊',
-    isOAuth: true,
-    authUrl: 'http://localhost:8000/auth/google/login',
     fields: [
-      { key: 'sheet_id', label: 'Spreadsheet ID', placeholder: '1NZ0DljGTjF2RsEU... (manual override)', type: 'text' },
+      { key: 'sheet_id', label: 'Spreadsheet ID', placeholder: '1NZ0DljGTjF2RsEU...', type: 'text', value: '' },
     ],
   },
 ];

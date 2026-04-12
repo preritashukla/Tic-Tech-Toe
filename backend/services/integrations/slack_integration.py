@@ -74,12 +74,22 @@ def _create_channel_sync(client: WebClient, name: str) -> dict:
 
 def _list_channels_sync(client: WebClient) -> dict:
     """Synchronous list_channels — runs inside asyncio.to_thread."""
-    response = client.conversations_list(limit=50)
+    response = client.conversations_list(limit=200, types="public_channel,private_channel")
     channels = response.get("channels", [])
     return {
         "channels": [{"id": c["id"], "name": c["name"]} for c in channels],
         "count": len(channels),
     }
+
+
+def _resolve_channel_id_sync(client: WebClient, channel_name: str) -> str:
+    """Resolves a channel name (e.g. #general) to an ID (e.g. C12345)."""
+    name = channel_name.lstrip("#")
+    response = client.conversations_list(limit=1000, types="public_channel,private_channel")
+    for channel in response.get("channels", []):
+        if channel["name"] == name:
+            return channel["id"]
+    return channel_name  # Fallback to original if not found (might already be an ID)
 
 
 async def execute_slack(action: str, params: dict, context: dict = None) -> dict:
@@ -118,10 +128,19 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
             if not message:
                 raise ValueError("'message' is required for send_message.")
 
+            # --- CHANNEL RESOLUTION ---
+            if str(channel).startswith("#"):
+                logger.info(f"Resolving Slack channel name: {channel}")
+                resolved_id = await asyncio.to_thread(_resolve_channel_id_sync, client, channel)
+                if resolved_id != channel:
+                    logger.info(f"Resolved {channel} to {resolved_id}")
+                    channel = resolved_id
+
             # Auto-inject links from recent context to fulfill user intent implicitly
             links = []
-            if context:
-                for out in context.values():
+            results_ctx = (context or {}).get("results", {})
+            if results_ctx:
+                for out in results_ctx.values():
                     if isinstance(out, dict):
                         if "branch_html_url" in out: links.append(f"Branch: {out['branch_html_url']}")
                         elif "branch_url" in out: links.append(f"Branch API: {out['branch_url']}")
@@ -177,8 +196,9 @@ async def execute_slack(action: str, params: dict, context: dict = None) -> dict
 
             # Auto-inject links into the comment just like send_message
             links = []
-            if context:
-                for out in context.values():
+            results_ctx = (context or {}).get("results", {})
+            if results_ctx:
+                for out in results_ctx.values():
                     if isinstance(out, dict):
                         if "branch_html_url" in out: links.append(f"Branch: {out['branch_html_url']}")
                         elif "branch_url" in out: links.append(f"Branch API: {out['branch_url']}")

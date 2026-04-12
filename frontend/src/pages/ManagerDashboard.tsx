@@ -119,17 +119,17 @@ const ManagerDashboard = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background min-h-0 overflow-hidden">
+    <div className="h-full flex flex-col bg-background min-h-0 overflow-hidden relative">
       {/* Steps progress */}
       <AnimatePresence>
         {steps.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="border-b border-border bg-card px-6 py-4 overflow-y-auto shrink-0"
+            className="border-b border-border bg-card/50 backdrop-blur-md px-6 py-4 overflow-y-auto shrink-0 z-10"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-              Execution Progress
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+              Real-time Execution Pipeline
             </p>
             <div className="flex flex-col gap-2">
               {steps.map((step, i) => {
@@ -140,15 +140,15 @@ const ManagerDashboard = () => {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${bg} transition-all duration-300`}
+                    className={`flex items-center gap-4 px-4 py-3 rounded-2xl border ${bg} transition-all duration-300 shadow-sm`}
                   >
-                    <div className={`p-1.5 rounded-lg border ${bg}`}>
-                      <Icon size={14} className={color} />
+                    <div className={`p-2 rounded-xl border ${bg} shadow-inner`}>
+                      <Icon size={16} className={color} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{step.label}</p>
+                      <p className="text-sm font-semibold text-foreground">{step.label}</p>
                       {step.detail && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 font-medium italic opacity-80">{step.detail}</p>
                       )}
                     </div>
                     <div className="shrink-0">{statusIcon(step.status)}</div>
@@ -161,14 +161,14 @@ const ManagerDashboard = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mt-3 flex items-center gap-2 text-green-400 text-sm font-semibold"
+                className="mt-4 flex items-center gap-2 text-[#22c55e] text-xs font-bold bg-[#22c55e]/10 border border-[#22c55e]/20 px-3 py-2 rounded-lg"
               >
-                <CheckCircle2 size={16} />
-                Workflow completed successfully!
+                <CheckCircle2 size={14} />
+                Workflow fully deployed and verified.
               </motion.div>
             )}
             {error && (
-              <div className="mt-3 flex items-center gap-2 text-red-400 text-sm">
+              <div className="mt-4 flex items-center gap-2 text-red-400 text-xs bg-red-400/10 border border-red-400/20 px-3 py-2 rounded-lg font-medium">
                 <XCircle size={14} /> {error}
               </div>
             )}
@@ -183,49 +183,49 @@ const ManagerDashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-6"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md bg-[hsl(222,47%,6%)] border border-[hsl(217,33%,18%)] rounded-2xl p-6 shadow-2xl"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-2xl"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <MessageSquare size={16} className="text-green-400" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-2xl bg-green-500/10 border border-green-500/20 shadow-inner">
+                  <MessageSquare size={20} className="text-green-500" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-sm">Review Slack Message</p>
-                  <p className="text-xs text-muted-foreground">→ {slackPreview.channel}</p>
+                  <p className="font-bold text-foreground text-base">Human-in-the-Loop Approval</p>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Integration: Slack → {slackPreview.channel}</p>
                 </div>
               </div>
 
               {/* Editable message */}
-              <div className="mb-4">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                  Message
+              <div className="mb-6">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-2 block">
+                  Final Message Content
                 </label>
                 <textarea
                   rows={4}
                   value={editMsg}
                   onChange={(e) => setEditMsg(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[hsl(222,47%,4%)] border border-[hsl(217,33%,18%)] text-foreground text-sm resize-none outline-none focus:border-[hsl(217,91%,60%)] transition-colors"
+                  className="w-full px-4 py-3 rounded-2xl bg-muted border border-border text-foreground text-sm resize-none outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-inner"
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleDelete}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-red-500/20 text-red-500 text-sm font-bold hover:bg-red-500/10 transition-all active:scale-95"
                 >
-                  <Trash2 size={14} /> Cancel
+                  <Trash2 size={16} /> Discard
                 </button>
                 <button
                   onClick={handleApprove}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-500 text-black text-sm font-bold hover:bg-green-400 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#22c55e] text-white text-sm font-black hover:bg-[#1ea34d] transition-all shadow-[0_4px_12px_rgba(34,197,94,0.3)] active:scale-95"
                 >
-                  <Check size={14} /> Send Now
+                  <Check size={16} /> Approve & Send
                 </button>
               </div>
             </motion.div>
@@ -234,63 +234,74 @@ const ManagerDashboard = () => {
       </AnimatePresence>
 
       {/* Center: Chat interface */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-0 overflow-y-auto relative z-0">
         {steps.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            className="text-center mb-10"
           >
-            <h2 className="text-2xl font-black text-foreground mb-2">What would you like to automate?</h2>
-            <p className="text-muted-foreground text-sm max-w-sm">
-              Describe the task in plain English. The gateway handles the rest.
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-[#22c55e] to-[#10b981] mx-auto mb-6 flex items-center justify-center shadow-xl shadow-green-500/20">
+              <Check size={32} className="text-white" />
+            </div>
+            <h2 className="text-3xl font-black text-foreground mb-3 tracking-tight">Agentic Command Center</h2>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto font-medium leading-relaxed">
+              Describe a workflow to orchestrate Jira, GitHub, Slack, and Sheets simultaneously.
             </p>
           </motion.div>
         )}
 
         {/* Suggestions */}
         {steps.length === 0 && (
-          <div className="flex flex-col gap-2 w-full max-w-lg mb-6">
-            {SUGGESTIONS.map((s) => (
-              <button
+          <div className="flex flex-col gap-3 w-full max-w-lg mb-8">
+            {SUGGESTIONS.map((s, i) => (
+              <motion.button
                 key={s}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
                 onClick={() => setText(s)}
-                className="text-left px-4 py-3 rounded-xl border border-[hsl(217,33%,18%)] bg-[hsl(222,47%,5%)] text-sm text-muted-foreground hover:text-foreground hover:border-[hsl(217,91%,60%)] transition-all duration-200"
+                className="text-left px-5 py-4 rounded-2xl border border-border bg-card/40 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-card hover:shadow-lg transition-all duration-300 group"
               >
-                {s}
-              </button>
+                <div className="flex items-center justify-between">
+                  <span>{s}</span>
+                  <Check size={14} className="opacity-0 group-hover:opacity-100 text-primary transition-opacity" />
+                </div>
+              </motion.button>
             ))}
           </div>
         )}
 
         {/* Input */}
-        <div className="w-full max-w-lg">
-          <div className={`input-glow-wrapper rounded-2xl p-[1px] transition-all duration-500 ${text.trim() ? 'input-glow-active' : ''}`}>
-            <div className="flex items-end gap-2 rounded-2xl bg-[hsl(222,47%,5%)] border border-[hsl(217,33%,18%)] p-3">
+        <div className="w-full max-w-lg relative">
+          <div className={`rounded-[2rem] p-[1.5px] transition-all duration-700 shadow-2xl ${text.trim() ? 'bg-gradient-to-r from-[#22c55e] via-[#3b82f6] to-[#8b5cf6]' : 'bg-border'}`}>
+            <div className="flex items-end gap-3 rounded-[2rem] bg-card p-4">
               <textarea
                 id="manager-chat-input"
                 rows={2}
-                placeholder="e.g. Critical bug found in login. Start incident response..."
+                placeholder="Start a new automation sequence..."
                 value={text}
                 disabled={loading}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                className="flex-1 bg-transparent text-foreground text-sm resize-none outline-none placeholder:text-muted-foreground leading-relaxed px-1"
+                className="flex-1 bg-transparent text-foreground text-base placeholder:text-muted-foreground placeholder:font-medium resize-none outline-none leading-relaxed px-2 py-1"
               />
               <button
                 id="manager-chat-send"
                 onClick={handleSubmit}
                 disabled={!text.trim() || loading}
-                className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl font-bold text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5"
-                style={{ background: 'linear-gradient(135deg, hsl(217,91%,60%), hsl(240,91%,65%))' }}
+                className="w-12 h-12 shrink-0 flex items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40 disabled:grayscale hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20"
+                style={{ background: 'linear-gradient(135deg, #22c55e, #10b981)' }}
               >
-                {loading ? <Loader2 size={16} className="animate-spin text-black" /> : <Send size={16} />}
+                {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
               </button>
             </div>
           </div>
-          <p className="text-center text-[10px] text-muted-foreground mt-2">
-            Powered by Agentic MCP Gateway
-          </p>
+          <div className="flex justify-center items-center gap-4 mt-4">
+             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+               System Status: Hybrid AI Node Online
+             </p>
+          </div>
         </div>
       </div>
     </div>

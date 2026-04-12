@@ -12,7 +12,7 @@ function ToolCard({ tool, icon, label, description, fields, isOAuth, authUrl }) 
   const status = state.status;
 
   const [values, setValues] = useState(
-    Object.fromEntries(fields.map(f => [f.key, '']))
+    Object.fromEntries(fields.map(f => [f.key, f.value || '']))
   );
   const [showPwd, setShowPwd] = useState(
     Object.fromEntries(fields.filter(f => f.type === 'password').map(f => [f.key, false]))

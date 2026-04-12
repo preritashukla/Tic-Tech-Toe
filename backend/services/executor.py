@@ -91,12 +91,14 @@ class ExecutionBridge:
         dag: WorkflowDAG,
         auto_approve: bool = True,
         dry_run: bool = False,
-        credentials: Optional[dict] = None
+        credentials: Optional[dict] = None,
+        chat_history: Optional[list] = None
     ):
         self.dag = dag
         self.auto_approve = auto_approve
         self.dry_run = dry_run
         self.credentials = credentials or {}
+        self.chat_history = chat_history or []
 
         # Shivam's context manager — template resolution + state
         self.context = ContextManager(
@@ -107,6 +109,7 @@ class ExecutionBridge:
             workflow_name=dag.workflow_name,
             dag=dag,
             total_nodes=len(dag.nodes),
+            chat_history=self.chat_history
         )
 
         # SSE event queue for streaming to Tejas's frontend
@@ -231,6 +234,42 @@ class ExecutionBridge:
                 "status": status.value,
                 "output": node.output if hasattr(node, "output") else None,
             })
+
+        # ─── Surface Auto-Rollback Results to Frontend ──────────────
+        rollback_results = getattr(executor, "_rollback_results", [])
+        if rollback_results:
+            for i, rb in enumerate(rollback_results):
+                rb_node_id = f"rollback_{rb['node']}"
+                rb_status = NodeStatus.SUCCESS if rb["status"] == "rolled_back" else NodeStatus.FAILED
+                rb_output = rb.get("result", {})
+                rb_error = rb.get("error")
+                
+                # Find original node to get tool info
+                original_node = executor.nodes.get(rb["node"])
+                rb_tool = original_node.tool if original_node else "system"
+                
+                rb_result = NodeExecutionResult(
+                    node_id=rb_node_id,
+                    node_name=f"🔄 Rollback: {rb['node']}",
+                    tool=rb_tool,
+                    action="rollback",
+                    status=rb_status,
+                    output=rb_output if isinstance(rb_output, dict) else {},
+                    error=rb_error,
+                )
+                self.execution.node_results[rb_node_id] = rb_result
+                
+                self.audit.log_tool_success(
+                    exec_id, rb_node_id, rb_tool, "auto_rollback",
+                    rb_output if isinstance(rb_output, dict) else {}, 0,
+                )
+                
+                await self._emit("node_update", {
+                    "node_id": rb_node_id,
+                    "status": rb_status.value,
+                    "output": rb_output if isinstance(rb_output, dict) else {},
+                    "is_rollback": True,
+                })
 
     # ─── Fallback Runner (when Grishma's executor not available) ───
 

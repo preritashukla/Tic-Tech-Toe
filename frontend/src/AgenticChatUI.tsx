@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { useTheme } from "next-themes";
+import { useAuth } from "@/context/AuthContext";
 import { useTools } from "./context/ToolsContext";
 
 const SUGGESTED_PROMPTS = [
@@ -88,7 +90,6 @@ function SimpleWorkflowProgress({ dagData, nodeDetails }: { dagData: any, nodeDe
     return str.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   };
 
-  return (
     <div style={{ marginTop: 12, marginBottom: 16 }}>
       {dagData.nodes.map((n: any) => {
         const detail = nodeDetails?.find(d => d.node_id === n.id);
@@ -158,7 +159,9 @@ function ThinkingDots() {
   );
 }
 
-function ChatMessage({ msg, onEdit }: { msg: any; onEdit: (msg: any) => void }) {
+function ChatMessage({ msg, onEdit, onApprove, onReject }: { msg: any; onEdit: (msg: any) => void; onApprove?: () => void; onReject?: () => void }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [hovering, setHovering] = useState(false);
 
   if (msg.role === "user") {
@@ -173,7 +176,8 @@ function ChatMessage({ msg, onEdit }: { msg: any; onEdit: (msg: any) => void }) 
             <button
               onClick={() => onEdit(msg)}
               style={{
-                background: "transparent", border: "1px solid #30363d", color: "#7d8590",
+                background: "transparent", border: `1px solid ${isDark ? "#30363d" : "#d0d7de"}`, 
+                color: isDark ? "#7d8590" : "#656d76",
                 borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: 11,
                 alignSelf: "center", whiteSpace: "nowrap",
               }}
@@ -182,8 +186,10 @@ function ChatMessage({ msg, onEdit }: { msg: any; onEdit: (msg: any) => void }) 
             </button>
           )}
           <div style={{
-            background: "#21262d", borderRadius: "18px 18px 4px 18px",
-            padding: "10px 16px", color: "#e6edf3", fontSize: 14, lineHeight: 1.6,
+            background: isDark ? "#21262d" : "#0969da", 
+            borderRadius: "18px 18px 4px 18px",
+            padding: "10px 16px", color: "#ffffff", fontSize: 14, lineHeight: 1.6,
+            boxShadow: isDark ? "none" : "0 2px 5px rgba(9,105,218,0.2)"
           }}>
             {msg.content}
           </div>
@@ -197,21 +203,91 @@ function ChatMessage({ msg, onEdit }: { msg: any; onEdit: (msg: any) => void }) 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <div style={{
           width: 28, height: 28, borderRadius: "50%",
-          background: "linear-gradient(135deg, #0d3320, #1a5c3a)",
+          background: isDark ? "linear-gradient(135deg, #0d3320, #1a5c3a)" : "linear-gradient(135deg, #dcfce7, #bbf7d0)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 12, color: "#4ade80", fontWeight: 700, flexShrink: 0,
+          fontSize: 12, color: "#166534", fontWeight: 700, flexShrink: 0,
+          border: isDark ? "none" : "1px solid #22c55e"
         }}>A</div>
-        <span style={{ color: "#7d8590", fontSize: 12 }}>Agentic MCP</span>
+        <span style={{ color: isDark ? "#7d8590" : "#656d76", fontSize: 12, fontWeight: 600 }}>Agentic MCP</span>
       </div>
       <div style={{ paddingLeft: 38 }}>
         {/* Thinking / status line */}
         {msg.thinking && (
           <div style={{
-            color: "#7d8590", fontSize: 12, fontStyle: "italic",
-            marginBottom: 10, padding: "6px 12px",
-            borderLeft: "2px solid #30363d",
+            color: isDark ? "#7d8590" : "#656d76", fontSize: 13, fontStyle: "italic",
+            marginBottom: 10, padding: "8px 14px",
+            background: isDark ? "transparent" : "#f6f8fa",
+            borderLeft: `3px solid ${isDark ? "#30363d" : "#d0d7de"}`,
+            borderRadius: isDark ? 0 : "0 8px 8px 0"
           }}>
             {msg.thinking}
+          </div>
+        )}
+
+        {/* ─── HITL Approval Card ─────────────────────────────────── */}
+        {msg.hitlPending && msg.hitlNodes && (
+          <div style={{
+            background: isDark ? "linear-gradient(135deg, #1a1200 0%, #1c1a0e 100%)" : "#fffbeb",
+            border: `1px solid ${isDark ? "#d4a72c44" : "#f59e0b"}`,
+            borderRadius: 12, padding: 16, marginBottom: 12,
+            boxShadow: isDark ? "0 0 20px rgba(212,167,44,0.08)" : "0 2px 8px rgba(245,158,11,0.15)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 18 }}>🛡️</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? "#f0c040" : "#b45309", letterSpacing: 0.3 }}>
+                HUMAN-IN-THE-LOOP APPROVAL REQUIRED
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: isDark ? "#a0956c" : "#92400e", marginBottom: 12 }}>
+              The following actions require your explicit approval before execution:
+            </div>
+            {msg.hitlNodes.map((n: any, i: number) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                background: isDark ? "#161b2244" : "#fff7ed",
+                border: `1px solid ${isDark ? "#30363d" : "#fed7aa"}`,
+                borderRadius: 8, padding: "8px 12px", marginBottom: 6,
+              }}>
+                <span style={{ fontSize: 16 }}>{TOOL_ICONS[n.tool] || "⚙️"}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? "#e6edf3" : "#1f2328", fontFamily: "monospace" }}>
+                    {n.tool}.{n.action}
+                  </div>
+                  <div style={{ fontSize: 11, color: isDark ? "#7d8590" : "#6b7280" }}>
+                    {Object.entries(n.params || {}).map(([k, v]) => `${k}: ${v}`).join(", ") || "No params"}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+              <button
+                onClick={onApprove}
+                style={{
+                  flex: 1, padding: "10px 16px", border: "none", borderRadius: 8,
+                  background: "linear-gradient(135deg, #238636, #2ea043)",
+                  color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                  boxShadow: "0 0 12px rgba(46,160,67,0.3)",
+                  transition: "all 0.2s",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                ✅ Approve & Execute
+              </button>
+              <button
+                onClick={onReject}
+                style={{
+                  flex: 1, padding: "10px 16px", border: `1px solid ${isDark ? "#f8514944" : "#dc2626"}`,
+                  borderRadius: 8, background: isDark ? "#3d111722" : "#fef2f2",
+                  color: isDark ? "#f85149" : "#dc2626", fontWeight: 700, fontSize: 13,
+                  cursor: "pointer", transition: "all 0.2s",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                ❌ Reject
+              </button>
+            </div>
           </div>
         )}
 
@@ -249,6 +325,24 @@ function ChatMessage({ msg, onEdit }: { msg: any; onEdit: (msg: any) => void }) 
 }
 
 export default function App() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { logout } = useAuth();
+  const isDark = resolvedTheme === "dark";
+
+  // GitHub Theme Mapping
+  const T = {
+    bg:           isDark ? "#0d1117" : "#f6f8fa",
+    sidebar:      isDark ? "#010409" : "#ffffff",
+    card:         isDark ? "#161b22" : "#ffffff",
+    border:       isDark ? "#30363d" : "#d0d7de",
+    text:         isDark ? "#e6edf3" : "#1f2328",
+    secondary:    isDark ? "#7d8590" : "#656d76",
+    accent:       isDark ? "#2ea043" : "#0969da",
+    muted:        isDark ? "#161b22" : "#f3f4f6",
+    input:        isDark ? "#0d1117" : "#ffffff",
+    shadow:       isDark ? "transparent" : "0 1px 3px rgba(0,0,0,0.12)",
+  };
+
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [editingMsg, setEditingMsg] = useState<any>(null);
@@ -258,6 +352,8 @@ export default function App() {
   const [slackMsg, setSlackMsg] = useState("");
   const [slackSending, setSlackSending] = useState(false);
   const [slackResult, setSlackResult] = useState<{ ok: boolean; text: string } | null>(null);
+  // ─── HITL Approval State ──────────────────────────────────────────
+  const [pendingApproval, setPendingApproval] = useState<any>(null);
   const { tools } = useTools();
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -395,26 +491,94 @@ export default function App() {
           return { role: m.role, content: text.trim() };
         });
 
+      const currentChatHistory = [
+        ...messages.filter(m => !m.isThinking && m.content).map(m => ({ role: m.role, content: m.content })),
+        { role: "user", content }
+      ];
+
       const planRes = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           user_input: content,
-          context: { history: chatHistory }
+          chat_history: currentChatHistory
         }),
       });
 
       if (!planRes.ok) {
         const errData = await planRes.json().catch(() => ({}));
-        throw new Error(errData.detail || "Planning failed: " + planRes.status);
+        let errorMessage = "Planning failed: " + planRes.status;
+        if (errData.detail) {
+           errorMessage = typeof errData.detail === 'string' 
+             ? errData.detail 
+             : JSON.stringify(errData.detail);
+        }
+        throw new Error(errorMessage);
       }
 
       const planData = await planRes.json();
+      
+      // If planning failed because the LLM didn't return a DAG JSON
       if (!planData.success || !planData.dag) {
-        throw new Error(planData.errors?.join(", ") || "Failed to generate execution plan");
+        // Check if the LLM returned pure conversational text (e.g. asking a clarifying question)
+        if (planData.raw_llm_output && !planData.raw_llm_output.includes("```json")) {
+           // Display the conversational message natively and stop execution
+           setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+             ...m,
+             isThinking: false,
+             content: planData.raw_llm_output,
+             thinking: undefined
+           } : m));
+           return;
+        } else {
+           // Otherwise, it was a legitimate generation failure
+           throw new Error(planData.errors?.join(", ") || "Failed to generate execution plan");
+        }
       }
 
       const dag = planData.dag;
+
+      // ─── HITL CHECK ─────────────────────────────────────────────────
+      const approvalNodes = (dag.nodes || []).filter((n: any) => n.requires_approval);
+      
+      if (approvalNodes.length > 0) {
+        // Pause execution and show approval card
+        setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+          ...m,
+          thinking: `⏸️ HITL — ${approvalNodes.length} step(s) require your approval before execution`,
+          content: "",
+          isThinking: false,
+          hitlPending: true,
+          hitlNodes: approvalNodes,
+        } : m));
+        
+        // Gather credentials for later use
+        const jiraToken = localStorage.getItem("jira_access_token");
+        const jiraCloudId = localStorage.getItem("jira_cloud_id");
+        const slackToken = localStorage.getItem("slack_access_token");
+        const googleToken = localStorage.getItem("google_access_token");
+        const googleSheetId = localStorage.getItem("google_sheets_id");
+        const userCredentials: Record<string, any> = {};
+        if (jiraToken && jiraCloudId) userCredentials.jira = { access_token: jiraToken, cloud_id: jiraCloudId };
+        if (slackToken) userCredentials.slack = { access_token: slackToken };
+        if (googleToken) { userCredentials.sheets = { access_token: googleToken, spreadsheet_id: googleSheetId }; userCredentials.google = { access_token: googleToken }; }
+        Object.entries(tools).forEach(([name, state]: [string, any]) => {
+          if (state.status === 'connected' && state.token && !userCredentials[name]) {
+            try { userCredentials[name] = JSON.parse(state.token); } catch { userCredentials[name] = { token: state.token }; }
+          }
+        });
+
+        const currentChatHistoryForApproval = [
+          ...messages.filter(m => !m.isThinking && m.content).map(m => ({ role: m.role, content: m.content })),
+          { role: "user", content }
+        ];
+
+        // Store pending approval data for later execution
+        setPendingApproval({ dag, thinkingId, userCredentials, chatHistory: currentChatHistoryForApproval });
+        setIsLoading(false);
+        return;
+      }
+      // ─── END HITL — proceed directly if no approval needed ───────
 
       setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
         ...m,
@@ -461,6 +625,7 @@ export default function App() {
             auto_approve: true, 
             dry_run: false,
             credentials: userCredentials,
+            chat_history: currentChatHistory
           }),
         });
 
@@ -554,6 +719,92 @@ export default function App() {
 
   const handleSuggestion = (text: string) => handleSend(text);
 
+  // ─── HITL Approval / Rejection Handlers ─────────────────────────
+  const handleHITLApprove = async () => {
+    if (!pendingApproval) return;
+    const { dag, thinkingId, userCredentials, chatHistory } = pendingApproval;
+    setPendingApproval(null);
+    setIsLoading(true);
+
+    // Update the message to show approval granted
+    setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+      ...m,
+      thinking: `✅ Approved — Dispatching ${dag.nodes?.length || 0} steps to live platforms…`,
+      content: "",
+      isThinking: true,
+      hitlPending: false,
+      hitlNodes: undefined,
+    } : m));
+
+    try {
+      const execRes = await fetch("/api/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dag,
+          auto_approve: true,
+          dry_run: false,
+          credentials: userCredentials,
+          chat_history: chatHistory,
+        }),
+      });
+
+      if (!execRes.ok) {
+        const errData = await execRes.json().catch(() => ({}));
+        throw new Error(errData.detail || "Execution failed: " + execRes.status);
+      }
+
+      const execData = await execRes.json();
+      const dagData = {
+        nodes: (execData.results || []).map((r: any) => ({
+          id: r.node_id, tool: r.tool || "generic", action: r.action || r.name,
+          status: r.status, output: r.output,
+        })),
+      };
+      const nodeDetails = (execData.results || []).map((r: any) => ({ ...r, output: r.output || {} }));
+      const auditLogStrings: string[] = (execData.audit_log || []).map((log: any) => {
+        if (log.event_type === "tool_success") return `${log.tool || log.details?.tool} → ${log.action || log.details?.action} [success]`;
+        if (log.event_type === "tool_failure") return `${log.tool || log.details?.tool} → ${log.action || log.details?.action} [failed: ${log.details?.error || log.error}]`;
+        return log.message || JSON.stringify(log);
+      });
+      const fallbackAudit = (execData.results || []).map((r: any) => `${r.tool} → ${r.action} [${r.status}]`);
+      const allOk = execData.failed === 0 && execData.succeeded > 0;
+      const summary = allOk
+        ? `✅ All ${execData.total_nodes} step${execData.total_nodes !== 1 ? "s" : ""} executed on live platforms.`
+        : `⚠️ Workflow done — ${execData.succeeded}/${execData.total_nodes} succeeded${execData.failed > 0 ? `, ${execData.failed} failed` : ""}.`;
+
+      setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+        id: thinkingId, role: "assistant",
+        thinking: `Execution ${execData.execution_id} — ${execData.total_nodes} nodes (HITL Approved ✅)`,
+        content: summary, dagData, nodeDetails,
+        audit: auditLogStrings.length > 0 ? auditLogStrings : fallbackAudit,
+        isThinking: false,
+      } : m));
+    } catch (e: any) {
+      setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+        id: thinkingId, role: "assistant",
+        content: "⚠️ Integration Error: " + (e.message || String(e)),
+        isThinking: false,
+      } : m));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleHITLReject = () => {
+    if (!pendingApproval) return;
+    const { thinkingId } = pendingApproval;
+    setPendingApproval(null);
+    setMessages(prev => prev.map((m: any) => m.id === thinkingId ? {
+      ...m,
+      thinking: "❌ Workflow rejected by user (HITL)",
+      content: "🚫 Execution cancelled — no actions were performed.",
+      isThinking: false,
+      hitlPending: false,
+      hitlNodes: undefined,
+    } : m));
+  };
+
   // ── Slack Quick-Send ──────────────────────────────────────────────
   const handleSlackQuickSend = async () => {
     const text = slackMsg.trim();
@@ -642,16 +893,32 @@ export default function App() {
           retries: n.retries || 0,
         }));
 
-        setMessages(prev => [...prev, {
+        const audit = nodes.map((n: any) => `${n.tool || "generic"} → ${n.action || n.title} [${n.status}]`);
+        const summaryMsg = {
           id: Date.now() + 1,
           role: "assistant",
-          thinking: `Workflow ${item.workflow_id} — restoring view`,
+          thinking: `Workflow ${item.workflow_id} — restored results`,
           content: `${succeeded}/${nodes.length} steps succeeded${failed > 0 ? `, ${failed} failed` : ""}.`,
           dagData,
           nodeDetails,
-          audit: nodes.map((n: any) => `${n.tool || "generic"} → ${n.action || n.title} [${n.status}]`),
+          audit,
           isThinking: false,
-        }]);
+        };
+
+        if (statusData.chat_history && statusData.chat_history.length > 0) {
+          // Map back to our message format (adding IDs)
+          const restored = statusData.chat_history.map((m: any, i: number) => ({
+            id: Date.now() - 1000 + i,
+            ...m
+          }));
+          
+          // The last message in a completed workflow is usually the assistant summary.
+          // We swap the generic summaryMsg in place of the last assistant message if it contains the DAG.
+          setMessages([...restored.slice(0, -1), summaryMsg]);
+        } else {
+          // Fallback for legacy workflows
+          setMessages([{ id: Date.now(), role: "user", content: item.title }, summaryMsg]);
+        }
       }
     } catch (e) { }
     setIsLoading(false);
@@ -660,30 +927,46 @@ export default function App() {
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <div style={{
-      display: "flex", height: "100vh", background: "#0d1117",
-      fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#e6edf3",
-      overflow: "hidden",
+      display: "flex", height: "100vh", background: T.bg,
+      fontFamily: "'Segoe UI', system-ui, sans-serif", color: T.text,
+      overflow: "hidden", transition: "background 0.3s, color 0.3s"
     }}>
       {/* ── SIDEBAR ── */}
       <div style={{
-        width: 260, flexShrink: 0, background: "#010409",
-        borderRight: "1px solid #21262d", display: "flex",
-        flexDirection: "column", overflow: "hidden",
+        width: 260, flexShrink: 0, background: T.sidebar,
+        borderRight: `1px solid ${T.border}`, display: "flex",
+        flexDirection: "column", overflow: "hidden", 
+        boxShadow: T.shadow, zIndex: 10
       }}>
-        {/* Logo */}
-        <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid #21262d" }}>
+        {/* Logo & Theme Toggle */}
+        <div style={{ padding: "20px 16px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 32, height: 32, borderRadius: 8,
-              background: "#0d3320", border: "1px solid #2ea043",
+              background: isDark ? "#0d3320" : "#dcfce7", border: "1px solid #2ea043",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#4ade80", fontSize: 14, fontWeight: 700,
+              color: "#22c55e", fontSize: 14, fontWeight: 700,
             }}>A</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Agentic MCP</div>
-              <div style={{ fontSize: 10, color: "#7d8590" }}>Gateway Active</div>
+              <div style={{ fontSize: 10, color: T.secondary }}>Gateway Active</div>
             </div>
           </div>
+          
+          <button 
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            style={{
+              background: "transparent", border: "none", cursor: "pointer", 
+              fontSize: 18, padding: 4, borderRadius: 6, display: "flex",
+              alignItems: "center", justifyContent: "center",
+              color: T.secondary,
+              transition: "transform 0.2s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = T.muted}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            {isDark ? "☀️" : "🌙"}
+          </button>
         </div>
 
         {/* New Chat */}
@@ -691,29 +974,14 @@ export default function App() {
           <button
             onClick={() => { setMessages([]); setChatStarted(false); setInput(""); setEditingMsg(null); setCurrentChatId(null); navigate("/dashboard"); }}
             style={{
-              width: "100%", padding: "8px 12px", background: "#161b22",
-              border: "1px solid #30363d", borderRadius: 8, color: "#e6edf3",
+              width: "100%", padding: "8px 12px", background: T.muted,
+              border: `1px solid ${T.border}`, borderRadius: 8, color: T.text,
               fontSize: 13, cursor: "pointer", textAlign: "left",
               display: "flex", alignItems: "center", gap: 8,
+              fontWeight: 500
             }}
           >
             <span style={{ fontSize: 16 }}>+</span> New workflow
-          </button>
-        </div>
-
-        {/* Jira OAuth Login */}
-        <div style={{ padding: "0 12px 12px" }}>
-          <button
-            onClick={() => window.location.href = "http://localhost:8000/auth/jira/login"}
-            style={{
-              width: "100%", padding: "8px 12px", 
-              background: localStorage.getItem("jira_access_token") ? "#0d3320" : "#1f6feb",
-              border: "1px solid #30363d", borderRadius: 8, color: "#fff",
-              fontSize: 13, cursor: "pointer", textAlign: "center",
-              fontWeight: 600, transition: "background 0.2s"
-            }}
-          >
-            {localStorage.getItem("jira_access_token") ? "✅ Jira Connected" : "Connect Jira (OAuth)"}
           </button>
         </div>
 
@@ -729,9 +997,10 @@ export default function App() {
               style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "8px 10px", borderRadius: 6, cursor: "pointer",
-                background: activeNav === nav.id ? "#161b22" : "transparent",
-                color: activeNav === nav.id ? "#e6edf3" : "#7d8590",
+                background: activeNav === nav.id ? (isDark ? "#161b22" : "#f0f2f5") : "transparent",
+                color: activeNav === nav.id ? T.text : T.secondary,
                 fontSize: 13, marginBottom: 2,
+                fontWeight: activeNav === nav.id ? 600 : 400
               }}
             >
               <span style={{ fontSize: 14 }}>{nav.icon}</span> {nav.label}
@@ -740,8 +1009,9 @@ export default function App() {
         </div>
 
         {/* Connected Tools */}
-        <div style={{ padding: "8px 12px 6px", borderTop: "1px solid #21262d" }}>
-          <div style={{ fontSize: 10, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
+        {/* Connected Tools Status */}
+        <div style={{ padding: "8px 12px 6px", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 10, color: T.secondary, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
             Connected Services
           </div>
           {CONNECTED_TOOLS.map(t => {
@@ -758,10 +1028,10 @@ export default function App() {
                 onClick={() => navigate(t.path)}
                 style={{
                   display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                  borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#7d8590",
+                  borderRadius: 6, cursor: "pointer", fontSize: 12, color: T.secondary,
                   marginBottom: 2,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#161b22")}
+                onMouseEnter={e => (e.currentTarget.style.background = T.muted)}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <span style={{ fontSize: 14 }}>{isConnected ? "✅" : "⚠️"}</span>
@@ -771,15 +1041,16 @@ export default function App() {
           })}
         </div>
 
-        {/* Workflow History -> Now Conversations */}
-        <div style={{ flex: 1, overflow: "auto", padding: "8px 12px", borderTop: "1px solid #21262d" }}>
-          <div style={{ fontSize: 10, color: "#7d8590", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
-            Conversations
+        {/* Conversations List */}
+        <div style={{ flex: 1, overflow: "auto", padding: "8px 12px", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 10, color: T.secondary, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
+            Chat History
           </div>
           {chats.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#484f58", fontStyle: "italic", padding: "0 8px" }}>No conversations yet</div>
+            <div style={{ fontSize: 11, color: T.secondary, fontStyle: "italic", padding: "0 8px" }}>No conversations yet</div>
           ) : (
             chats.map((chat: any) => {
+              const isActive = currentChatId === chat.id;
               return (
                 <div
                   key={chat.id}
@@ -792,24 +1063,83 @@ export default function App() {
                     padding: "7px 8px", borderRadius: 6, cursor: "pointer",
                     fontSize: 12, marginBottom: 2,
                     lineHeight: 1.4, transition: "background 0.15s",
-                    background: currentChatId === chat.id ? "#161b22" : "transparent",
-                    color: currentChatId === chat.id ? "#58a6ff" : "#7d8590",
-                    borderLeft: currentChatId === chat.id ? "2px solid #58a6ff" : "none",
-                    paddingLeft: currentChatId === chat.id ? "6px" : "8px",
+                    background: isActive ? T.muted : "transparent",
+                    color: isActive ? T.accent : T.secondary,
+                    borderLeft: isActive ? `2px solid ${T.accent}` : "none",
+                    paddingLeft: isActive ? "6px" : "8px",
                   }}
-                  onMouseEnter={e => { if (currentChatId !== chat.id) e.currentTarget.style.background = "#0d1117"; }}
-                  onMouseLeave={e => { if (currentChatId !== chat.id) e.currentTarget.style.background = "transparent"; }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = T.muted; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                 >
-                  <div style={{ color: "#c9d1d9", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div style={{ color: isActive ? T.text : T.secondary, fontWeight: isActive ? 600 : 400, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {chat.title}
                   </div>
-                  <div style={{ fontSize: 10, display: "flex", justifyContent: "space-between" }}>
-                    <span>{chat.messages.length} messages</span>
+                  <div style={{ fontSize: 10, opacity: 0.7 }}>
+                    {chat.messages.length} messages
                   </div>
                 </div>
               );
             })
           )}
+        </div>
+
+        {/* Platform Execution History */}
+        <div style={{ maxHeight: "30%", overflow: "auto", padding: "8px 12px", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 10, color: T.secondary, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
+            Recent Workflows
+          </div>
+          {history.length === 0 ? (
+            <div style={{ fontSize: 11, color: T.secondary, fontStyle: "italic", padding: "0 8px" }}>No active workflows</div>
+          ) : (
+            history.map((item: any) => {
+              const date = new Date(item.created_at);
+              const timeStr = isNaN(date.getTime()) ? "Pending" : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              const isActive = id === item.workflow_id;
+              
+              return (
+                <div
+                  key={item.workflow_id}
+                  onClick={() => startWithHistory(item)}
+                  style={{
+                    padding: "7px 8px", borderRadius: 6, cursor: "pointer",
+                    fontSize: 12, marginBottom: 2,
+                    lineHeight: 1.4, transition: "background 0.15s",
+                    background: isActive ? T.muted : "transparent",
+                    color: isActive ? T.accent : T.secondary,
+                    borderLeft: isActive ? `2px solid ${T.accent}` : "none",
+                    paddingLeft: isActive ? "6px" : "8px",
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = T.muted; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div style={{ color: isActive ? T.text : T.secondary, fontWeight: isActive ? 600 : 400, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: 10, display: "flex", justifyContent: "space-between", color: T.secondary }}>
+                    <span>{item.workflow_id?.slice(0, 16)}…</span>
+                    <span>{timeStr}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+        {/* Logout at bottom */}
+        <div style={{ padding: "12px", borderTop: `1px solid ${T.border}`, marginTop: "auto" }}>
+          <button
+            onClick={() => { logout(); navigate("/login"); }}
+            style={{
+              width: "100%", padding: "8px", background: "transparent",
+              border: `1px solid ${T.border}`, borderRadius: 8, color: "#f85149",
+              fontSize: 13, cursor: "pointer", display: "flex", 
+              alignItems: "center", justifyContent: "center", gap: 8,
+              fontWeight: 600, transition: "background 0.2s"
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = isDark ? "#3d1117" : "#fff1f0")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            <span>🚪</span> Sign Out
+          </button>
         </div>
       </div>
 
@@ -817,9 +1147,9 @@ export default function App() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {activeNav === "logs" ? (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 24, overflow: "hidden" }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 8px", color: "#e6edf3" }}>System Logs</h2>
-            <p style={{ color: "#7d8590", fontSize: 14, margin: "0 0 20px" }}>Live orchestration execution logs</p>
-            <div style={{ flex: 1, background: "#010409", border: "1px solid #30363d", borderRadius: 12, padding: 16, overflowY: "auto", fontFamily: "monospace", fontSize: 13, color: "#c9d1d9" }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 8px", color: T.text }}>System Logs</h2>
+            <p style={{ color: T.secondary, fontSize: 14, margin: "0 0 20px" }}>Live orchestration execution logs</p>
+            <div style={{ flex: 1, background: T.sidebar, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, overflowY: "auto", fontFamily: "monospace", fontSize: 13, color: T.text }}>
               {history.map((wf: any) => (
                 <div key={wf.workflow_id} style={{ marginBottom: 12 }}>
                   <div style={{ color: "#58a6ff", fontWeight: 600 }}>[{wf.workflow_id}] {wf.title}</div>
@@ -849,15 +1179,15 @@ export default function App() {
                 }}>
                   <div style={{
                     width: 48, height: 48, borderRadius: 12,
-                    background: "#0d3320", border: "1px solid #2ea043",
+                    background: isDark ? "#0d3320" : "#dcfce7", border: "1px solid #2ea043",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    margin: "0 auto 20px", color: "#4ade80", fontSize: 22, fontWeight: 700,
+                    margin: "0 auto 20px", color: "#22c55e", fontSize: 22, fontWeight: 700,
                   }}>A</div>
 
-                  <h1 style={{ fontSize: 28, fontWeight: 600, margin: "0 0 8px", textAlign: "center" }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 600, margin: "0 0 8px", textAlign: "center", color: T.text }}>
                     Hello, Tejas 👋
                   </h1>
-                  <p style={{ color: "#7d8590", fontSize: 15, margin: "0 0 40px", textAlign: "center" }}>
+                  <p style={{ color: T.secondary, fontSize: 15, margin: "0 0 40px", textAlign: "center" }}>
                     What workflow would you like to run today?
                   </p>
 
@@ -868,13 +1198,20 @@ export default function App() {
                         key={i}
                         onClick={() => handleSuggestion(p)}
                         style={{
-                          background: "#161b22", border: "1px solid #30363d",
+                          background: T.card, border: `1px solid ${T.border}`,
                           borderRadius: 10, padding: "12px 14px", cursor: "pointer",
-                          color: "#c9d1d9", fontSize: 12, textAlign: "left",
-                          lineHeight: 1.5, transition: "border-color 0.15s",
+                          color: T.text, fontSize: 12, textAlign: "left",
+                          lineHeight: 1.5, transition: "border-color 0.15s, transform 0.15s",
+                          boxShadow: T.shadow
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = "#58a6ff")}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = "#30363d")}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = T.accent;
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = T.border;
+                          e.currentTarget.style.transform = "translateY(0)";
+                        }}
                       >
                         {p}
                       </button>
@@ -884,8 +1221,9 @@ export default function App() {
                   {/* ── Slack Quick-Send Panel ── */}
                   <div style={{
                     maxWidth: 640, width: "100%",
-                    background: "#161b22", border: "1px solid #30363d",
+                    background: T.card, border: `1px solid ${T.border}`,
                     borderRadius: 12, padding: "16px 18px",
+                    boxShadow: T.shadow
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                       <span style={{ fontSize: 18 }}>💬</span>
@@ -905,13 +1243,13 @@ export default function App() {
                         onKeyDown={e => { if (e.key === "Enter") handleSlackQuickSend(); }}
                         disabled={slackSending}
                         style={{
-                          flex: 1, background: "#0d1117", border: "1px solid #30363d",
-                          borderRadius: 8, padding: "9px 12px", color: "#e6edf3",
+                          flex: 1, background: T.bg, border: `1px solid ${T.border}`,
+                          borderRadius: 8, padding: "9px 12px", color: T.text,
                           fontSize: 13, outline: "none", fontFamily: "inherit",
                           opacity: slackSending ? 0.6 : 1,
                         }}
-                        onFocus={e => (e.target.style.borderColor = "#58a6ff")}
-                        onBlur={e => (e.target.style.borderColor = "#30363d")}
+                        onFocus={e => (e.target.style.borderColor = T.accent)}
+                        onBlur={e => (e.target.style.borderColor = T.border)}
                       />
                       <button
                         onClick={handleSlackQuickSend}
@@ -945,7 +1283,7 @@ export default function App() {
                 /* ── CHAT MESSAGES ── */
                 <div style={{ maxWidth: 780, margin: "0 auto", padding: "0 24px" }}>
                   {messages.map((msg: any) => (
-                    <ChatMessage key={msg.id} msg={msg} onEdit={handleEdit} />
+                    <ChatMessage key={msg.id} msg={msg} onEdit={handleEdit} onApprove={handleHITLApprove} onReject={handleHITLReject} />
                   ))}
                   <div ref={bottomRef} />
                 </div>
@@ -953,21 +1291,22 @@ export default function App() {
             </div>
 
             {/* ── INPUT BOX ── */}
-            <div style={{ padding: "16px 24px 20px", borderTop: chatStarted ? "1px solid #21262d" : "none", background: "#0d1117" }}>
+            <div style={{ padding: "16px 24px 20px", borderTop: chatStarted ? `1px solid ${T.border}` : "none", background: T.bg }}>
               <div style={{ maxWidth: 780, margin: "0 auto" }}>
                 {editingMsg && (
                   <div style={{ fontSize: 11, color: "#f0883e", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
                     <span>✏️ Editing message — response will regenerate from this point</span>
                     <button
                       onClick={() => { setEditingMsg(null); setInput(""); }}
-                      style={{ background: "none", border: "none", color: "#7d8590", cursor: "pointer", fontSize: 12 }}
+                      style={{ background: "none", border: "none", color: T.secondary, cursor: "pointer", fontSize: 12 }}
                     >✕ cancel</button>
                   </div>
                 )}
                 <div style={{
                   display: "flex", alignItems: "flex-end", gap: 10,
-                  background: "#161b22", border: `1px solid ${editingMsg ? "#f0883e" : "#30363d"}`,
+                  background: T.card, border: `1px solid ${editingMsg ? "#f0883e" : T.border}`,
                   borderRadius: 14, padding: "12px 14px", transition: "border-color 0.2s",
+                  boxShadow: T.shadow
                 }}>
                   <textarea
                     ref={textareaRef}

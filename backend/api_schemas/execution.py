@@ -58,6 +58,7 @@ class WorkflowExecution(BaseModel):
     dag: Optional[WorkflowDAG] = None
     status: WorkflowStatus = WorkflowStatus.PENDING
     node_results: dict[str, NodeExecutionResult] = Field(default_factory=dict)
+    chat_history: list[dict[str, str]] = Field(default_factory=list)
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed_at: Optional[str] = None
     total_nodes: int = 0

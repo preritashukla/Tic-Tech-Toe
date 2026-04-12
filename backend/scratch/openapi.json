@@ -1,0 +1,1378 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Agentic MCP Gateway",
+    "description": "AI-powered orchestration layer that connects to multiple third-party services via MCP servers, understands natural language workflow descriptions, decomposes them into executable DAG steps, and orchestrates cross-service operations.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/plan": {
+      "post": {
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Generate workflow DAG from natural language",
+        "description": "Takes a natural language workflow description and generates a validated DAG (Directed Acyclic Graph) using Groq Llama 3.3-70B. The DAG can then be passed to POST /execute for execution.",
+        "operationId": "create_plan_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "DAG generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input"
+          },
+          "500": {
+            "description": "LLM service error"
+          }
+        }
+      }
+    },
+    "/plan/validate": {
+      "post": {
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Validate a DAG without generating one",
+        "description": "Validates an existing DAG JSON against the schema.",
+        "operationId": "validate_dag_plan_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowDAG-Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Validate Dag Plan Validate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/execute": {
+      "post": {
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Execute a workflow DAG",
+        "description": "Executes a validated DAG through the execution engine. Runs nodes in topological order with parallelism for independent nodes. Returns final execution results with per-node status.",
+        "operationId": "execute_workflow_execute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecuteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/execute/stream": {
+      "post": {
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Execute DAG with SSE streaming",
+        "description": "Executes a validated DAG and streams real-time events via Server-Sent Events. Events include: workflow_start, node_start, node_running, node_success, node_failed, node_retry, node_skipped, hitl_required, workflow_complete.",
+        "operationId": "execute_workflow_stream_execute_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/execute/status": {
+      "get": {
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Get execution status",
+        "description": "Retrieves the current status and results of a workflow execution by ID.",
+        "operationId": "get_execution_status_execute_status_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Execution ID",
+              "title": "Id"
+            },
+            "description": "Execution ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Execution Status Execute Status Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/execute/approve/{execution_id}/{node_id}": {
+      "post": {
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Approve a HITL gate",
+        "description": "Approves a pending human-in-the-loop approval for a specific node.",
+        "operationId": "approve_hitl_execute_approve__execution_id___node_id__post",
+        "parameters": [
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Execution Id"
+            }
+          },
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          },
+          {
+            "name": "approved",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Approved"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Approve Hitl Execute Approve  Execution Id   Node Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/jira/login": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Jira Login",
+        "description": "Redirect user to Atlassian for authorization.",
+        "operationId": "jira_login_auth_jira_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/jira/callback": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Jira Callback",
+        "description": "Handle the callback from Atlassian.",
+        "operationId": "jira_callback_auth_jira_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/google/login": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Google Login",
+        "description": "Redirect user to Google for authorization.",
+        "operationId": "google_login_auth_google_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/google/callback": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Google Callback",
+        "description": "Handle the callback from Google.",
+        "operationId": "google_callback_auth_google_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/slack/login": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Slack Login",
+        "description": "Redirect user to Slack for authorization.",
+        "operationId": "slack_login_auth_slack_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/slack/callback": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Slack Callback",
+        "description": "Handle the callback from Slack.",
+        "operationId": "slack_callback_auth_slack_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/data": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Get Combined Data",
+        "description": "Returns recent activity from GitHub and Jira.",
+        "operationId": "get_combined_data_integrations_data_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/status": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Get Integration Status",
+        "description": "Returns which integrations are pre-configured via .env variables.\nFrontend uses this to auto-populate tool connection status.",
+        "operationId": "get_integration_status_integrations_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/verify/{tool}": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Verify Integration",
+        "description": "POST /integrations/verify/{tool}\nVerifies a specific integration is live and reachable.\nBody is optional \u2014 uses .env credentials by default.\nbody = { \"token\": \"...\", \"repo\": \"...\", ... }",
+        "operationId": "verify_integration_integrations_verify__tool__post",
+        "parameters": [
+          {
+            "name": "tool",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tool"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/slack/messages": {
+      "get": {
+        "tags": [
+          "Slack Dashboard"
+        ],
+        "summary": "Get Messages",
+        "description": "Retrieve all logged Slack messages.",
+        "operationId": "get_messages_slack_messages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Messages Slack Messages Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/slack/channels": {
+      "get": {
+        "tags": [
+          "Slack Dashboard"
+        ],
+        "summary": "Get Channels",
+        "description": "Retrieve all identified Slack channels.",
+        "operationId": "get_channels_slack_channels_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Channels Slack Channels Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Root",
+        "description": "Welcome endpoint with API information.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health Check",
+        "description": "System health check with service status.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Get Execution Status",
+        "description": "Retrieve the current status of a workflow execution by ID.",
+        "operationId": "get_execution_status_status_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/active-workflows": {
+      "get": {
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Get Active Workflows",
+        "description": "Retrieve all currently active workflow executions.",
+        "operationId": "get_active_workflows_active_workflows_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit/logs": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "Get Audit Logs",
+        "description": "Retrieve audit logs, optionally filtered by execution_id or event_type.",
+        "operationId": "get_audit_logs_audit_logs_get",
+        "parameters": [
+          {
+            "name": "execution_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Execution Id"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit/stats": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "Get Audit Stats",
+        "description": "Get audit event statistics.",
+        "operationId": "get_audit_stats_audit_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit/security": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "Get Security Events",
+        "description": "Get security-relevant events (HITL, permissions, errors).",
+        "operationId": "get_security_events_audit_security_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DAGNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique node identifier, e.g. 'node_1' or 'task_1'"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool",
+            "description": "Target MCP tool: jira, github, slack, sheets"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Tool-specific action to invoke"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params",
+            "description": "Action parameters, may contain {{template}} refs"
+          },
+          "depends_on": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Depends On",
+            "description": "IDs of upstream dependency nodes"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "description": "Whether this node needs HITL approval",
+            "default": false
+          },
+          "retry": {
+            "$ref": "#/components/schemas/RetryConfig"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Human-readable step name"
+          },
+          "mock_output": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mock Output",
+            "description": "Mock output for demo/testing"
+          },
+          "timeout_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout Ms",
+            "description": "Per-node timeout in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tool",
+          "action"
+        ],
+        "title": "DAGNode",
+        "description": "A single step in the workflow DAG."
+      },
+      "ExecuteRequest": {
+        "properties": {
+          "dag": {
+            "$ref": "#/components/schemas/WorkflowDAG-Input",
+            "description": "The DAG to execute"
+          },
+          "auto_approve": {
+            "type": "boolean",
+            "title": "Auto Approve",
+            "description": "If True, skip HITL approval gates (demo mode)",
+            "default": true
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "If True, simulate execution without calling real tools",
+            "default": false
+          },
+          "credentials": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credentials",
+            "description": "User-specific credentials from the ConnectTools dashboard"
+          },
+          "chat_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat History",
+            "description": "Full conversation history to persist"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dag"
+        ],
+        "title": "ExecuteRequest",
+        "description": "POST /execute \u2014 request body."
+      },
+      "ExecuteResponse": {
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "title": "Execution Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "total_nodes": {
+            "type": "integer",
+            "title": "Total Nodes"
+          },
+          "succeeded": {
+            "type": "integer",
+            "title": "Succeeded"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          },
+          "results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "audit_log": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Audit Log"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "success",
+          "total_nodes",
+          "succeeded",
+          "failed",
+          "skipped"
+        ],
+        "title": "ExecuteResponse",
+        "description": "POST /execute \u2014 final response (non-streaming)."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PlanRequest": {
+        "properties": {
+          "user_input": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 5,
+            "title": "User Input",
+            "description": "Natural language workflow description",
+            "examples": [
+              "Critical bug filed in Jira \u2192 Create GitHub branch \u2192 Notify Slack \u2192 Update incident tracker"
+            ]
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "description": "Optional context from previous interactions"
+          },
+          "chat_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat History",
+            "description": "Leading conversation history to be saved with the workflow"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_input"
+        ],
+        "title": "PlanRequest",
+        "description": "POST /plan \u2014 request body."
+      },
+      "PlanResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether DAG generation succeeded"
+          },
+          "dag": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowDAG-Output"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Generated workflow DAG"
+          },
+          "raw_llm_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Llm Output",
+            "description": "Raw LLM response for debugging"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "Validation or generation errors"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "description": "Number of LLM attempts made",
+            "default": 1
+          },
+          "model_used": {
+            "type": "string",
+            "title": "Model Used",
+            "description": "LLM model used",
+            "default": "llama-3.3-70b-versatile"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "PlanResponse",
+        "description": "POST /plan \u2014 response body."
+      },
+      "RetryConfig": {
+        "properties": {
+          "max_attempts": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Attempts",
+            "default": 3
+          },
+          "backoff_factor": {
+            "type": "number",
+            "minimum": 1.0,
+            "title": "Backoff Factor",
+            "default": 2.0
+          },
+          "initial_delay": {
+            "type": "number",
+            "minimum": 0.1,
+            "title": "Initial Delay",
+            "default": 1.0
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Timeout",
+            "description": "Per-attempt timeout in seconds",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "title": "RetryConfig",
+        "description": "Per-node retry policy with exponential backoff."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorkflowDAG-Input": {
+        "properties": {
+          "workflow_name": {
+            "type": "string",
+            "title": "Workflow Name",
+            "description": "Human-readable workflow name"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/DAGNode"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Nodes",
+            "description": "Ordered list of DAG steps"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Id",
+            "description": "Unique execution ID"
+          },
+          "execution_layers": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Layers",
+            "description": "Manually specified execution layers from the planner"
+          },
+          "context_refs": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Refs",
+            "description": "Context template assignments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workflow_name",
+          "nodes"
+        ],
+        "title": "WorkflowDAG",
+        "description": "Complete workflow directed acyclic graph.\nThis is the primary contract between LLM output and the execution engine."
+      },
+      "WorkflowDAG-Output": {
+        "properties": {
+          "workflow_name": {
+            "type": "string",
+            "title": "Workflow Name",
+            "description": "Human-readable workflow name"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/DAGNode"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Nodes",
+            "description": "Ordered list of DAG steps"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Id",
+            "description": "Unique execution ID"
+          },
+          "execution_layers": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Layers",
+            "description": "Manually specified execution layers from the planner"
+          },
+          "context_refs": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Refs",
+            "description": "Context template assignments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workflow_name",
+          "nodes"
+        ],
+        "title": "WorkflowDAG",
+        "description": "Complete workflow directed acyclic graph.\nThis is the primary contract between LLM output and the execution engine."
+      }
+    }
+  }
+}

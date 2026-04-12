@@ -17,7 +17,7 @@ class PlanRequest(BaseModel):
     """POST /plan — request body."""
     user_input: str = Field(
         ...,
-        min_length=5,
+        min_length=1,
         max_length=2000,
         description="Natural language workflow description",
         json_schema_extra={"examples": [
@@ -27,6 +27,10 @@ class PlanRequest(BaseModel):
     context: Optional[dict[str, Any]] = Field(
         default=None,
         description="Optional context from previous interactions"
+    )
+    chat_history: Optional[list[dict[str, str]]] = Field(
+        default_factory=list,
+        description="Leading conversation history to be saved with the workflow"
     )
 
 
@@ -56,6 +60,10 @@ class ExecuteRequest(BaseModel):
     credentials: Optional[dict[str, Any]] = Field(
         default=None,
         description="User-specific credentials from the ConnectTools dashboard"
+    )
+    chat_history: Optional[list[dict[str, str]]] = Field(
+        default_factory=list,
+        description="Full conversation history to persist"
     )
 
 

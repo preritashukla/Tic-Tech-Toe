@@ -35,6 +35,9 @@ async def call_github_api(method: str, endpoint: str, data: Optional[dict] = Non
                 error_detail = response.text
             raise Exception(f"GitHub API Error ({response.status_code}): {error_detail}")
             
+        if response.status_code == 204:
+            return {}
+            
         return response.json()
 
 async def get_repository(owner: str, repo: str) -> dict:
@@ -82,23 +85,99 @@ async def create_branch(owner: str, repo: str, branch_name: str, from_branch: Op
     try:
         data = await call_github_api("POST", f"/repos/{owner}/{repo}/git/refs", data=payload)
     except Exception as e:
-        if "404" in str(e):
-            # Self-diagnostic: Check if we can even see the repo
+        if "422" in str(e):
+            # 🛡️ COLLISION AVOIDANCE: Branch likely already exists.
+            # We append a unique suffix and retry automatically.
+            import time
+            suffix = str(int(time.time()))[-4:]
+            new_name = f"{branch_name}-{suffix}"
+            payload["ref"] = f"refs/heads/{new_name}"
+            print(f"DEBUG: Branch {branch_name} exists, retrying as {new_name}")
             try:
-                test = await call_github_api("GET", f"/repos/{owner}/{repo}")
-                perm = test.get("permissions", {})
-                print(f"DIAGNOSTIC: Repo {owner}/{repo} is VISIBLE. Permissions: {perm}")
-                if not perm.get("push"):
-                    raise Exception(f"404 on branch creation likely due to MISSING PUSH PERMISSION for {owner}/{repo}")
-            except Exception as get_err:
-                print(f"DIAGNOSTIC: Repo {owner}/{repo} is NOT VISIBLE or accessible: {get_err}")
-        raise e
+                data = await call_github_api("POST", f"/repos/{owner}/{repo}/git/refs", data=payload)
+                branch_name = new_name
+            except Exception as e2:
+                # If still failing, return the original error message but with a hint
+                raise Exception(f"GitHub Branch Creation Failed: Reference already exists and collision rescue failed. ({str(e)})")
+        else:
+            if "404" in str(e):
+                # Self-diagnostic: Check permissions
+                try:
+                    test = await call_github_api("GET", f"/repos/{owner}/{repo}")
+                    perm = test.get("permissions", {})
+                    if not perm.get("push"):
+                        raise Exception(f"GitHub Access Denied: You do not have PUSH permission to {owner}/{repo}")
+                except: pass
+            raise e
     return {
         "branch_name": branch_name,
         "branch_ref": data["ref"],
         "branch_sha": data["object"]["sha"],
         "branch_url": data["url"],
         "branch_html_url": f"https://github.com/{owner}/{repo}/tree/{branch_name}"
+    }
+
+async def delete_branch(owner: str, repo: str, branch_name: str) -> dict:
+    """Delete a branch (ref) from GitHub."""
+    # 🕵️ TEMPLATE PROTECTION: If branch_name contains '{{', it means the LLM tried to use a filter
+    # that our executor doesn't support, resulting in an unresolved string.
+    if "{{" in branch_name:
+        raise ValueError(f"Invalid branch name '{branch_name}'. It appears context resolution or a complex filter failed.")
+
+    # GitHub ref deletion uses DELETE /git/refs/heads/{branch}
+    # It returns 204 No Content on success
+    try:
+        await call_github_api("DELETE", f"/repos/{owner}/{repo}/git/refs/heads/{branch_name}")
+    except Exception as e:
+        # 🛡️ IDEMPOTENCY: If the branch is already gone (422/404), treat as success for cleaner rollbacks.
+        if "422" in str(e) or "404" in str(e):
+            print(f"DEBUG: Branch {branch_name} not found in {owner}/{repo}. Assuming already deleted.")
+            return {
+                "status": "success",
+                "message": f"Branch '{branch_name}' was already removed or didn't exist in {owner}/{repo}.",
+                "warning": "Simulation: Idempotent success"
+            }
+        raise e
+        
+    return {
+        "status": "success",
+        "message": f"Branch '{branch_name}' deleted successfully from {owner}/{repo}",
+        "branch_name": branch_name
+    }
+
+async def delete_branches_by_pattern(owner: str, repo: str, pattern: str) -> dict:
+    """Delete all branches matching a prefix pattern."""
+    # Strip glob characters — LLM often sends "test-rollback*" but we need a clean prefix
+    clean_pattern = pattern.rstrip("*").rstrip("?").strip()
+    print(f"DEBUG: delete_branches_by_pattern — raw='{pattern}', clean='{clean_pattern}'")
+    
+    branches_data = await list_branches(owner, repo, per_page=100)
+    all_names = branches_data["branch_names"]
+    print(f"DEBUG: All branches found: {all_names}")
+    
+    # Filter by prefix
+    to_delete = [n for n in all_names if n.startswith(clean_pattern) and n not in ["main", "master"]]
+    print(f"DEBUG: Branches to delete: {to_delete}")
+    
+    if not to_delete:
+        return {
+            "status": "success",
+            "message": f"No branches found matching prefix '{pattern}'",
+            "count": 0
+        }
+    
+    results = []
+    for name in to_delete:
+        try:
+            await delete_branch(owner, repo, name)
+            results.append(name)
+        except: pass
+        
+    return {
+        "status": "success",
+        "message": f"Cleaned up {len(results)} branches matching '{pattern}'",
+        "deleted_branches": results,
+        "count": len(results)
     }
 
 async def list_issues(owner: str, repo: str, state: str = "open", labels: Optional[str] = None, assignee: Optional[str] = None) -> dict:
@@ -301,28 +380,38 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
                     owner, repo = parts[0], parts[1]
                     break
     
-    # Fallback to .env GITHUB_REPO if still not found
-    if not owner or not repo:
-        env_repo = os.getenv("GITHUB_REPO")
-        if env_repo and "/" in env_repo:
-            parts = env_repo.split("/")
-            owner, repo = parts[0], parts[1]
+    # ── Master Repo Enforcement ───────────────────────────────────────────────
+    MASTER_REPO = "preritashukla/Tic-Tech-Toe"
+    
+    # Check if a different repo was explicitly requested
+    req_owner = inputs.get("owner") or inputs.get("repo_owner") or inputs.get("github_owner")
+    req_repo = inputs.get("repo") or inputs.get("repo_name") or inputs.get("repository") or inputs.get("repo_full_name")
+    
+    # Sometimes LLM puts 'owner/repo' completely inside 'repo'
+    if not req_owner and req_repo and "/" in str(req_repo):
+        # Clean URL prefixes if any
+        raw_val = str(req_repo).split("github.com/")[-1].strip("/")
+        parts = raw_val.split("/")
+        if len(parts) >= 2:
+            req_owner, req_repo = parts[0], parts[1]
 
-    if not owner or not repo:
+    # If the LLM passed ANY identifying data for the repo, validate it.
+    if req_owner or req_repo:
+        slug = f"{req_owner or 'unknown'}/{req_repo or 'unknown'}".lower()
+        if slug != MASTER_REPO.lower():
+             raise ValueError("you enter wrong github repo")
+             
+    # If NO repo was provided by the user, explicitly ASK them instead of silently defaulting.
+    if not req_owner and not req_repo:
         raise ValueError(
-            f"Missing 'owner' and 'repo' in GitHub tool inputs. "
-            f"Received: {list(inputs.keys())}"
+            f"You didn't specify a repository. Do you want to perform this in the master repo ({MASTER_REPO})? "
+            f"If so, simply reply 'yes'."
         )
 
-    # ── Canonical Resolution ──────────────────────────────────────────────────
-    # Force canonical name to avoid case-insensitive 404s on POST
-    try:
-        repo_data = await call_github_api("GET", f"/repos/{owner}/{repo}")
-        owner, repo = repo_data["owner"]["login"], repo_data["name"]
-        print(f"DEBUG: Resolved canonical path -> {owner}/{repo}")
-    except:
-        # Fallback to provided names if GET fails (e.g. repo truly missing)
-        pass
+    # We only get here if the user's explicit input matched MASTER_REPO.
+    owner, repo = MASTER_REPO.split("/")
+
+    print(f"DEBUG: Using Master Repository -> {owner}/{repo}")
 
     if action == "get_repository":
         return await get_repository(owner, repo)
@@ -334,6 +423,22 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
         if not branch_name:
              raise ValueError("Missing 'branch_name' for create_branch")
         return await create_branch(owner, repo, branch_name, from_branch)
+    elif action in ["delete_branch", "rollback", "cleanup"]:
+        branch_name = inputs.get("branch_name") or inputs.get("name")
+        # 🔥 HEALER LOGIC: If the LLM forgot the branch_name, try to find it in the 'repo' field
+        # sometimes LLMs pass 'repo' as 'owner/repo:branch' or similar.
+        if not branch_name:
+            context_name = inputs.get("context_branch_name") or inputs.get("target")
+            if context_name: branch_name = context_name
+            
+        if not branch_name:
+             raise ValueError("Missing 'branch_name' for branch deletion. Please ensure you link the branch name from the creation step.")
+        return await delete_branch(owner, repo, branch_name)
+    elif action in ["delete_branches_by_pattern", "batch_delete", "cleanup_pattern"]:
+        pattern = inputs.get("pattern") or inputs.get("prefix") or inputs.get("branch_name")
+        if not pattern:
+            raise ValueError("Missing 'pattern' for batch branch deletion.")
+        return await delete_branches_by_pattern(owner, repo, pattern)
     elif action == "get_branch":
         return await get_branch(owner, repo, inputs.get("branch"))
     elif action == "list_issues":
