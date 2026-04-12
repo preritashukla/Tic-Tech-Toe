@@ -6,11 +6,25 @@ import Layout from '@/components/Layout';
 import WorkflowDashboard from '@/pages/WorkflowDashboard';
 import { createWorkflow } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PanelLeftClose as PanelLeftCloseIcon, PanelLeftOpen as PanelLeftOpenIcon } from 'lucide-react';
+import { PanelLeftClose as PanelLeftCloseIcon, PanelLeftOpen as PanelLeftOpenIcon, Github, Kanban, MessageSquare, FileSpreadsheet, Layers } from 'lucide-react';
+import { useTools } from '@/context/ToolsContext';
+import IntegrationOverview from '@/components/IntegrationOverview';
+
+const formatExecutionDate = (ts: any) => {
+  if (!ts) return 'N/A';
+  try {
+    const date = new Date(ts);
+    if (isNaN(date.getTime())) return String(ts);
+    return date.toLocaleString();
+  } catch {
+    return String(ts);
+  }
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { tools } = useTools();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
@@ -32,7 +46,15 @@ const Dashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const { workflow_id } = await createWorkflow(text);
+      // Pass any configured tool tokens correctly
+      const credentials = {
+        github: tools.github.status === 'connected' ? tools.github.token : undefined,
+        jira: tools.jira.status === 'connected' ? tools.jira.token : undefined,
+        slack: tools.slack.status === 'connected' ? tools.slack.token : undefined,
+        sheets: tools.sheets.status === 'connected' ? tools.sheets.token : undefined,
+      };
+
+      const { workflow_id } = await createWorkflow(text, credentials);
       setText('');
       loadHistory();
       navigate(`/dashboard/${workflow_id}`);
@@ -61,9 +83,34 @@ const Dashboard = () => {
 
           {/* Workflow Input */}
           <div className="p-4 border-b border-border bg-card shrink-0">
-            <p className="text-foreground font-semibold text-sm mb-3">
-              Run Parallel Workflow
-            </p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-foreground font-semibold text-sm">
+                Run Parallel Workflow
+              </p>
+              <div className="flex gap-1.5">
+                {[
+                  { id: 'github', icon: Github, color: 'text-purple-400' },
+                  { id: 'jira', icon: Kanban, color: 'text-blue-400' },
+                  { id: 'slack', icon: MessageSquare, color: 'text-green-400' },
+                  { id: 'sheets', icon: FileSpreadsheet, color: 'text-yellow-400' },
+                ].map(tool => {
+                  const connected = tools[tool.id as any]?.status === 'connected';
+                  return (
+                    <div 
+                      key={tool.id} 
+                      title={`${tool.id.charAt(0).toUpperCase() + tool.id.slice(1)}: ${connected ? 'Connected' : 'Disconnected'}`}
+                      className={`p-1 rounded-md border transition-all ${
+                        connected 
+                          ? 'bg-secondary border-border ' + tool.color
+                          : 'bg-transparent border-transparent text-muted-foreground/30'
+                      }`}
+                    >
+                      <tool.icon size={12} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             <div className={`input-glow-wrapper rounded-xl p-[1px] transition-all duration-500 ${text.trim() ? 'input-glow-active' : ''}`}>
               <div className="flex items-start gap-2 rounded-xl bg-background p-2 border border-border">
                 <textarea
@@ -134,7 +181,7 @@ const Dashboard = () => {
                     {item.name}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1 font-mono">
-                    {new Date(item.timestamp).toLocaleString()}
+                    {formatExecutionDate(item.timestamp)}
                   </p>
                 </button>
               ))}
@@ -164,14 +211,8 @@ const Dashboard = () => {
           {id ? (
             <WorkflowDashboard />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
-              <div className="w-20 h-20 rounded-full border-2 border-dashed border-border flex items-center justify-center mb-5">
-                <RocketLaunchIcon sx={{ fontSize: 30 }} className="text-muted-foreground" />
-              </div>
-              <p className="text-foreground text-lg font-semibold mb-2">No Workflow Selected</p>
-              <p className="text-muted-foreground text-sm max-w-xs">
-                Select a workflow from the panel or create a new one to view its execution graph and live telemetry.
-              </p>
+            <div className="flex-1 overflow-y-auto w-full pt-10">
+              <IntegrationOverview />
             </div>
           )}
         </div>

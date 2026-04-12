@@ -20,20 +20,34 @@ def get_sheets_client(context: Optional[Dict] = None):
         return gspread.authorize(creds)
 
     # Priority 2: Service Account (from env)
-    creds_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON")
+    creds_env = os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON")
+    
+    scopes = [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'
+    ]
+
+    # Check if creds is a raw JSON string
+    if creds_env and creds_env.strip().startswith("{"):
+        import json
+        try:
+            creds_info = json.loads(creds_env)
+            creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
+            logger.info("Sheets API: Using service account credentials from raw JSON string")
+            return gspread.authorize(creds)
+        except Exception as e:
+            raise ValueError(f"Invalid Google Sheets credentials JSON string: {e}")
+    
+    creds_path = creds_env
     if not creds_path:
         creds_path = os.path.join(os.getcwd(), "credentials", "service_account.json")
     
-    if os.path.exists(creds_path):
-        scopes = [
-            'https://www.googleapis.com/auth/spreadsheets',
-            'https://www.googleapis.com/auth/drive'
-        ]
-        creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
-        logger.info("Sheets API: Using service account credentials")
-        return gspread.authorize(creds)
-
-    raise Exception("Google Sheets Credentials Missing: Please connect your Google account.")
+    if not os.path.exists(creds_path):
+        raise FileNotFoundError(f"Google Sheets credentials not found at: {creds_path}. Place your service_account.json in the credentials/ folder.")
+    
+    creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
+    logger.info(f"Sheets API: Using service account credentials file: {creds_path}")
+    return gspread.authorize(creds)
 
 def _read_row_sync(worksheet: gspread.Worksheet, row_key: str) -> Dict[str, Any]:
     try:
@@ -67,8 +81,17 @@ def _update_row_sync(worksheet: gspread.Worksheet, row_key: str, status: str) ->
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-def _append_row_sync(worksheet: gspread.Worksheet, row_data: Dict[str, Any]) -> Dict[str, Any]:
+def _append_row_sync(worksheet: gspread.Worksheet, row_data: Any) -> Dict[str, Any]:
     try:
+        if isinstance(row_data, list):
+            # If the user passed a list, just append it directly
+            new_row = [str(item) for item in row_data]
+            worksheet.append_row(new_row)
+            return {
+                "status": "success",
+                "output": {"row_data": new_row}
+            }
+
         headers = worksheet.row_values(1)
         new_row = []
         for h in headers:
@@ -80,9 +103,10 @@ def _append_row_sync(worksheet: gspread.Worksheet, row_data: Dict[str, Any]) -> 
             
             new_row.append(str(val) if val is not None else "")
         
-        # If headers are empty or new_row is empty, use raw values if possible or just append
-        if not new_row and row_data:
-            new_row = list(row_data.values())
+        # If headers are empty or we failed to map ANY keys to the headers, just append raw values
+        is_empty_row = all(val == "" for val in new_row)
+        if (not headers or is_empty_row) and row_data:
+            new_row = [str(v) for v in row_data.values()]
 
         worksheet.append_row(new_row)
         return {
@@ -98,13 +122,16 @@ async def execute_sheets(action: str, params: Dict[str, Any], context: Optional[
     Bridges the async executor with synchronous gspread calls.
     """
     try:
-        client = await asyncio.to_thread(get_sheets_client)
+        client = await asyncio.to_thread(get_sheets_client, context)
+        ctx_creds = (context or {}).get("credentials", {}).get("sheets", {}) or (context or {}).get("credentials", {}).get("google", {})
         sheet_id = ctx_creds.get("spreadsheet_id") or os.getenv("GOOGLE_SHEETS_ID")
         if not sheet_id:
             raise ValueError("Spreadsheet ID Missing: Please provide a Spreadsheet ID in the 'Connect Tools' dashboard.")
             
         spreadsheet = await asyncio.to_thread(client.open_by_key, sheet_id)
         sheet_name = params.get("sheet_name", "Sheet1")
+        if sheet_name and sheet_name.startswith("{{"):
+            sheet_name = "Sheet1"
         worksheet = await asyncio.to_thread(spreadsheet.worksheet, sheet_name)
         
         result = None
@@ -119,6 +146,17 @@ async def execute_sheets(action: str, params: Dict[str, Any], context: Optional[
             
         elif action == "append_row":
             row_data = params.get("row_data", {})
+            if not row_data and params:
+                 # If row_data is empty but params has values, use params as row_data
+                 row_data = {k: v for k, v in params.items() if k not in ("sheet_name", "action")}
+            
+            # Add identifiable test data (timestamp)
+            from datetime import datetime
+            if isinstance(row_data, dict):
+                if "timestamp" not in row_data:
+                    row_data["timestamp"] = datetime.now().isoformat()
+            
+            logger.info(f"Appending row to {sheet_name}: {row_data}")
             result = await asyncio.to_thread(_append_row_sync, worksheet, row_data)
             
         else:

@@ -45,6 +45,12 @@ async def execute_workflow(request: ExecuteRequest) -> ExecuteResponse:
     Runs the DAG and returns results after all nodes complete.
     For real-time updates, use POST /execute/stream instead.
     """
+    # FRONTEND_PAYLOAD Capture
+    print("\n" + "="*50)
+    print("FRONTEND_TRIGGERED_EXECUTION")
+    print(f"FRONTEND_PAYLOAD = {request.model_dump_json(indent=2)}")
+    print("="*50 + "\n")
+
     logger.info(f"Execute request: {request.dag.workflow_name} ({len(request.dag.nodes)} nodes)")
 
     # Bridge to Grishma's execution engine via HTTP adapter
@@ -54,6 +60,9 @@ async def execute_workflow(request: ExecuteRequest) -> ExecuteResponse:
         dry_run=request.dry_run,
         credentials=request.credentials,
     )
+
+    # BACKEND_RECEIVED_PAYLOAD Trace
+    print(f"BACKEND_RECEIVED_PAYLOAD = {request.model_dump_json(indent=2)}\n")
 
     try:
         execution = await bridge.run()

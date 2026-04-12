@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type ToolStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
@@ -7,6 +7,7 @@ export interface ToolState {
   token: string;
   errorMsg?: string;
   detail?: string;
+  meta?: Record<string, string>;
 }
 
 export type ToolName = 'github' | 'jira' | 'slack' | 'sheets';
@@ -16,81 +17,95 @@ export interface ToolsContextType {
   connect: (tool: ToolName, credentialsJson: string) => Promise<void>;
   reset: (tool: ToolName) => void;
   allConnected: boolean;
+  refreshFromBackend: () => Promise<void>;
 }
 
 const DEFAULT: ToolState = { status: 'idle', token: '' };
+const API_BASE = '/api';
 
 const ToolsContext = createContext<ToolsContextType | null>(null);
 
-// ─── Validators ───────────────────────────────────────────────────
-// Each validator receives a parsed credentials object.
+// ─── Real Backend Verification ────────────────────────────────────────
+// Each validator calls the backend /integrations/verify/{tool} endpoint.
+// Credentials entered by the user (if any) are sent as the body.
+// The backend ALWAYS falls back to .env values, so pre-configured tools
+// will verify successfully even without user input.
 
-async function validateGitHub(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  // GitHub API requires the PAT as a Bearer token — Basic Auth is deprecated
-  const { password } = creds; // 'password' field = Personal Access Token
+async function callBackendVerify(
+  tool: ToolName,
+  extraBody: Record<string, string> = {},
+): Promise<{ ok: boolean; detail: string; meta?: Record<string, string> }> {
   try {
-    const res = await fetch('https://api.github.com/user', {
-      headers: {
-        Authorization: `token ${password}`,
-        'User-Agent': 'MCPGateway/1.0',
-        'Accept': 'application/vnd.github+json',
-      },
+    const res = await fetch(`${API_BASE}/integrations/verify/${tool}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(extraBody),
     });
-    if (res.ok) {
-      const data = await res.json();
-      return { ok: true, detail: `Signed in as @${data.login} (${data.name || data.login})` };
+    if (!res.ok) {
+      return { ok: false, detail: `Server error ${res.status}: ${res.statusText}` };
     }
-    const err = await res.json().catch(() => ({}));
-    return { ok: false, detail: `HTTP ${res.status}: ${(err as any).message || 'Authentication failed. Check your PAT.'}` };
+    const data = await res.json();
+    return {
+      ok: data.ok === true,
+      detail: data.detail ?? (data.ok ? 'Connected successfully' : 'Verification failed'),
+      meta: data,
+    };
   } catch (e) {
-    return { ok: false, detail: `Network error: ${String(e)}` };
+    return {
+      ok: false,
+      detail: `Cannot reach backend. Make sure the server is running on port 8000. (${String(e)})`,
+    };
   }
 }
 
-async function validateSlack(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  // Mock: Slack doesn't expose password login via API — validate account format
-  await new Promise(r => setTimeout(r, 900));
-  const { email, password } = creds;
-  if (email && password === 'admin123') {
-    return { ok: true, detail: `Slack account ${email} connected (mock validation)` };
-  }
-  return { ok: false, detail: 'Invalid credentials. Password must be \'admin123\' for this demo.' };
+async function validateGitHub(
+  creds: Record<string, string>,
+): Promise<{ ok: boolean; detail: string; meta?: Record<string, string> }> {
+  const body: Record<string, string> = {};
+  if (creds.password) body.token = creds.password;
+  if (creds.username) body.username = creds.username;
+  return callBackendVerify('github', body);
 }
 
-async function validateJira(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  // Mock validation: the user wants to securely collect the Account Password now
-  // without triggering real frontend API calls, saving them for the backend later.
-  const { domain, email, password } = creds;
-  if (!domain || !email || !password) return { ok: false, detail: 'Missing required configuration fields.' };
-
-  // Simulate network handshake
-  await new Promise(r => setTimeout(r, 1200));
-
-  if (password.length >= 6) {
-    return { ok: true, detail: `Signed into Jira workspace ${domain} as ${email}` };
-  }
-  
-  return { ok: false, detail: 'Invalid password. Must be at least 6 characters.' };
+async function validateSlack(
+  creds: Record<string, string>,
+): Promise<{ ok: boolean; detail: string; meta?: Record<string, string> }> {
+  const body: Record<string, string> = {};
+  if (creds.token) body.token = creds.token;
+  // Slack uses pre-configured bot token from .env — no user-provided token needed
+  return callBackendVerify('slack', body);
 }
 
-async function validateSheets(creds: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
-  // Mock: simulate Google account login
-  await new Promise(r => setTimeout(r, 800));
-  const { email, password } = creds;
-  if (email && password === 'admin123') {
-    return { ok: true, detail: `Google account ${email} connected (mock)` };
-  }
-  return { ok: false, detail: 'Invalid credentials. Password must be \'admin123\' for this demo.' };
+async function validateJira(
+  creds: Record<string, string>,
+): Promise<{ ok: boolean; detail: string; meta?: Record<string, string> }> {
+  const body: Record<string, string> = {};
+  if (creds.domain)   body.base_url = creds.domain.startsWith('http') ? creds.domain : `https://${creds.domain}`;
+  if (creds.email)    body.email    = creds.email;
+  if (creds.password) body.token    = creds.password;
+  return callBackendVerify('jira', body);
 }
 
-const VALIDATORS: Record<ToolName, (creds: Record<string, string>) => Promise<{ ok: boolean; detail: string }>> = {
+async function validateSheets(
+  creds: Record<string, string>,
+): Promise<{ ok: boolean; detail: string; meta?: Record<string, string> }> {
+  const body: Record<string, string> = {};
+  if (creds.sheet_id) body.sheet_id = creds.sheet_id;
+  if (creds.token) body.token = creds.token;
+  return callBackendVerify('sheets', body);
+}
+
+const VALIDATORS: Record<
+  ToolName,
+  (creds: Record<string, string>) => Promise<{ ok: boolean; detail: string; meta?: Record<string, string> }>
+> = {
   github: validateGitHub,
   slack:  validateSlack,
   jira:   validateJira,
   sheets: validateSheets,
 };
 
-// ─── Provider ─────────────────────────────────────────────────────
+// ─── Provider ─────────────────────────────────────────────────────────
 
 export const ToolsProvider = ({ children }: { children: ReactNode }) => {
   const [tools, setTools] = useState<Record<ToolName, ToolState>>({
@@ -100,33 +115,76 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
     sheets: { ...DEFAULT },
   });
 
+  // On mount: check which tools are pre-configured in the backend .env
+  // and auto-verify them so the dashboard shows them as "connected" immediately.
+  const refreshFromBackend = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/integrations/status`);
+      if (!res.ok) return;
+      const status = await res.json();
+
+      // For each tool that's pre-configured, kick off a background verify
+      const toolNames: ToolName[] = ['github', 'slack', 'jira', 'sheets'];
+      await Promise.all(
+        toolNames.map(async (tool) => {
+          if (status[tool]?.configured) {
+            // Mark as connecting first
+            setTools((prev) => ({
+              ...prev,
+              [tool]: { status: 'connecting', token: 'env-configured' },
+            }));
+            const result = await callBackendVerify(tool, {});
+            setTools((prev) => ({
+              ...prev,
+              [tool]: {
+                status: result.ok ? 'connected' : 'error',
+                token: 'env-configured',
+                detail: result.detail,
+                errorMsg: result.ok ? undefined : result.detail,
+                meta: result.meta,
+              },
+            }));
+          }
+        }),
+      );
+    } catch {
+      // Backend not reachable yet — silently ignore, user can connect manually
+    }
+  };
+
+  useEffect(() => {
+    refreshFromBackend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const connect = async (tool: ToolName, credentialsJson: string) => {
-    setTools(p => ({ ...p, [tool]: { status: 'connecting', token: credentialsJson } }));
+    setTools((p) => ({ ...p, [tool]: { status: 'connecting', token: credentialsJson } }));
 
     let creds: Record<string, string> = {};
     try { creds = JSON.parse(credentialsJson); } catch { creds = { token: credentialsJson }; }
 
-    const { ok, detail } = await VALIDATORS[tool](creds);
+    const result = await VALIDATORS[tool](creds);
 
-    setTools(p => ({
+    setTools((p) => ({
       ...p,
       [tool]: {
-        status: ok ? 'connected' : 'error',
+        status: result.ok ? 'connected' : 'error',
         token: credentialsJson,
-        detail,
-        errorMsg: ok ? undefined : detail,
+        detail: result.detail,
+        errorMsg: result.ok ? undefined : result.detail,
+        meta: result.meta,
       },
     }));
   };
 
   const reset = (tool: ToolName) => {
-    setTools(p => ({ ...p, [tool]: { ...DEFAULT } }));
+    setTools((p) => ({ ...p, [tool]: { ...DEFAULT } }));
   };
 
-  const allConnected = Object.values(tools).every(t => t.status === 'connected');
+  const allConnected = Object.values(tools).every((t) => t.status === 'connected');
 
   return (
-    <ToolsContext.Provider value={{ tools, connect, reset, allConnected }}>
+    <ToolsContext.Provider value={{ tools, connect, reset, allConnected, refreshFromBackend }}>
       {children}
     </ToolsContext.Provider>
   );

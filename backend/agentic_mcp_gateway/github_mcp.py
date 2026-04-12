@@ -1,25 +1,32 @@
 import os
+import json
 import httpx
 import base64
 from typing import Any, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 BASE_URL = "https://api.github.com"
 
 async def call_github_api(method: str, endpoint: str, data: Optional[dict] = None, params: Optional[dict] = None) -> dict:
     """Helper to call the real GitHub REST API."""
+    token = os.getenv("GITHUB_TOKEN")
     headers = {
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "Agentic-MCP-Gateway"
     }
-    if GITHUB_TOKEN:
-        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+    if token:
+        # Use 'Bearer' format which is modern and handles both Classic and Fine-grained PATs
+        headers["Authorization"] = f"Bearer {token}"
         
     async with httpx.AsyncClient() as client:
         url = f"{BASE_URL}{endpoint}"
-        response = await client.request(method, url, json=data, params=params, headers=headers)
+        print(f"DEBUG: GitHub API Call -> {method} {url}")
+        if data: print(f"DEBUG: Payload -> {json.dumps(data)}")
+        try:
+            response = await client.request(method, url, json=data, params=params, headers=headers)
+        except Exception as e:
+            raise Exception(f"GitHub Connection Error: {str(e)}")
         
         if response.status_code >= 400:
             try:
@@ -33,6 +40,8 @@ async def call_github_api(method: str, endpoint: str, data: Optional[dict] = Non
 async def get_repository(owner: str, repo: str) -> dict:
     data = await call_github_api("GET", f"/repos/{owner}/{repo}")
     return {
+        "id": data.get("id"),
+        "repo_id": data.get("id"),
         "repo_full_name": data.get("full_name"),
         "repo_default_branch": data.get("default_branch"),
         "repo_clone_url": data.get("clone_url"),
@@ -49,17 +58,41 @@ async def list_branches(owner: str, repo: str, per_page: int = 30) -> dict:
         "branch_count": len(data)
     }
 
-async def create_branch(owner: str, repo: str, branch_name: str, from_branch: str) -> dict:
-    # 1. Get SHA of from_branch
-    ref_data = await call_github_api("GET", f"/repos/{owner}/{repo}/git/refs/heads/{from_branch}")
+async def create_branch(owner: str, repo: str, branch_name: str, from_branch: Optional[str] = "main") -> dict:
+    # 1. Get SHA of from_branch with smart fallback
+    try:
+        ref_data = await call_github_api("GET", f"/repos/{owner}/{repo}/git/refs/heads/{from_branch}")
+    except Exception as e:
+        # If we failed to find 'main', try 'master' automatically
+        if from_branch == "main":
+            try:
+                ref_data = await call_github_api("GET", f"/repos/{owner}/{repo}/git/refs/heads/master")
+            except:
+                raise Exception(f"Could not find a base branch (tried 'main' and 'master') in {owner}/{repo}")
+        else:
+            raise e
+            
     sha = ref_data["object"]["sha"]
     
     # 2. Create new ref
     payload = {
-        "ref": f"refs/heads/{branch_name}",
-        "sha": sha
+        "ref": f"refs/heads/{branch_name.strip('/')}",
+        "sha": sha.strip()
     }
-    data = await call_github_api("POST", f"/repos/{owner}/{repo}/git/refs", data=payload)
+    try:
+        data = await call_github_api("POST", f"/repos/{owner}/{repo}/git/refs", data=payload)
+    except Exception as e:
+        if "404" in str(e):
+            # Self-diagnostic: Check if we can even see the repo
+            try:
+                test = await call_github_api("GET", f"/repos/{owner}/{repo}")
+                perm = test.get("permissions", {})
+                print(f"DIAGNOSTIC: Repo {owner}/{repo} is VISIBLE. Permissions: {perm}")
+                if not perm.get("push"):
+                    raise Exception(f"404 on branch creation likely due to MISSING PUSH PERMISSION for {owner}/{repo}")
+            except Exception as get_err:
+                print(f"DIAGNOSTIC: Repo {owner}/{repo} is NOT VISIBLE or accessible: {get_err}")
+        raise e
     return {
         "branch_name": branch_name,
         "branch_ref": data["ref"],
@@ -77,6 +110,7 @@ async def list_issues(owner: str, repo: str, state: str = "open", labels: Option
     
     result = {
         "issues_json": issues,
+        "issues": issues, # Alias for better LLM compatibility
         "issue_count": len(issues)
     }
     if issues:
@@ -221,7 +255,7 @@ async def list_commits(owner: str, repo: str, sha: Optional[str] = None, path: O
     if sha: params["sha"] = sha
     if path: params["path"] = path
     data = await call_github_api("GET", f"/repos/{owner}/{repo}/commits", params=params)
-    result = {"commit_count": len(data), "commits_json": data}
+    result = {"commit_count": len(data), "commits_json": data, "commits": data}
     if data:
         result.update({
             "latest_commit_sha": data[0]["sha"],
@@ -250,8 +284,8 @@ async def create_release(owner: str, repo: str, tag_name: str, name: str, body: 
 
 async def handle_github_tool(action: str, inputs: dict) -> dict:
     """Dispatcher for GitHub tools."""
-    owner = inputs.get("owner")
-    repo = inputs.get("repo")
+    owner = inputs.get("owner") or inputs.get("repo_owner") or inputs.get("github_owner")
+    repo = inputs.get("repo") or inputs.get("repo_name") or inputs.get("repository")
 
     # ── Flexible owner/repo resolution ─────────────────────────────────────────
     # The LLM often passes "owner/repo" as a single field under various key names.
@@ -266,6 +300,13 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
                 if len(parts) >= 2:
                     owner, repo = parts[0], parts[1]
                     break
+    
+    # Fallback to .env GITHUB_REPO if still not found
+    if not owner or not repo:
+        env_repo = os.getenv("GITHUB_REPO")
+        if env_repo and "/" in env_repo:
+            parts = env_repo.split("/")
+            owner, repo = parts[0], parts[1]
 
     if not owner or not repo:
         raise ValueError(
@@ -273,12 +314,26 @@ async def handle_github_tool(action: str, inputs: dict) -> dict:
             f"Received: {list(inputs.keys())}"
         )
 
+    # ── Canonical Resolution ──────────────────────────────────────────────────
+    # Force canonical name to avoid case-insensitive 404s on POST
+    try:
+        repo_data = await call_github_api("GET", f"/repos/{owner}/{repo}")
+        owner, repo = repo_data["owner"]["login"], repo_data["name"]
+        print(f"DEBUG: Resolved canonical path -> {owner}/{repo}")
+    except:
+        # Fallback to provided names if GET fails (e.g. repo truly missing)
+        pass
+
     if action == "get_repository":
         return await get_repository(owner, repo)
     elif action == "list_branches":
         return await list_branches(owner, repo, inputs.get("per_page", 30))
     elif action == "create_branch":
-        return await create_branch(owner, repo, inputs.get("branch_name"), inputs.get("from_branch"))
+        branch_name = inputs.get("branch_name") or inputs.get("name")
+        from_branch = inputs.get("from_branch") or inputs.get("base") or "main"
+        if not branch_name:
+             raise ValueError("Missing 'branch_name' for create_branch")
+        return await create_branch(owner, repo, branch_name, from_branch)
     elif action == "get_branch":
         return await get_branch(owner, repo, inputs.get("branch"))
     elif action == "list_issues":

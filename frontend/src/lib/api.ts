@@ -41,7 +41,10 @@ async function fetchWithRetry(
 
 // ─── API Functions ───────────────────────────────────────────────────────────
 
-export async function createWorkflow(input: string): Promise<{ workflow_id: string }> {
+export async function createWorkflow(
+  input: string,
+  credentials?: Record<string, any>
+): Promise<{ workflow_id: string }> {
   let resolvedId: string;
 
   if (USE_MOCK) {
@@ -101,7 +104,8 @@ export async function createWorkflow(input: string): Promise<{ workflow_id: stri
       body: JSON.stringify({ 
         dag: planData.dag,
         auto_approve: true, // Default to true for zero-latency hackathon demo
-        dry_run: false
+        dry_run: false,
+        credentials: credentials || {}
       }),
     });
     if (!execRes.ok) throw new Error(`Execution failed: ${execRes.statusText}`);

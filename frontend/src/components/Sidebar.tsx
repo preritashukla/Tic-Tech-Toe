@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import { LayoutDashboard, Activity, GitBranch, MessageSquare, Kanban, Server, FileSpreadsheet, LogOut, Code2, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Activity, GitBranch, MessageSquare, Kanban, Server, FileSpreadsheet, LogOut, Code2, BarChart3, Github as GithubIcon, CheckCircle2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
+import { useTools } from '@/context/ToolsContext';
 
 const devNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -14,6 +15,7 @@ const devNavItems = [
 export default function Sidebar() {
   const pathname = useLocation().pathname;
   const { user, logout } = useAuth();
+  const { tools } = useTools();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -80,6 +82,34 @@ export default function Sidebar() {
               );
             })}
           </nav>
+        </div>
+
+        {/* Integration Status */}
+        <div className="px-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-2">Integrations</p>
+          <div className="flex flex-col gap-2 px-2">
+            {[
+              { id: 'github', name: 'GitHub', icon: GithubIcon, color: 'text-purple-400' },
+              { id: 'jira', name: 'Jira', icon: Kanban, color: 'text-blue-400' },
+              { id: 'slack', name: 'Slack', icon: MessageSquare, color: 'text-green-400' },
+              { id: 'sheets', name: 'Sheets', icon: FileSpreadsheet, color: 'text-yellow-400' },
+            ].map((tool) => {
+              const connected = tools[tool.id as any]?.status === 'connected';
+              return (
+                <div key={tool.id} className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <tool.icon size={14} className={connected ? tool.color : 'text-muted-foreground/40'} />
+                    <span className={`text-xs font-medium transition-colors ${connected ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+                      {tool.name}
+                    </span>
+                  </div>
+                  {connected && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
 

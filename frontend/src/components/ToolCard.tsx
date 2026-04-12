@@ -1,3 +1,8 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTools } from '@/context/ToolsContext';
+import { useAuth } from '@/context/AuthContext';
+
 function ToolCard({ tool, icon, label, description, fields, isOAuth, authUrl }) {
   const { tools, connect, reset } = useTools();
   const { user } = useAuth();
@@ -15,13 +20,14 @@ function ToolCard({ tool, icon, label, description, fields, isOAuth, authUrl }) 
 
   const isConnecting = status === 'connecting';
   const isConnected = status === 'connected';
-  const allFilled = fields.every(f => values[f.key]?.trim());
+  // Fields are optional — if all empty, the backend uses .env credentials
+  const allFilled = true; // Always allow connect; backend falls back to .env
 
   const handleConnect = () => {
     if (isOAuth) {
       // For Google Sheets, we still need the Spreadsheet ID
       if (tool === 'sheets') {
-        const spreadsheetId = values['spreadsheet_id'];
+        const spreadsheetId = values['sheet_id']; // Using 'sheet_id' as per teammate's naming
         if (spreadsheetId) {
           localStorage.setItem('google_sheets_id', spreadsheetId);
         }
@@ -31,7 +37,7 @@ function ToolCard({ tool, icon, label, description, fields, isOAuth, authUrl }) 
       return;
     }
 
-    if (!allFilled || isConnecting) return;
+    if (isConnecting) return;
     connect(tool, JSON.stringify(values));
   };
 

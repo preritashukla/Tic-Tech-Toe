@@ -186,3 +186,9 @@ class ContextManager:
         self._conversation_history.clear()
         self._execution_metadata.clear()
         logger.info("Context manager cleared")
+
+    def get_all(self) -> dict:
+        """Return all stored node outputs as a flat dict (node_id -> output dict).
+        Used by integration handlers that need cross-node context."""
+        return dict(self._node_outputs)
+

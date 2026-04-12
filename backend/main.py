@@ -29,6 +29,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.plan import router as plan_router
 from routers.execute import router as execute_router
 from routers.auth import router as auth_router
+from routers.integrations import router as integrations_router
+from routers.slack import router as slack_router
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
 from api_schemas.execution import WorkflowStatus
@@ -111,6 +113,8 @@ app.add_middleware(
 app.include_router(plan_router)
 app.include_router(execute_router)
 app.include_router(auth_router)
+app.include_router(integrations_router)
+app.include_router(slack_router)
 
 
 # ─── Root Endpoint ────────────────────────────────────────────────
@@ -189,13 +193,14 @@ async def get_execution_status(id: str):
                 "tool": r.tool,
                 "action": r.action,
                 "status": r.status.value,
-                "outputs": r.output,
+                "output": r.output,
                 "error": r.error,
                 "duration": f"{round(r.duration_ms / 1000, 1)}s" if r.duration_ms > 0 else None,
                 "retries": r.retries
             }
             for r in execution.node_results.values()
         ],
+        "audit_log": get_audit_logger().get_logs_by_execution(execution.execution_id),
         "edges": [
             {"source": dep, "target": n.id}
             for n in execution.dag.nodes
@@ -205,7 +210,7 @@ async def get_execution_status(id: str):
         "succeeded": execution.succeeded,
         "failed": execution.failed,
         "skipped": execution.skipped,
-        "timestamp": execution.started_at
+        "created_at": execution.started_at
     }
 
 

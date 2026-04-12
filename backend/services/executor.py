@@ -135,15 +135,20 @@ class ExecutionBridge:
         })
 
         try:
-            try:
-                # Try to use Grishma's production executor
-                await self._run_with_grishma_executor(exec_id)
-            except ImportError:
-                logger.warning("Grishma's executor not importable — using internal fallback runner")
-                await self._run_internal_fallback(exec_id)
-            except Exception as e:
-                logger.error(f"Execution engine error: {e}")
-                self.audit.log_error(exec_id, str(e))
+            # Try to use Grishma's production executor
+            print(f"EXECUTION_PATH = Production (agentic_executor.DAGExecutor)")
+            await self._run_with_grishma_executor(exec_id)
+        except ImportError:
+            print(f"EXECUTION_PATH = Fallback (internal runner) [ImportError]")
+            logger.warning("Grishma's executor not importable — using internal fallback runner")
+            await self._run_internal_fallback(exec_id)
+        except Exception as e:
+            # Any other exception from Grishma's executor → fall back to internal runner
+            # This ensures real integrations still fire even if the production executor fails
+            print(f"EXECUTION_PATH = Fallback (internal runner) [Exception: {e}]")
+            logger.warning(f"Grishma's executor threw exception ({e}) — falling back to internal runner")
+            self.audit.log_error(exec_id, f"Production executor failed, using fallback: {e}")
+            await self._run_internal_fallback(exec_id)
         finally:
             # Finalize results collection regardless of success/error
             self.execution.mark_complete()
@@ -182,13 +187,16 @@ class ExecutionBridge:
         dag_dict = _convert_dag_for_grishma(self.dag)
         logger.info(f"[{exec_id}] Using Grishma's DAGExecutor ({len(dag_dict['nodes'])} nodes)")
 
-        executor = GrishmaExecutor(dag_dict, credentials=self.credentials, auto_approve=self.auto_approve)
+        executor = GrishmaExecutor(dag_dict, credentials=self.credentials, 
+                                   auto_approve=self.auto_approve, context=self.context)
         await executor.run()
 
         # Collect results from Grishma's executor nodes
         for node_id, node in executor.nodes.items():
             status = NodeStatus.SUCCESS if node_id in executor.completed else (
-                NodeStatus.FAILED if node_id in executor.failed else NodeStatus.SKIPPED
+                NodeStatus.FAILED if node_id in executor.failed else (
+                    NodeStatus.SKIPPED if node_id in executor.skipped else NodeStatus.PENDING
+                )
             )
             result = NodeExecutionResult(
                 node_id=node_id,
@@ -206,10 +214,17 @@ class ExecutionBridge:
             if status == NodeStatus.SUCCESS and hasattr(node, "output") and node.output:
                 self.context.store(node_id, node.output)
 
-            self.audit.log_tool_success(
-                exec_id, node_id, node.tool, node.action,
-                node.output if hasattr(node, "output") else {}, 0,
-            ) if status == NodeStatus.SUCCESS else None
+            if status == NodeStatus.SUCCESS:
+                self.audit.log_tool_success(
+                    exec_id, node_id, node.tool, node.action,
+                    node.output if hasattr(node, "output") else {}, 0,
+                )
+            elif status == NodeStatus.FAILED:
+                self.audit.log_tool_failure(
+                    exec_id, node_id, node.tool, node.action,
+                    node.error if hasattr(node, "error") else "Unknown error",
+                    node.attempts if hasattr(node, "attempts") else 1
+                )
 
             await self._emit("node_update", {
                 "node_id": node_id,
@@ -230,6 +245,7 @@ class ExecutionBridge:
         node_map = self.dag.node_map()
         completed: set[str] = set()
         failed: set[str] = set()
+        skipped: set[str] = set()
 
         # Topological layers for parallel execution
         layers = self.dag.get_execution_order()
@@ -240,20 +256,21 @@ class ExecutionBridge:
             for node_id in layer:
                 node = node_map[node_id]
                 # Skip if upstream failed
-                if any(dep in failed for dep in node.depends_on):
+                if any(dep in failed or dep in skipped for dep in node.depends_on):
                     self._record_result(node_id, node, NodeStatus.SKIPPED,
                                         error="upstream dependency failed")
+                    skipped.add(node_id)
                     await self._emit("node_skipped", {"node_id": node_id,
                                                        "reason": "upstream failed"})
                     continue
-                tasks.append(self._execute_fallback_node(exec_id, node, completed, failed))
+                tasks.append(self._execute_fallback_node(exec_id, node, completed, failed, skipped))
 
             if tasks:
                 await asyncio.gather(*tasks)
 
     async def _execute_fallback_node(
         self, exec_id: str, node: DAGNode,
-        completed: set, failed: set,
+        completed: set, failed: set, skipped: set
     ) -> None:
         """Execute a single node using mock dispatch (fallback mode)."""
         import random
@@ -275,7 +292,7 @@ class ExecutionBridge:
         # HITL check
         if node.requires_approval and not self.auto_approve:
             self._record_result(node_id, node, NodeStatus.SKIPPED, error="HITL not approved")
-            failed.add(node_id)
+            skipped.add(node_id)
             self.audit.log_hitl_request(exec_id, node_id, node.tool, node.action)
             return
 
@@ -291,7 +308,7 @@ class ExecutionBridge:
 
                 if node.tool in ["slack", "slack_mcp"]:
                     from services.integrations.slack_integration import execute_slack
-                    result = await execute_slack(node.action, resolved_params, getattr(self.context, '__dict__', {}))
+                    result = await execute_slack(node.action, resolved_params, self.context.get_all())
                     if result.get("status") == "error":
                         raise Exception(result.get("error"))
                     output = result.get("output", {})
@@ -302,8 +319,15 @@ class ExecutionBridge:
                         raise Exception(sheets_res.get("error"))
                     output = sheets_res.get("output", sheets_res.get("data", {}))
                 elif node.tool in ["github", "github_mcp"]:
-                    from agentic_mcp_gateway.github_mcp import handle_github_tool
-                    output = await handle_github_tool(node.action, resolved_params)
+                    from agentic_mcp_gateway.agentic_executor import dispatch_mcp as _dispatch
+                    result = await _dispatch("github", node.action, resolved_params, self.credentials)
+                    output = result if isinstance(result, dict) else {"result": str(result)}
+                elif node.tool in ["jira", "jira_mcp"]:
+                    from services.integrations.jira_integration import execute_jira
+                    jira_res = await execute_jira(node.action, resolved_params, self.context.get_all())
+                    if jira_res.get("status") == "error":
+                        raise Exception(jira_res.get("error"))
+                    output = jira_res.get("output", jira_res)
                 else:
                     output = _mock_tool_output(node.tool, node.action, resolved_params)
                 

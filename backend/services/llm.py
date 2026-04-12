@@ -76,7 +76,12 @@ class LLMService:
 
                 user_content = user_input
                 if context:
-                    user_content += f"\n\nAdditional context: {json.dumps(context)}"
+                    history = context.get("history", [])
+                    if history:
+                        hist_str = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in history])
+                        user_content = f"=== Previous Conversation ===\n{hist_str}\n=============================\n\nUser: {user_input}"
+                    else:
+                        user_content += f"\n\nAdditional context: {json.dumps(context)}"
 
                 # Call Groq API
                 start_time = time.time()
@@ -246,6 +251,11 @@ class LLMService:
                 elif "params" in node and "inputs" not in node:
                     node["inputs"] = node["params"]
 
+                # Force HITL for sensitive operations (create branch, create PR, etc.)
+                sensitive_actions = ["create_branch", "create_pull_request", "create_release"]
+                if node.get("action") in sensitive_actions:
+                    node["requires_approval"] = True
+                
                 # Ensure depends_on is a list
                 if "depends_on" not in node:
                     node["depends_on"] = []
