@@ -16,7 +16,7 @@ import ProtectedRoute            from "@/components/ProtectedRoute";
 import Landing          from "./pages/Landing";
 import LoginPage        from "./pages/LoginPage";
 import ConnectTools     from "./pages/ConnectTools";
-import AgenticChatUI    from "./AgenticChatUI";
+import Dashboard        from "./pages/Dashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import NotFound         from "./pages/NotFound";
 import Logs             from "./pages/Logs";
@@ -39,7 +39,7 @@ const RoleRouter = () => {
   if (user?.role === 'manager') {
     return <Layout><ManagerDashboard /></Layout>;
   }
-  return <AgenticChatUI />;
+  return <Dashboard />;
 };
 
 const App = () => (
