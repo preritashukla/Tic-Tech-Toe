@@ -126,11 +126,11 @@ class ExecutionBridge:
         start_time = time.time()
 
         # Save to store so /status endpoint can find it
-        get_execution_store().save(self.execution)
+        await get_execution_store().save(self.execution)
 
         self.audit.log_workflow_start(exec_id, self.dag.workflow_name, str(self.dag.nodes))
         self.execution.status = WorkflowStatus.RUNNING
-        get_execution_store().save(self.execution)
+        await get_execution_store().save(self.execution)
         await self._emit("workflow_start", {
             "execution_id": exec_id,
             "workflow_name": self.dag.workflow_name,
@@ -155,7 +155,7 @@ class ExecutionBridge:
         finally:
             # Finalize results collection regardless of success/error
             self.execution.mark_complete()
-            get_execution_store().save(self.execution)
+            await get_execution_store().save(self.execution)
 
         # Finalize
         elapsed_ms = (time.time() - start_time) * 1000

@@ -190,11 +190,12 @@ async def get_execution_status(id: str = Query(..., description="Execution ID"))
     Also searches by workflow_id if execution_id not found.
     """
     store = get_execution_store()
-    execution = store.get(id)
+    execution = await store.fetch_from_db(id)
     
     # If not found by execution_id, try searching by workflow_id
     if not execution:
-        for exec_id, exec_record in store.get_all().items():
+        executions = await store.refresh_all()
+        for exec_id, exec_record in executions.items():
             if exec_record.execution_id == id or (hasattr(exec_record, 'dag') and exec_record.dag.workflow_id == id):
                 execution = exec_record
                 break

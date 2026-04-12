@@ -33,10 +33,17 @@ from routers.integrations import router as integrations_router
 from routers.slack import router as slack_router
 from services.audit import get_audit_logger
 from services.execution_store import get_execution_store
+from services.mongodb_client import MongoDBClient
 from api_schemas.execution import WorkflowStatus
 
 # ─── Environment & Logging ─────────────────────────────────────────
-load_dotenv()
+# Load .env from backend/ or from parent project root
+if os.path.exists(".env"):
+    load_dotenv(".env")
+elif os.path.exists("../.env"):
+    load_dotenv("../.env")
+else:
+    load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -77,9 +84,13 @@ async def lifespan(app: FastAPI):
     logger.info("    GET  /audit/logs     → Audit trail")
     logger.info("─" * 60)
 
+    # Initialize MongoDB if URI is provided
+    await MongoDBClient.connect()
+
     yield
 
     # ── Shutdown ──
+    await MongoDBClient.close()
     logger.info("Agentic MCP Gateway — Shutting down")
 
 
@@ -175,7 +186,7 @@ async def health_check():
 async def get_execution_status(id: str):
     """Retrieve the current status of a workflow execution by ID."""
     store = get_execution_store()
-    execution = store.get(id)
+    execution = await store.fetch_from_db(id)
     
     if not execution:
         # If not found in live store, check audit logs or return 404
@@ -218,7 +229,7 @@ async def get_execution_status(id: str):
 async def get_active_workflows():
     """Retrieve all currently active workflow executions."""
     store = get_execution_store()
-    executions = store.get_all()
+    executions = await store.refresh_all()
     return {
         "workflows": [
             {
@@ -255,7 +266,7 @@ async def websocket_endpoint(websocket: WebSocket, execution_id: str):
     try:
         while True:
             # Check for updates in the store
-            execution = store.get(execution_id)
+            execution = await store.fetch_from_db(execution_id)
             if execution:
                 # Send current status
                 await websocket.send_json({

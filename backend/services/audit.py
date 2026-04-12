@@ -10,9 +10,11 @@ from __future__ import annotations
 import json
 import time
 import logging
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Optional
 from enum import Enum
+from services.mongodb_client import MongoDBClient
 
 logger = logging.getLogger("mcp_gateway.audit")
 
@@ -225,6 +227,17 @@ class AuditLogger:
     def _record(self, event_type: AuditEventType, details: dict[str, Any], **kwargs) -> None:
         entry = AuditEntry(event_type=event_type, details=details, **kwargs)
         self._entries.append(entry)
+
+        # Fire-and-forget to MongoDB
+        db = MongoDBClient.get_db()
+        if db:
+            try:
+                # We use create_task because this method is called from synchronous context
+                # and we don't want to block the execution flow for logging.
+                asyncio.create_task(db.audit_logs.insert_one(entry.to_dict()))
+            except Exception as e:
+                logger.error(f"Failed to queue audit log to MongoDB: {e}")
+
         logger.debug(f"[AUDIT] {event_type.value}: {json.dumps(details)[:200]}")
 
     @staticmethod
