@@ -42,7 +42,7 @@ class ExecutionStore:
         
         # 2. Persist to MongoDB if available
         db = MongoDBClient.get_db()
-        if db:
+        if db is not None:
             try:
                 await db.executions.replace_one(
                     {"execution_id": execution.execution_id},
@@ -69,7 +69,7 @@ class ExecutionStore:
     async def fetch_from_db(self, execution_id: str) -> Optional[WorkflowExecution]:
         """Asynchronous fetch from MongoDB with cache update."""
         db = MongoDBClient.get_db()
-        if not db:
+        if db is None:
             return self.get(execution_id)
             
         try:
@@ -92,7 +92,7 @@ class ExecutionStore:
     async def refresh_all(self) -> Dict[str, WorkflowExecution]:
         """Refresh memory cache from MongoDB."""
         db = MongoDBClient.get_db()
-        if not db:
+        if db is None:
             return self.get_all()
 
         try:

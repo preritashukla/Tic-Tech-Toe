@@ -230,7 +230,7 @@ class AuditLogger:
 
         # Fire-and-forget to MongoDB
         db = MongoDBClient.get_db()
-        if db:
+        if db is not None:
             try:
                 # We use create_task because this method is called from synchronous context
                 # and we don't want to block the execution flow for logging.

@@ -35,7 +35,7 @@ class MongoDBClient:
     @classmethod
     async def close(cls):
         """Close MongoDB connection."""
-        if cls._client:
+        if cls._client is not None:
             cls._client.close()
             logger.info("MongoDB connection closed.")
 
