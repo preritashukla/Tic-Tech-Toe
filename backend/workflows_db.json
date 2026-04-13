@@ -13564,5 +13564,887 @@
     "succeeded": 3,
     "failed": 0,
     "skipped": 0
+  },
+  "exec-a599236a3bf3": {
+    "execution_id": "exec-a599236a3bf3",
+    "workflow_name": "Send Message to #all-daiict",
+    "dag": {
+      "workflow_name": "Send Message to #all-daiict",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "System is live!"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775996998.843659",
+          "message_text": "System is live!",
+          "csv_uploaded": false,
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Send a message to #all-daiict on Slack: 'System is live!'"
+      }
+    ],
+    "started_at": "2026-04-12T12:29:57.942369+00:00",
+    "completed_at": "2026-04-12T12:29:58.967900+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-90ecd4a016c1": {
+    "execution_id": "exec-90ecd4a016c1",
+    "workflow_name": "Send Message to #all-daiict",
+    "dag": {
+      "workflow_name": "Send Message to #all-daiict",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "System is live!"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775997041.988069",
+          "message_text": "System is live!",
+          "csv_uploaded": false,
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Send a message to #all-daiict on Slack: 'System is live!'"
+      }
+    ],
+    "started_at": "2026-04-12T12:30:41.095499+00:00",
+    "completed_at": "2026-04-12T12:30:42.117103+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-214600bee615": {
+    "execution_id": "exec-214600bee615",
+    "workflow_name": "Fetch GitHub Commits and Post to Slack",
+    "dag": {
+      "workflow_name": "Fetch GitHub Commits and Post to Slack",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "list_commits",
+          "params": {
+            "repo": "preritashukla/Tic-Tech-Toe",
+            "count": 10,
+            "user_confirmed": true
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        },
+        {
+          "id": "node_2",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "Latest GitHub Commits"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.list_commits",
+        "tool": "github",
+        "action": "list_commits",
+        "status": "success",
+        "output": {
+          "summary": "There is no API response provided. Please provide the API response, and I'll summarize it into a concise JSON object.",
+          "commit_count": 10,
+          "commits_json": "[Technical data truncated \u2014 See summary]",
+          "commits": "[Technical data truncated \u2014 See summary]",
+          "latest_commit_sha": "3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "latest_commit_msg": "chore: update gitignore to exclude local logs and data files",
+          "latest_commit_author": "Grishma Makwana",
+          "latest_commit_date": "2026-04-12T12:25:54Z"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775997104.178939",
+          "message_text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`3e2887b` Grishma Makwana \u2014 chore: update gitignore to exclude local logs and data files\n`bead329` Grishma Makwana \u2014 fix: resolve NotImplementedError by comparing Mong",
+          "csv_uploaded": false,
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Fetch latest GitHub commits and post a summary to Slack #all-daiict"
+      }
+    ],
+    "started_at": "2026-04-12T12:31:42.415259+00:00",
+    "completed_at": "2026-04-12T12:31:44.582838+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-895172cf0e30": {
+    "execution_id": "exec-895172cf0e30",
+    "workflow_name": "Send Message to #all-daiict",
+    "dag": {
+      "workflow_name": "Send Message to #all-daiict",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict",
+            "message": "System is live!"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775998083.460039",
+          "message_text": "System is live!",
+          "csv_uploaded": false,
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Send a message to #all-daiict on Slack: 'System is live!'"
+      }
+    ],
+    "started_at": "2026-04-12T12:48:02.741489+00:00",
+    "completed_at": "2026-04-12T12:48:03.762769+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-f8e22a337bb7": {
+    "execution_id": "exec-f8e22a337bb7",
+    "workflow_name": "Fetch GitHub Commits and Post to Slack",
+    "dag": {
+      "workflow_name": "Fetch GitHub Commits and Post to Slack",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "list_commits",
+          "params": {
+            "repo": "preritashukla/Tic-Tech-Toe",
+            "user_confirmed": true
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        },
+        {
+          "id": "node_2",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.list_commits",
+        "tool": "github",
+        "action": "list_commits",
+        "status": "success",
+        "output": {
+          "summary": "There is no API response provided. Please provide the API response, and I'll summarize it into a concise JSON object.",
+          "commit_count": 10,
+          "commits_json": "[Technical data truncated \u2014 See summary]",
+          "commits": "[Technical data truncated \u2014 See summary]",
+          "latest_commit_sha": "3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "latest_commit_msg": "chore: update gitignore to exclude local logs and data files",
+          "latest_commit_author": "Grishma Makwana",
+          "latest_commit_date": "2026-04-12T12:25:54Z"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775998243.429819",
+          "message_text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`3e2887b` Grishma Makwana \u2014 chore: update gitignore to exclude local logs and data files\n`bead329` Grishma Makwana \u2014 fix: resolve NotImplementedError by comparing Mong",
+          "csv_uploaded": false,
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Fetch latest GitHub commits and post a summary to Slack #all-daiict"
+      }
+    ],
+    "started_at": "2026-04-12T12:50:41.984332+00:00",
+    "completed_at": "2026-04-12T12:50:43.888138+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-57ba0703bc04": {
+    "execution_id": "exec-57ba0703bc04",
+    "workflow_name": "Create Fix Branch",
+    "dag": {
+      "workflow_name": "Create Fix Branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "get_current_branch",
+          "params": {
+            "user_confirmed": true
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        },
+        {
+          "id": "node_2",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "fix/TIC-1",
+            "user_confirmed": true
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.get_current_branch",
+        "tool": "github",
+        "action": "get_current_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "main",
+          "branch_sha": "3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "branch_commit_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/commits/3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "branch_protected": false,
+          "summary": "Action github.get_current_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "fix/TIC-1-8306",
+          "branch_ref": "refs/heads/fix/TIC-1-8306",
+          "branch_sha": "3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/fix/TIC-1-8306",
+          "branch_html_url": "https://github.com/preritashukla/Tic-Tech-Toe/tree/fix/TIC-1-8306",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Fetch latest GitHub commits and post a summary to Slack #all-daiict"
+      },
+      {
+        "role": "assistant",
+        "content": "Workflow Completed Successfully"
+      },
+      {
+        "role": "user",
+        "content": "Hello! I'm Agentic MCP, your intelligent workflow orchestrator. I'd be happy to help you with your task. What do you need assistance with?"
+      },
+      {
+        "role": "assistant",
+        "content": "Hello! I'm Agentic MCP, your intelligent workflow orchestrator. I'd be happy to help you with your task. What do you need assistance with?"
+      },
+      {
+        "role": "user",
+        "content": "> \"Do you want to perform this in the master repo (preritashukla/Tic-Tech-Toe)?\""
+      },
+      {
+        "role": "assistant",
+        "content": "> \"Do you want to perform this in the master repo (preritashukla/Tic-Tech-Toe)?\""
+      },
+      {
+        "role": "user",
+        "content": "yes"
+      }
+    ],
+    "started_at": "2026-04-12T12:51:44.438039+00:00",
+    "completed_at": "2026-04-12T12:51:46.907498+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-194dd2e98e2d": {
+    "execution_id": "exec-194dd2e98e2d",
+    "workflow_name": "Create helloWorld Branch",
+    "dag": {
+      "workflow_name": "Create helloWorld Branch",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "create_branch",
+          "params": {
+            "branch_name": "helloWorld",
+            "user_confirmed": true
+          },
+          "depends_on": [],
+          "requires_approval": true,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.create_branch",
+        "tool": "github",
+        "action": "create_branch",
+        "status": "success",
+        "output": {
+          "branch_name": "helloWorld",
+          "branch_ref": "refs/heads/helloWorld",
+          "branch_sha": "3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "branch_url": "https://api.github.com/repos/preritashukla/Tic-Tech-Toe/git/refs/heads/helloWorld",
+          "branch_html_url": "https://github.com/preritashukla/Tic-Tech-Toe/tree/helloWorld",
+          "summary": "Action github.create_branch completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "create a branch name helloWorld"
+      }
+    ],
+    "started_at": "2026-04-12T12:52:37.869032+00:00",
+    "completed_at": "2026-04-12T12:52:38.860519+00:00",
+    "total_nodes": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exec-07ce4b1d501b": {
+    "execution_id": "exec-07ce4b1d501b",
+    "workflow_name": "Create Jira Ticket and Upload File to Slack",
+    "dag": {
+      "workflow_name": "Create Jira Ticket and Upload File to Slack",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "jira",
+          "action": "create_issue",
+          "params": {
+            "issue_title": "Rollback Demo"
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        },
+        {
+          "id": "node_2",
+          "tool": "slack",
+          "action": "upload_file",
+          "params": {
+            "file_path": "/Desktop/this_file_does_not_exist.txt"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "partial",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "jira.create_issue",
+        "tool": "jira",
+        "action": "create_issue",
+        "status": "success",
+        "output": {
+          "key": "SCRUM-95",
+          "id": "10167",
+          "issue_id": "SCRUM-95",
+          "url": "https://agenticmcpgateway.atlassian.net/browse/SCRUM-95",
+          "summary": "New Issue"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "slack.upload_file",
+        "tool": "slack",
+        "action": "upload_file",
+        "status": "failed",
+        "output": {},
+        "error": "File not found: /Desktop/this_file_does_not_exist.txt",
+        "duration_ms": 0.0,
+        "retries": 2,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "rollback_node_1": {
+        "node_id": "rollback_node_1",
+        "node_name": "\ud83d\udd04 Rollback: node_1",
+        "tool": "jira",
+        "action": "rollback",
+        "status": "success",
+        "output": {},
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Create a Jira ticket titled 'Rollback Demo', and then try to upload a file to Slack from the path '/Desktop/this_file_does_not_exist.txt'."
+      }
+    ],
+    "started_at": "2026-04-12T12:56:05.323555+00:00",
+    "completed_at": "2026-04-12T12:56:10.860893+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 1,
+    "skipped": 0
+  },
+  "exec-777e2f9517f8": {
+    "execution_id": "exec-777e2f9517f8",
+    "workflow_name": "Fetch GitHub Commits and Post to Slack",
+    "dag": {
+      "workflow_name": "Fetch GitHub Commits and Post to Slack",
+      "nodes": [
+        {
+          "id": "node_1",
+          "tool": "github",
+          "action": "list_commits",
+          "params": {
+            "repo": "preritashukla/Tic-Tech-Toe",
+            "user_confirmed": true
+          },
+          "depends_on": [],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        },
+        {
+          "id": "node_2",
+          "tool": "slack",
+          "action": "send_message",
+          "params": {
+            "channel": "#all-daiict"
+          },
+          "depends_on": [
+            "node_1"
+          ],
+          "requires_approval": false,
+          "retry": {
+            "max_attempts": 3,
+            "backoff_factor": 2.0,
+            "initial_delay": 1.0,
+            "timeout": 10
+          },
+          "name": null,
+          "mock_output": null,
+          "timeout_ms": null
+        }
+      ],
+      "description": null,
+      "workflow_id": null,
+      "execution_layers": null,
+      "context_refs": null
+    },
+    "status": "completed",
+    "node_results": {
+      "node_1": {
+        "node_id": "node_1",
+        "node_name": "github.list_commits",
+        "tool": "github",
+        "action": "list_commits",
+        "status": "success",
+        "output": {
+          "summary": "There is no API response provided. Please provide the API response, and I'll summarize it into a concise JSON object.",
+          "commit_count": 10,
+          "commits_json": "[Technical data truncated \u2014 See summary]",
+          "commits": "[Technical data truncated \u2014 See summary]",
+          "latest_commit_sha": "3e2887b880a5fd747055ed8d3b6bf741677ba410",
+          "latest_commit_msg": "chore: update gitignore to exclude local logs and data files",
+          "latest_commit_author": "Grishma Makwana",
+          "latest_commit_date": "2026-04-12T12:25:54Z"
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "node_name": "slack.send_message",
+        "tool": "slack",
+        "action": "send_message",
+        "status": "success",
+        "output": {
+          "ok": true,
+          "channel": "C0AT2NMEC2C",
+          "ts": "1775998616.079709",
+          "message_text": "\ud83d\udccb *Commit Summary* \u2014 10 commits\n\n`3e2887b` Grishma Makwana \u2014 chore: update gitignore to exclude local logs and data files\n`bead329` Grishma Makwana \u2014 fix: resolve NotImplementedError by comparing Mong",
+          "csv_uploaded": false,
+          "summary": "Action slack.send_message completed successfully."
+        },
+        "error": null,
+        "duration_ms": 0.0,
+        "retries": 0,
+        "started_at": null,
+        "completed_at": null,
+        "requires_approval": false,
+        "approved": null
+      }
+    },
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "Fetch latest GitHub commits and post a summary to Slack #all-daiict"
+      }
+    ],
+    "started_at": "2026-04-12T12:56:54.416508+00:00",
+    "completed_at": "2026-04-12T12:56:56.526005+00:00",
+    "total_nodes": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
   }
 }

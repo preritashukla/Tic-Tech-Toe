@@ -473,6 +473,8 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('agentic_chats') || '[]'); } catch { return []; }
   });
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+
 
   // Capture OAuth credentials from URL on mount
   useEffect(() => {
@@ -566,26 +568,27 @@ export default function App() {
     const content = (text || input).trim();
     if (!content) return;
 
+    const userMsgId = Date.now();
+    const thinkingId = userMsgId + 1;
+    const newUserMsg = { id: userMsgId, role: "user", content };
+    const thinkingMsg = {
+      id: thinkingId, role: "assistant",
+      thinking: "🧠 Generating execution plan via LLM…",
+      content: "", isThinking: true,
+    };
+
     if (editingMsg) {
       const idx = messages.findIndex((m: any) => m.id === editingMsg.id);
       const sliced = messages.slice(0, idx);
-      const newUserMsg = { id: Date.now(), role: "user", content };
-      setMessages([...sliced, newUserMsg]);
+      setMessages([...sliced, newUserMsg, thinkingMsg]);
       setEditingMsg(null);
     } else {
-      setMessages(prev => [...prev, { id: Date.now(), role: "user", content }]);
+      setMessages(prev => [...prev, newUserMsg, thinkingMsg]);
     }
 
     setInput("");
     setChatStarted(true);
     setIsLoading(true);
-
-    const thinkingId = Date.now() + 1;
-    setMessages(prev => [...prev, {
-      id: thinkingId, role: "assistant",
-      thinking: "🧠 Generating execution plan via LLM…",
-      content: "", isThinking: true,
-    }]);
 
     try {
       // Extract sliding window of history (last 10 messages)
@@ -1070,20 +1073,38 @@ export default function App() {
             </div>
           </div>
           
-          <button 
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            style={{
-              background: "transparent", border: "none", cursor: "pointer", 
-              fontSize: 18, padding: 4, borderRadius: 6, display: "flex",
-              alignItems: "center", justifyContent: "center",
-              color: T.secondary,
-              transition: "transform 0.2s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = T.muted}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-          >
-            {isDark ? "☀️" : "🌙"}
-          </button>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button 
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              title="Toggle Services Panel"
+              style={{
+                background: "transparent", border: "none", cursor: "pointer", 
+                fontSize: 16, padding: 4, borderRadius: 6, display: "flex",
+                alignItems: "center", justifyContent: "center",
+                color: rightPanelOpen ? T.accent : T.secondary,
+                transition: "all 0.2s",
+                background: rightPanelOpen ? T.muted : "transparent"
+              }}
+              onMouseEnter={e => { if(!rightPanelOpen) e.currentTarget.style.background = T.muted }}
+              onMouseLeave={e => { if(!rightPanelOpen) e.currentTarget.style.background = "transparent" }}
+            >
+              ☰
+            </button>
+            <button 
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              style={{
+                background: "transparent", border: "none", cursor: "pointer", 
+                fontSize: 18, padding: 4, borderRadius: 6, display: "flex",
+                alignItems: "center", justifyContent: "center",
+                color: T.secondary,
+                transition: "transform 0.2s"
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = T.muted}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              {isDark ? "☀️" : "🌙"}
+            </button>
+          </div>
         </div>
 
         {/* New Chat */}
@@ -1125,38 +1146,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* Connected Tools */}
-        {/* Connected Tools Status */}
-        <div style={{ padding: "8px 12px 6px", borderTop: `1px solid ${T.border}` }}>
-          <div style={{ fontSize: 10, color: T.secondary, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
-            Connected Services
-          </div>
-          {CONNECTED_TOOLS.map(t => {
-            const toolKey = t.name.split(" ")[0].toLowerCase();
-            let isConnected = false;
-            if (toolKey === "github") isConnected = !!tools.github?.token;
-            else if (toolKey === "jira") isConnected = !!localStorage.getItem("jira_access_token") || !!tools.jira?.token;
-            else if (toolKey === "slack") isConnected = !!localStorage.getItem("slack_access_token") || !!tools.slack?.token;
-            else if (toolKey === "google") isConnected = !!localStorage.getItem("google_access_token") || !!tools.sheets?.token;
-
-            return (
-              <div
-                key={t.name}
-                onClick={() => navigate(t.path)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                  borderRadius: 6, cursor: "pointer", fontSize: 12, color: T.secondary,
-                  marginBottom: 2,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = T.muted)}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                <span style={{ fontSize: 14 }}>{isConnected ? "✅" : "⚠️"}</span>
-                {isConnected ? `${t.name.split(" ")[0]} Connected` : `${t.name.split(" ")[0]} not connected.`}
-              </div>
-            );
-          })}
-        </div>
 
         {/* Conversations List */}
         <div style={{ flex: 1, overflow: "auto", padding: "8px 12px", borderTop: `1px solid ${T.border}` }}>
@@ -1386,7 +1375,6 @@ export default function App() {
                       <div style={{
                         marginTop: 10, fontSize: 12, fontFamily: "monospace",
                         color: slackResult.ok ? "#4ade80" : "#f85149",
-                        padding: "6px 10px",
                         background: slackResult.ok ? "#0d3320" : "#3d1117",
                         borderRadius: 6,
                         border: `1px solid ${slackResult.ok ? "#2ea04330" : "#f8514930"}`,
@@ -1464,6 +1452,109 @@ export default function App() {
               </div>
             </div>
           </>
+        )}
+      </div>
+
+      {/* ── RIGHT PANEL (RAIL SYSTEM) ── */}
+      <div style={{
+        width: rightPanelOpen ? 280 : 60, flexShrink: 0, background: T.sidebar,
+        borderLeft: `1px solid ${T.border}`, display: "flex",
+        flexDirection: "column", overflow: "hidden", 
+        boxShadow: T.shadow, zIndex: 5,
+        transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+      }}>
+        <div style={{ 
+          padding: rightPanelOpen ? "20px 16px 12px" : "20px 0 12px", 
+          borderBottom: `1px solid ${T.border}`, 
+          display: "flex", alignItems: "center", 
+          justifyContent: rightPanelOpen ? "space-between" : "center" 
+        }}>
+          {rightPanelOpen ? (
+            <>
+              <div style={{ fontSize: 11, color: T.secondary, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>
+                Connected Services
+              </div>
+              <button 
+                onClick={() => setRightPanelOpen(false)}
+                style={{ background: "transparent", border: "none", color: T.secondary, cursor: "pointer", fontSize: 14 }}
+              >✕</button>
+            </>
+          ) : (
+            <button 
+              onClick={() => setRightPanelOpen(true)}
+              style={{ background: "transparent", border: "none", color: T.accent, cursor: "pointer", fontSize: 18 }}
+              title="Expand Panel"
+            >☰</button>
+          )}
+        </div>
+        
+        <div style={{ padding: rightPanelOpen ? "16px" : "16px 0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          {CONNECTED_TOOLS.map(t => {
+              const toolKey = t.name.split(" ")[0].toLowerCase();
+              const toolId = toolKey === "google" ? "sheets" : toolKey;
+              let isConnected = false;
+              if (toolKey === "github") isConnected = !!tools.github?.token;
+              else if (toolKey === "jira") isConnected = !!localStorage.getItem("jira_access_token") || !!tools.jira?.token;
+              else if (toolKey === "slack") isConnected = !!localStorage.getItem("slack_access_token") || !!tools.slack?.token;
+              else if (toolKey === "google") isConnected = !!localStorage.getItem("google_access_token") || !!tools.sheets?.token;
+
+              const tc = TOOL_COLORS[toolId] || TOOL_COLORS.generic;
+
+              return (
+                <div
+                  key={t.name}
+                  onClick={() => { if(!rightPanelOpen) setRightPanelOpen(true); else navigate(t.path); }}
+                  title={!rightPanelOpen ? `${t.name} (${isConnected ? "Connected" : "Disconnected"})` : ""}
+                  style={{
+                    display: "flex", alignItems: "center", 
+                    gap: 12, padding: rightPanelOpen ? "10px 0" : "10px 0",
+                    width: rightPanelOpen ? "100%" : "auto",
+                    cursor: "pointer", fontSize: 14, color: isConnected ? T.text : T.secondary,
+                    transition: "all 0.2s",
+                    opacity: isConnected ? 1 : 0.6
+                  }}
+                >
+                  <div style={{ position: "relative" }}>
+                    <div style={{ 
+                      width: 32, height: 32, borderRadius: 8, 
+                      flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: isConnected ? tc.bg : "#21262d",
+                      border: `1px solid ${isConnected ? tc.border : "#30363d"}`,
+                      boxShadow: isConnected ? `0 0 10px ${tc.border}44` : "none",
+                      fontSize: 18,
+                      transition: "transform 0.2s"
+                    }}>
+                      {TOOL_ICONS[toolId] || "⚙️"}
+                    </div>
+                    {/* Tiny status dot */}
+                    <div style={{
+                      position: "absolute", bottom: -2, right: -2,
+                      width: 10, height: 10, borderRadius: "50%",
+                      background: isConnected ? "#2ea043" : "#f85149",
+                      border: `2px solid ${T.sidebar}`,
+                      boxShadow: "0 0 4px rgba(0,0,0,0.5)"
+                    }} />
+                  </div>
+                  {rightPanelOpen && (
+                    <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {t.name.split(" ")[0]}
+                      </span>
+                      <span style={{ fontSize: 10, color: isConnected ? "#2ea043" : T.secondary }}>
+                        {isConnected ? "Connected" : "Not Linked"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+          })}
+        </div>
+
+        {rightPanelOpen && (
+          <div style={{ marginTop: "auto", padding: "16px", borderTop: `1px solid ${T.border}`, fontSize: 11, color: T.secondary }}>
+            <p style={{ margin: 0 }}>Configure integrations to enable automated platform actions.</p>
+          </div>
         )}
       </div>
     </div>

@@ -17,7 +17,7 @@ import Landing          from "./pages/Landing";
 import LoginPage        from "./pages/LoginPage";
 import ConnectTools     from "./pages/ConnectTools";
 import AgenticChatUI    from "./AgenticChatUI";
-import ManagerDashboard from "./pages/ManagerDashboard";
+import ManagerLayout    from "./components/manager/ManagerLayout";
 import NotFound         from "./pages/NotFound";
 import Logs             from "./pages/Logs";
 import Layout           from "./components/Layout";
@@ -33,11 +33,11 @@ const MuiThemeWrapper = ({ children }: { children: React.ReactNode }) => {
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 };
 
-/** Role-aware dashboard: Manager → simplified chat | Developer → full Agentic Chat */
+/** Role-aware dashboard: Manager → separate layout | Developer → full Agentic Chat */
 const RoleRouter = () => {
   const { user } = useAuth();
   if (user?.role === 'manager') {
-    return <Layout><ManagerDashboard /></Layout>;
+    return <ManagerLayout />;
   }
   return <AgenticChatUI />;
 };
